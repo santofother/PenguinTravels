@@ -1027,13 +1027,337 @@
     .flavor { font-size: 9px; }
     button.choice { font-size: 9px; }
   }
+
+  /* ===== AUDIO SETTINGS BAR ===== */
+  #audioBar {
+    position: fixed;
+    top: 16px; right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    pointer-events: none;
+  }
+  #audioToggleBtn {
+    pointer-events: all;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    background: var(--bg-deep);
+    color: var(--gold);
+    border: 3px solid var(--gold);
+    padding: 5px 9px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    box-shadow: 3px 3px 0 #000, inset 0 0 0 1px #000;
+    transition: background 0.05s steps(2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  #audioToggleBtn:hover { background: var(--gold); color: var(--bg-deep); }
+  #audioToggleBtn .audioIcon { font-size: 11px; }
+
+  #audioPanel {
+    pointer-events: all;
+    background: var(--bg-deep);
+    border: 3px solid var(--paper);
+    border-top: none;
+    padding: 10px 12px 12px;
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 180px;
+    box-shadow: 3px 3px 0 #000;
+  }
+  #audioPanel.open { display: flex; }
+
+  .audioRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .audioLabel {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--paper);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .audioSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 6px;
+    background: var(--ink);
+    border: 2px solid var(--paper);
+    outline: none;
+    cursor: pointer;
+  }
+  .audioSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px; height: 14px;
+    background: var(--gold);
+    border: 2px solid #000;
+    cursor: pointer;
+    image-rendering: pixelated;
+  }
+  .audioSlider::-moz-range-thumb {
+    width: 10px; height: 14px;
+    background: var(--gold);
+    border: 2px solid #000;
+    cursor: pointer;
+  }
+  .audioToggle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 4px 7px;
+    cursor: pointer;
+    border: 2px solid var(--paper);
+    background: var(--ink);
+    color: var(--paper);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    transition: background 0.05s steps(2);
+  }
+  .audioToggle.on  { background: var(--green); color: var(--ink); border-color: var(--green); }
+  .audioToggle.off { background: var(--red);   color: #fff;       border-color: var(--red);   }
+  .audioToggle:hover { filter: brightness(1.15); }
+
+  .audioDivider {
+    border: none;
+    border-top: 2px dashed #333;
+    margin: 0;
+  }
+  .audioTitle {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--teal);
+    letter-spacing: 2px;
+    text-align: center;
+    padding-bottom: 2px;
+  }
 </style>
 </head>
 <body>
+  <!-- ===== AUDIO SETTINGS BAR ===== -->
+  <div id="audioBar">
+    <button id="audioToggleBtn" title="Audio Settings" onclick="toggleAudioPanel()">
+      <span class="audioIcon" id="audioIcon">🔊</span> SFX
+    </button>
+    <div id="audioPanel">
+      <div class="audioTitle">— AUDIO —</div>
+      <div class="audioRow">
+        <span class="audioLabel">VOL</span>
+        <input type="range" class="audioSlider" id="volSlider"
+               min="0" max="1" step="0.05" value="0.2"
+               oninput="AudioManager.setMasterVolume(+this.value)">
+      </div>
+      <hr class="audioDivider">
+      <div class="audioRow">
+        <span class="audioLabel">MUSIC</span>
+        <button class="audioToggle on" id="btnMusic" onclick="AudioManager.toggleMusic()">ON</button>
+      </div>
+      <div class="audioRow">
+        <span class="audioLabel">SFX</span>
+        <button class="audioToggle on" id="btnSFX" onclick="AudioManager.toggleSFX()">ON</button>
+      </div>
+    </div>
+  </div>
+
   <div id="game"></div>
 
 <script>
 'use strict';
+
+// =====================================================================
+//  AUDIO MANAGER — Penguin Travels
+//  Sprite sheet: SoundEffects/Heart_of_the_High_Score.mp3
+//  Music folder: Music/
+// =====================================================================
+const AudioManager = (() => {
+  // ── SFX sprite timings (milliseconds) ──────────────────────────────
+  const SPRITES = {
+    ui_click:       { start:    0, end:  150 },
+    travel:         { start:  150, end: 1150 },
+    coin:           { start: 1150, end: 1650 },
+    success:        { start: 1650, end: 2200 },
+    error:          { start: 2200, end: 2500 },
+    heart:          { start: 2500, end: 2750 },
+    adventure_loop: { start: 2750, end: null }, // plays to file end
+  };
+
+  // ── PLAYLIST ───────────────────────────────────────────────────────
+  // Songs play in order, looping back to the start when all have played.
+  // To add a new song: just add another 'Music/YourSong.mp3' entry here.
+  const PLAYLIST = [
+    'Music/Tokyo_To_The_Sand.mp3',
+    'Music/Latitude_of_Home.mp3',
+    'Music/Captain_of_the_Cloudship.mp3',
+    'Music/Aurora_of_My_Nights.mp3',
+	'Music/Aurora_of_My_Nights (1).mp3',
+	'Home_Against_The_Freeze.mp3',
+	'Polar_Night_Ascent.mp3',
+	'Where_the_Stars_Bloom.mp3',
+  ];
+
+  // ── Internal state ─────────────────────────────────────────────────
+  let _unlocked       = false;
+  let _masterVolume   = 0.8;
+  let _musicEnabled   = true;
+  let _sfxEnabled     = true;
+  let _musicEl        = null;   // single persistent <audio> for music
+  let _currentSrc     = null;   // src currently loaded in _musicEl
+  let _fadeOutTimer   = null;   // interval handle for the fade-out step
+  let _playlistIndex  = 0;      // which song in PLAYLIST is playing
+
+  // ── Helpers ────────────────────────────────────────────────────────
+  function _setMusicVolume(v) {
+    if (_musicEl) _musicEl.volume = Math.max(0, Math.min(1, v));
+  }
+
+  // Advance to the next track in the playlist (wraps around).
+  function _nextTrack() {
+    _playlistIndex = (_playlistIndex + 1) % PLAYLIST.length;
+    _currentSrc = null; // allow crossfade to same file if playlist has one entry
+    _crossfadeTo(PLAYLIST[_playlistIndex]);
+  }
+
+  // Crossfade to a new src. Music and SFX each use their own Audio
+  // objects so they are completely independent — SFX can never touch
+  // the music element and vice versa.
+  function _crossfadeTo(src) {
+    if (!_unlocked || !_musicEnabled) return;
+    if (_currentSrc === src) return;  // same track already playing — do nothing
+    _currentSrc = src;
+
+    // Fade out the old element in its own closure so it finishes cleanly
+    // even if _crossfadeTo is called again before it completes.
+    if (_musicEl) {
+      const old = _musicEl;
+      old.onended = null; // detach playlist handler before discarding
+      _musicEl = null;
+      clearInterval(_fadeOutTimer);
+      _fadeOutTimer = setInterval(() => {
+        if (old.volume > 0.06) {
+          old.volume = Math.max(0, old.volume - 0.07);
+        } else {
+          old.pause();
+          old.src = '';
+          clearInterval(_fadeOutTimer);
+        }
+      }, 50);
+    }
+
+    const el = new Audio(src);
+    el.loop    = false;  // we manage looping ourselves via the playlist
+    el.volume  = 0;
+    el.preload = 'auto';
+    _musicEl   = el;
+
+    // When a track finishes, automatically advance to the next one
+    el.onended = () => { if (_musicEl === el) _nextTrack(); };
+
+    el.play().catch(() => {});
+
+    const targetVol = _masterVolume * 0.65;
+    const fadeIn = setInterval(() => {
+      if (!_musicEl || _musicEl !== el) { clearInterval(fadeIn); return; }
+      el.volume = Math.min(targetVol, el.volume + 0.04);
+      if (el.volume >= targetVol) clearInterval(fadeIn);
+    }, 60);
+  }
+
+  // Start the playlist from the beginning (called once on unlock).
+  function _startPlaylist() {
+    _playlistIndex = 0;
+    _crossfadeTo(PLAYLIST[0]);
+  }
+
+  // ── Public API ─────────────────────────────────────────────────────
+  return {
+    // Must be called on the very first user gesture (character select).
+    // Nothing plays before this — satisfies browser autoplay policy.
+    unlock() {
+      if (_unlocked) return;
+      _unlocked = true;
+      _startPlaylist();
+    },
+
+    // SFX: each call creates its own throw-away Audio element targeting
+    // the sprite file. It is completely separate from _musicEl so it
+    // can never interrupt or restart the music track.
+    playSFX(type) {
+      if (!_unlocked || !_sfxEnabled) return;
+      const sp = SPRITES[type];
+      if (!sp) return;
+      const el = new Audio('SoundEffects/Heart_of_the_High_Score.mp3');
+      el.volume      = _masterVolume;
+      el.currentTime = sp.start / 1000;
+      el.play().catch(() => {});
+      if (sp.end !== null) {
+        setTimeout(() => { el.pause(); el.src = ''; }, sp.end - sp.start);
+      }
+    },
+
+    // Called from renderScene / renderTitle — now a no-op for music routing.
+    // The playlist runs independently of scene changes; music never restarts
+    // or skips because of navigation. This method is kept so existing
+    // renderScene / renderTitle call sites don't need any changes.
+    playMusicForScene(_key) {
+      // Music plays continuously through the playlist regardless of location.
+      // No action needed here — unlock() already started it.
+    },
+
+    // Volume slider
+    setMasterVolume(v) {
+      _masterVolume = v;
+      _setMusicVolume(v * 0.65);
+      // Update toggle icon
+      const icon = document.getElementById('audioIcon');
+      if (icon) icon.textContent = v < 0.01 ? '🔇' : v < 0.4 ? '🔉' : '🔊';
+    },
+
+    // Music on/off toggle
+    toggleMusic() {
+      _musicEnabled = !_musicEnabled;
+      const btn = document.getElementById('btnMusic');
+      if (btn) { btn.textContent = _musicEnabled ? 'ON' : 'OFF'; btn.className = 'audioToggle ' + (_musicEnabled ? 'on' : 'off'); }
+      if (!_musicEnabled && _musicEl) {
+        _musicEl.pause();
+      } else if (_musicEnabled && _unlocked) {
+        if (_musicEl) {
+          // Resume the paused track
+          _musicEl.play().catch(() => {});
+        } else {
+          // Restart playlist from current index
+          _currentSrc = null;
+          _crossfadeTo(PLAYLIST[_playlistIndex]);
+        }
+      }
+    },
+
+    // SFX on/off toggle
+    toggleSFX() {
+      _sfxEnabled = !_sfxEnabled;
+      const btn = document.getElementById('btnSFX');
+      if (btn) { btn.textContent = _sfxEnabled ? 'ON' : 'OFF'; btn.className = 'audioToggle ' + (_sfxEnabled ? 'on' : 'off'); }
+    },
+  };
+})();
+
+// Audio settings panel show/hide
+function toggleAudioPanel() {
+  const panel = document.getElementById('audioPanel');
+  if (panel) panel.classList.toggle('open');
+}
+
+// Convenience shorthand used throughout the game
+function playSFX(type) { AudioManager.playSFX(type); }
+
 
 const State = {
   coins: 0,
@@ -1049,6 +1373,8 @@ const State = {
 
 // =============== SCENE ART RENDERERS ==================
 function art_antarctica() {
+  // ♥ generated here — trigger heart SFX
+  playSFX('heart');
   let stars = '';
   for (let i = 0; i < 8; i++) stars += `<div class="snowflake" style="left:${Math.random()*100}%; animation-delay:${Math.random()*4}s;">❄</div>`;
   return `<div class="sceneArt bg-ice">
@@ -2159,6 +2485,7 @@ function partner() { return State.player === 'porky' ? 'Squid' : 'Mr Porky'; }
 function midNext() { return State.visited.has('choose2b') ? 'choose3' : 'choose2b'; }
 function addCoins(n) {
   State.coins += n;
+  playSFX('coin');   // 🪙 coin earned
   renderTopBar();
   popCoins(n);
 }
@@ -2279,6 +2606,11 @@ function renderTopBar() {
 }
 
 function renderTitle() {
+  // ♥ generated here — trigger heart SFX (only after unlock)
+  playSFX('heart');
+  // Music: title screen plays Tokyo_To_The_Sand
+  AudioManager.playMusicForScene('title');
+
   const game = document.getElementById('game');
   game.innerHTML = `
     <div class="panel">
@@ -2309,14 +2641,28 @@ function renderTitle() {
       </div>
     </div>
   `;
-  document.getElementById('btnPorky').onclick = () => { State.player = 'porky'; goTo('antarctica'); };
-  document.getElementById('btnSquid').onclick = () => { State.player = 'squid'; goTo('antarctica'); };
+  // Character buttons unlock audio on first user interaction (browser autoplay policy)
+  document.getElementById('btnPorky').onclick = () => {
+    AudioManager.unlock();
+    AudioManager.playMusicForScene('title'); // ensure music starts after unlock
+    State.player = 'porky';
+    goTo('antarctica');
+  };
+  document.getElementById('btnSquid').onclick = () => {
+    AudioManager.unlock();
+    AudioManager.playMusicForScene('title');
+    State.player = 'squid';
+    goTo('antarctica');
+  };
 }
 
 function renderScene(key) {
   const sc = Scenes[key];
   if (!sc) { console.error('Missing scene:', key); return; }
   if (sc.onEnter) { sc.onEnter(); return; }
+
+  // Dynamic music routing based on scene
+  AudioManager.playMusicForScene(key);
 
   const isFirstVisit = !State.visited.has(key);
   State.current = key;
@@ -2417,9 +2763,11 @@ function renderPuzzle(container, p) {
     attempts++;
     const fb = document.getElementById('feedback');
     if (p.validate(input.value)) {
+      playSFX('success');
       fb.className = 'feedback good'; fb.textContent = '★ CORRECT! ★';
       setTimeout(() => goTo(p.onWin), 800);
     } else {
+      playSFX('error');
       fb.className = 'feedback bad';
       fb.textContent = attempts >= 3 ? 'Try the hint, my love.' : '✗ Not quite. Try again!';
     }
@@ -2595,10 +2943,12 @@ function checkSequence(p) {
     return;
   }
   if (allCorrect) {
+    playSFX('success');
     fb.className = 'feedback good';
     fb.textContent = '★ THE SLABS GLOW! THE PATH OPENS! ★';
     setTimeout(() => goTo(p.onWin), 900);
   } else {
+    playSFX('error');
     fb.className = 'feedback bad';
     fb.textContent = '✗ The Sphinx hisses. Wrong order!';
     document.getElementById('slotPad').classList.add('shakeBad');
@@ -2685,6 +3035,7 @@ function clickStar(id) {
     wrap.__progress++;
     updateStarProgress(wrap.__progress, p.order.length);
     if (wrap.__progress === p.order.length) {
+      playSFX('success');
       fb.className = 'feedback good';
       fb.textContent = '★ THE CONSTELLATION IS COMPLETE! ★';
       setTimeout(() => goTo(p.onWin), 900);
@@ -2695,6 +3046,7 @@ function clickStar(id) {
       fb.textContent = `Good! ${wrap.__progress} of ${p.order.length} lit.`;
     }
   } else {
+    playSFX('error');
     fb.className = 'feedback bad';
     fb.textContent = '✗ Wrong star! The pattern resets.';
     wrap.classList.add('shakeBad');
@@ -3021,6 +3373,7 @@ const TRAVEL_SCENES = new Set([
 let _transitionLock = false;
 
 function playTravelTransition(destKey, done) {
+  playSFX('travel');   // ✈ travel sound
   const sc = Scenes[destKey];
   const dest = (sc && sc.name) || destKey.toUpperCase();
   const overlay = document.createElement('div');
@@ -3049,6 +3402,7 @@ function playTravelTransition(destKey, done) {
 }
 
 function playFadeTransition(done) {
+  playSFX('travel');   // scene-change whoosh
   const panel = document.querySelector('.panel');
   if (!panel) { done(); _transitionLock = false; return; }
   panel.classList.add('scene-fadeOut');
@@ -3064,6 +3418,7 @@ function playFadeTransition(done) {
 }
 
 function goTo(key) {
+  playSFX('ui_click');   // 🖱 button press
   if (key === 'title') {
     if (_transitionLock) return;
     _transitionLock = true;

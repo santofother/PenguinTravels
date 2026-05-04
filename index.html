@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Penguin Travels</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #0a0a23;
+    --ink: #1a1a2e;
+    --paper: #f4f4d6;
+    --gold: #ffd23f;
+    --pink: #ff6ec7;
+    --teal: #4cd2ff;
+    --green: #6bdc6b;
+    --red: #ff5c5c;
+    --shadow: #000;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-deep);
+    font-family: 'Press Start 2P', monospace;
+    color: var(--paper);
+    overflow: hidden;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background: radial-gradient(circle at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  #game {
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+
+  /* Pixel-art bordered panel */
+  .panel {
+    position: relative;
+    background: var(--ink);
+    color: var(--paper);
+    width: min(1280px, 100%);
+    height: min(960px, 95vh);
+    padding: 24px;
+    box-shadow:
+      0 -6px 0 0 var(--paper),
+      0 6px 0 0 var(--paper),
+      -6px 0 0 0 var(--paper),
+      6px 0 0 0 var(--paper),
+      0 -12px 0 0 var(--ink),
+      0 12px 0 0 var(--ink),
+      -12px 0 0 0 var(--ink),
+      12px 0 0 0 var(--ink),
+      0 -12px 0 6px var(--paper),
+      0 12px 0 6px var(--paper),
+      -12px 0 0 6px var(--paper),
+      12px 0 0 6px var(--paper);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+
+  .banner {
+    text-align: center;
+    font-size: 10px;
+    color: var(--pink);
+    background: #2b0a2b;
+    padding: 6px 8px;
+    margin: -24px -24px 14px -24px;
+    border-bottom: 4px solid var(--pink);
+    letter-spacing: 2px;
+    animation: pulsePink 1.2s steps(2) infinite;
+  }
+  @keyframes pulsePink {
+    0%, 100% { color: var(--pink); text-shadow: 2px 2px 0 #5a005a; }
+    50% { color: #fff; text-shadow: 2px 2px 0 var(--pink); }
+  }
+
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 10px; margin-bottom: 14px;
+    border-bottom: 2px dashed var(--paper);
+    padding-bottom: 10px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .gameTitle { color: var(--gold); font-size: 12px; letter-spacing: 2px; }
+  .coins { color: var(--gold); }
+  .stops { color: var(--teal); }
+
+  .scene {
+    flex: 1;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .scene::-webkit-scrollbar { width: 8px; }
+  .scene::-webkit-scrollbar-track { background: #000; }
+  .scene::-webkit-scrollbar-thumb { background: var(--paper); }
+
+  .sceneArt {
+    display: flex; align-items: center; justify-content: center;
+    height: clamp(220px, 38vh, 360px);
+    margin-bottom: 14px;
+    background: var(--bg-deep);
+    border: 4px solid var(--paper);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .locationName {
+    font-size: 12px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    text-shadow: 3px 3px 0 #000;
+  }
+
+  .flavor {
+    font-size: 11px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+    padding: 10px;
+    background: #0a0a1a;
+    border-left: 4px solid var(--teal);
+    min-height: 60px;
+  }
+
+  .choices {
+    display: grid; gap: 10px;
+    grid-template-columns: 1fr;
+  }
+
+  button.choice {
+    font-family: inherit;
+    font-size: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 14px;
+    border: 4px solid var(--paper);
+    cursor: pointer;
+    text-align: left;
+    line-height: 1.6;
+    transition: transform 0.05s steps(2);
+    box-shadow: 4px 4px 0 0 var(--shadow);
+  }
+  button.choice:hover {
+    background: var(--gold);
+    color: var(--ink);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 0 var(--shadow);
+  }
+  button.choice:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 0 var(--shadow);
+  }
+  button.choice.special { border-color: var(--pink); color: var(--pink); }
+  button.choice.special:hover { background: var(--pink); color: #fff; }
+  button.choice.puzzle { border-color: var(--gold); color: var(--gold); }
+
+  /* TITLE SCREEN ============================================== */
+  #title {
+    text-align: center;
+    padding: 30px 10px;
+  }
+  .bigTitle {
+    font-size: 28px;
+    color: var(--gold);
+    letter-spacing: 6px;
+    text-shadow:
+      4px 0 0 var(--pink),
+      4px 4px 0 #5a005a,
+      8px 8px 0 #000;
+    margin: 30px 0 20px;
+    animation: bob 1.2s steps(2) infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  .subtitle {
+    font-size: 10px;
+    color: var(--teal);
+    margin-bottom: 30px;
+    letter-spacing: 2px;
+  }
+  .startBtn {
+    font-family: inherit;
+    font-size: 14px;
+    padding: 16px 28px;
+    background: var(--ink);
+    color: var(--gold);
+    border: 4px solid var(--gold);
+    cursor: pointer;
+    letter-spacing: 4px;
+    box-shadow: 6px 6px 0 0 #000;
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink {
+    0%, 50% { background: var(--ink); color: var(--gold); }
+    51%, 100% { background: var(--gold); color: var(--ink); }
+  }
+  .startBtn:hover { transform: scale(1.05); }
+
+  /* Character select */
+  .charSelectRow {
+    display: flex; gap: 20px; justify-content: center; margin: 10px 0 24px;
+  }
+  .charBtn {
+    font-family: inherit; font-size: 10px;
+    padding: 14px 16px; width: 130px;
+    background: var(--ink); color: var(--paper);
+    border: 4px solid var(--paper); cursor: pointer;
+    letter-spacing: 2px; line-height: 1.8;
+    box-shadow: 6px 6px 0 0 #000;
+    transition: transform 0.05s steps(2);
+    position: relative;
+  }
+  .charBtn:hover { transform: translate(-2px,-2px); box-shadow: 8px 8px 0 0 #000; background: var(--paper); color: var(--ink); }
+  .charBtn.squidBtn { border-color: var(--pink); color: var(--pink); }
+  .charBtn.squidBtn:hover { background: var(--pink); color: #fff; border-color: var(--pink); }
+  .charSelectLabel { font-size: 9px; color: var(--teal); letter-spacing: 2px; margin-bottom: 8px; }
+
+  .titleArt {
+    height: 180px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  /* ====== CSS PIXEL PENGUINS ====== */
+  .penguin {
+    width: 48px; height: 64px;
+    position: relative;
+    display: inline-block;
+    animation: waddle 0.8s steps(2) infinite;
+  }
+  @keyframes waddle {
+    0%, 100% { transform: rotate(-4deg) translateY(0); }
+    50% { transform: rotate(4deg) translateY(-2px); }
+  }
+  /* Body using box-shadow pixels at 4px units */
+  .penguin .body {
+    position: absolute;
+    width: 4px; height: 4px;
+    left: 22px; top: 30px;
+    background: #000;
+    box-shadow:
+      /* head row */
+      -8px -24px 0 #000, -4px -24px 0 #000, 0 -24px 0 #000, 4px -24px 0 #000, 8px -24px 0 #000,
+      -12px -20px 0 #000, -8px -20px 0 #000, -4px -20px 0 #000, 0 -20px 0 #000, 4px -20px 0 #000, 8px -20px 0 #000, 12px -20px 0 #000,
+      /* eyes */
+      -8px -16px 0 #fff, -4px -16px 0 #000, 4px -16px 0 #fff, 8px -16px 0 #000,
+      -12px -16px 0 #000, 12px -16px 0 #000,
+      /* beak */
+      -2px -12px 0 var(--gold), 2px -12px 0 var(--gold),
+      -4px -12px 0 #000, -8px -12px 0 #000,
+      4px -12px 0 #000, 8px -12px 0 #000,
+      -12px -12px 0 #000, 12px -12px 0 #000,
+      /* body outline */
+      -16px -8px 0 #000, -12px -8px 0 #fff, -8px -8px 0 #fff, -4px -8px 0 #fff, 0 -8px 0 #fff, 4px -8px 0 #fff, 8px -8px 0 #fff, 12px -8px 0 #fff, 16px -8px 0 #000,
+      -16px -4px 0 #000, -12px -4px 0 #fff, -8px -4px 0 #fff, -4px -4px 0 #fff, 0 -4px 0 #fff, 4px -4px 0 #fff, 8px -4px 0 #fff, 12px -4px 0 #fff, 16px -4px 0 #000,
+      -16px 0 0 #000, -12px 0 0 #fff, -8px 0 0 #fff, -4px 0 0 #fff, 0 0 0 #fff, 4px 0 0 #fff, 8px 0 0 #fff, 12px 0 0 #fff, 16px 0 0 #000,
+      -16px 4px 0 #000, -12px 4px 0 #fff, -8px 4px 0 #fff, -4px 4px 0 #fff, 0 4px 0 #fff, 4px 4px 0 #fff, 8px 4px 0 #fff, 12px 4px 0 #fff, 16px 4px 0 #000,
+      -12px 8px 0 #000, -8px 8px 0 #fff, -4px 8px 0 #fff, 0 8px 0 #fff, 4px 8px 0 #fff, 8px 8px 0 #fff, 12px 8px 0 #000,
+      /* feet */
+      -8px 12px 0 var(--gold), -4px 12px 0 var(--gold), 4px 12px 0 var(--gold), 8px 12px 0 var(--gold);
+  }
+  .penguin.izzy .body { box-shadow:
+      -8px -24px 0 #000, -4px -24px 0 #000, 0 -24px 0 #000, 4px -24px 0 #000, 8px -24px 0 #000,
+      -12px -20px 0 #000, -8px -20px 0 #000, -4px -20px 0 #000, 0 -20px 0 #000, 4px -20px 0 #000, 8px -20px 0 #000, 12px -20px 0 #000,
+      /* pink bow */
+      -16px -24px 0 var(--pink), -16px -28px 0 var(--pink), -20px -24px 0 var(--pink),
+      16px -24px 0 var(--pink), 16px -28px 0 var(--pink), 20px -24px 0 var(--pink),
+      -8px -16px 0 #fff, -4px -16px 0 #000, 4px -16px 0 #fff, 8px -16px 0 #000,
+      -12px -16px 0 #000, 12px -16px 0 #000,
+      -2px -12px 0 var(--gold), 2px -12px 0 var(--gold),
+      -4px -12px 0 #000, -8px -12px 0 #000,
+      4px -12px 0 #000, 8px -12px 0 #000,
+      -12px -12px 0 #000, 12px -12px 0 #000,
+      -16px -8px 0 #000, -12px -8px 0 #fff, -8px -8px 0 #fff, -4px -8px 0 #fff, 0 -8px 0 #fff, 4px -8px 0 #fff, 8px -8px 0 #fff, 12px -8px 0 #fff, 16px -8px 0 #000,
+      -16px -4px 0 #000, -12px -4px 0 var(--pink), -8px -4px 0 #fff, -4px -4px 0 #fff, 0 -4px 0 #fff, 4px -4px 0 #fff, 8px -4px 0 #fff, 12px -4px 0 var(--pink), 16px -4px 0 #000,
+      -16px 0 0 #000, -12px 0 0 var(--pink), -8px 0 0 #fff, -4px 0 0 #fff, 0 0 0 #fff, 4px 0 0 #fff, 8px 0 0 #fff, 12px 0 0 var(--pink), 16px 0 0 #000,
+      -16px 4px 0 #000, -12px 4px 0 #fff, -8px 4px 0 #fff, -4px 4px 0 #fff, 0 4px 0 #fff, 4px 4px 0 #fff, 8px 4px 0 #fff, 12px 4px 0 #fff, 16px 4px 0 #000,
+      -12px 8px 0 #000, -8px 8px 0 #fff, -4px 8px 0 #fff, 0 8px 0 #fff, 4px 8px 0 #fff, 8px 8px 0 #fff, 12px 8px 0 #000,
+      -8px 12px 0 var(--gold), -4px 12px 0 var(--gold), 4px 12px 0 var(--gold), 8px 12px 0 var(--gold);
+  }
+
+  .penguinPair {
+    position: absolute;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 30px; align-items: end;
+  }
+  .heart {
+    position: absolute;
+    top: 30px; left: 50%;
+    transform: translateX(-50%);
+    color: var(--pink);
+    font-size: 24px;
+    animation: heartPop 1s steps(2) infinite;
+  }
+  @keyframes heartPop {
+    0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+    50% { transform: translateX(-50%) scale(1.3); opacity: 0.7; }
+  }
+
+  /* Stars */
+  .star {
+    position: absolute;
+    color: var(--paper);
+    font-size: 8px;
+    animation: twinkle 1.5s steps(2) infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  /* Scene background helpers */
+  .bg-ice { background: linear-gradient(to bottom, #b3e5ff 0%, #b3e5ff 60%, #fff 60%, #fff 100%); }
+  .bg-tokyo { background: linear-gradient(to bottom, #ff6ec7 0%, #ff6ec7 30%, #2b0a2b 30%, #2b0a2b 100%); }
+  .bg-paris { background: linear-gradient(to bottom, #ff9f4a 0%, #ff6ec7 50%, #4a2b6e 100%); }
+  .bg-egypt { background: linear-gradient(to bottom, #ffb84a 0%, #ffd23f 60%, #c98a3a 60%, #c98a3a 100%); }
+  .bg-amazon { background: linear-gradient(to bottom, #4cd2ff 0%, #4cd2ff 30%, #1a5c1a 30%, #0a3a0a 100%); }
+  .bg-iceland { background: linear-gradient(to bottom, #0a0a3a 0%, #2a1a6a 50%, #6bdc6b 80%, #fff 100%); }
+  .bg-venice { background: linear-gradient(to bottom, #ff9f4a 0%, #ff6ec7 40%, #4cd2ff 60%, #1a5c8a 100%); }
+  .bg-hawaii { background: linear-gradient(to bottom, #ffd23f 0%, #ff6ec7 40%, #4cd2ff 70%, #1a5c8a 100%); }
+  .bg-everest { background: linear-gradient(to bottom, #6ec5ff 0%, #b3e5ff 60%, #fff 60%, #fff 100%); }
+  .bg-nyc { background: linear-gradient(to bottom, #2b0a2b 0%, #4a2b6e 100%); }
+  .bg-gbr { background: linear-gradient(to bottom, #4cd2ff 0%, #1a5c8a 60%, #0a2a4a 100%); }
+  .bg-credits { background: linear-gradient(to bottom, #0a0a23 0%, #2b0a4a 100%); }
+
+  /* Scene-specific pixel art structures */
+  .pixelObject { position: absolute; }
+
+  /* Igloo (Antarctica) */
+  .igloo {
+    width: 60px; height: 40px;
+    bottom: 8px; left: 30%;
+    background: #fff;
+    border-radius: 60px 60px 0 0;
+    box-shadow:
+      0 0 0 4px #000,
+      -10px 4px 0 #000,
+      10px 4px 0 #000;
+  }
+  .igloo::before {
+    content: ""; position: absolute;
+    width: 16px; height: 18px;
+    background: #1a1a2e;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    border-radius: 16px 16px 0 0;
+    box-shadow: 0 0 0 3px #000;
+  }
+  .snowflake {
+    position: absolute;
+    color: #fff;
+    font-size: 10px;
+    animation: fall 4s linear infinite;
+  }
+  @keyframes fall {
+    from { transform: translateY(-20px); opacity: 1; }
+    to { transform: translateY(220px); opacity: 0; }
+  }
+
+  /* Tokyo: torii gate */
+  .torii {
+    position: absolute;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 90px;
+  }
+  .torii::before {
+    content: ""; position: absolute;
+    width: 100px; height: 12px;
+    background: var(--red);
+    top: 0; left: -10px;
+    box-shadow: 0 0 0 3px #000, 0 18px 0 var(--red), 0 18px 0 3px #000;
+  }
+  .torii::after {
+    content: ""; position: absolute;
+    width: 8px; height: 80px;
+    background: var(--red);
+    top: 10px; left: 12px;
+    box-shadow: 60px 0 0 var(--red), 0 0 0 3px #000, 60px 0 0 3px #000;
+  }
+  .neon {
+    position: absolute;
+    top: 15px; right: 20px;
+    color: var(--pink);
+    font-size: 14px;
+    animation: blinkFast 0.6s steps(2) infinite;
+    text-shadow: 0 0 8px var(--pink);
+  }
+  @keyframes blinkFast {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0.3; }
+  }
+
+  /* Paris: Eiffel tower */
+  .eiffel {
+    position: absolute;
+    bottom: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 40px solid transparent;
+    border-right: 40px solid transparent;
+    border-bottom: 130px solid #1a1a2e;
+  }
+  .eiffel::before {
+    content: ""; position: absolute;
+    width: 20px; height: 4px;
+    background: #1a1a2e;
+    bottom: -130px; left: -10px;
+    box-shadow: 0 -30px 0 #1a1a2e, 0 -60px 0 -2px #1a1a2e;
+  }
+  .moon {
+    position: absolute;
+    top: 20px; right: 30px;
+    width: 30px; height: 30px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #000, inset -8px -2px 0 #d6d6c0;
+  }
+
+  /* Pyramid */
+  .pyramid {
+    position: absolute;
+    bottom: 60px; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 70px solid transparent;
+    border-right: 70px solid transparent;
+    border-bottom: 100px solid #c98a3a;
+  }
+  .pyramid::after {
+    content: ""; position: absolute;
+    width: 0; height: 0;
+    border-left: 30px solid transparent;
+    border-right: 30px solid transparent;
+    border-bottom: 100px solid #e0a04a;
+    bottom: -100px; left: -30px;
+  }
+  .sphinx { position: absolute; bottom: 60px; left: 20px; font-size: 32px; }
+  .sun {
+    position: absolute;
+    top: 20px; right: 25px;
+    width: 36px; height: 36px;
+    background: var(--gold);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px #ff9f4a, 0 0 20px var(--gold);
+  }
+
+  /* Amazon */
+  .tree {
+    position: absolute;
+    bottom: 0; width: 30px; height: 80px;
+    background: #5a3a1a;
+  }
+  .tree::before {
+    content: ""; position: absolute;
+    width: 60px; height: 60px;
+    background: #1a5c1a;
+    border-radius: 50%;
+    top: -40px; left: -15px;
+    box-shadow: 0 0 0 3px #000;
+  }
+
+  /* Iceland aurora */
+  .aurora {
+    position: absolute;
+    top: 20px; left: 0; right: 0; height: 60px;
+    background: linear-gradient(to right, transparent, #6bdc6b, var(--pink), #4cd2ff, transparent);
+    opacity: 0.6;
+    animation: shimmer 3s steps(4) infinite;
+    filter: blur(3px);
+  }
+  @keyframes shimmer {
+    0%, 100% { transform: skewY(-2deg); opacity: 0.5; }
+    50% { transform: skewY(2deg); opacity: 0.8; }
+  }
+
+  /* Venice */
+  .gondola {
+    position: absolute;
+    bottom: 50px; left: 50%;
+    transform: translateX(-50%);
+    width: 80px; height: 16px;
+    background: #1a1a2e;
+    border-radius: 0 0 40px 40px;
+    box-shadow: 0 0 0 3px #000;
+  }
+  .gondola::before {
+    content: ""; position: absolute;
+    width: 4px; height: 30px;
+    background: #5a3a1a;
+    top: -30px; left: 70px;
+  }
+
+  /* Hawaii palm */
+  .palm {
+    position: absolute;
+    bottom: 0; left: 30px;
+    width: 8px; height: 80px;
+    background: #5a3a1a;
+  }
+  .palm::before {
+    content: "🌴";
+    position: absolute;
+    font-size: 50px;
+    top: -50px; left: -22px;
+  }
+  .wave { position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: #1a5c8a; box-shadow: 0 -3px 0 #4cd2ff; }
+
+  /* Everest */
+  .mountain {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 100px solid transparent;
+    border-right: 100px solid transparent;
+    border-bottom: 130px solid #b3e5ff;
+  }
+  .mountain::after {
+    content: ""; position: absolute;
+    width: 0; height: 0;
+    border-left: 40px solid transparent;
+    border-right: 40px solid transparent;
+    border-bottom: 50px solid #fff;
+    bottom: -130px; left: -40px;
+  }
+
+  /* NYC skyline */
+  .skyline {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 100px;
+    background: #1a1a2e;
+    box-shadow: inset 0 0 0 0 #000;
+  }
+  .building {
+    position: absolute;
+    bottom: 0;
+    background: #2b1a4e;
+    box-shadow: 0 0 0 2px #000;
+  }
+  .window {
+    position: absolute;
+    width: 4px; height: 4px;
+    background: var(--gold);
+    animation: flicker 2s steps(2) infinite;
+  }
+  @keyframes flicker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* GBR coral reef */
+  .coral {
+    position: absolute;
+    bottom: 0;
+    font-size: 30px;
+  }
+  .bubble {
+    position: absolute;
+    width: 8px; height: 8px;
+    background: #fff;
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: rise 3s linear infinite;
+  }
+  @keyframes rise {
+    from { bottom: 0; opacity: 0.6; }
+    to { bottom: 200px; opacity: 0; }
+  }
+
+  /* Puzzle UI */
+  .puzzleBox {
+    background: #0a0a1a;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 4px dashed var(--gold);
+  }
+  .puzzleBox p { font-size: 10px; line-height: 1.6; margin-bottom: 10px; color: var(--gold); }
+  .puzzleInput {
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 3px solid var(--paper);
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .puzzleInput:focus { outline: none; border-color: var(--gold); }
+
+  /* === CUBE-ESCAPE STYLE PUZZLES === */
+  .puzzleLayout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+  .puzzleLeft, .puzzleRight {
+    display: flex; flex-direction: column;
+    min-height: 0;
+  }
+  .puzzleRight { overflow-y: auto; padding-right: 4px; }
+  .puzzleRight::-webkit-scrollbar { width: 8px; }
+  .puzzleRight::-webkit-scrollbar-track { background: #000; }
+  .puzzleRight::-webkit-scrollbar-thumb { background: var(--paper); }
+  @media (max-width: 900px) {
+    .puzzleLayout { grid-template-columns: 1fr; }
+    .puzzleRight { overflow-y: visible; }
+  }
+  .escapeScene {
+    position: relative;
+    flex: 1;
+    min-height: clamp(280px, 50vh, 520px);
+    margin-bottom: 12px;
+    border: 4px solid var(--gold);
+    overflow: hidden;
+    cursor: crosshair;
+    box-shadow: inset 0 0 0 2px #000, 0 0 0 2px #000;
+  }
+  .escapeScene::after {
+    content: "🔍 click around";
+    position: absolute;
+    bottom: 4px; right: 6px;
+    font-size: 7px;
+    color: var(--paper);
+    opacity: 0.6;
+    pointer-events: none;
+    letter-spacing: 1px;
+  }
+  .hotspot {
+    position: absolute;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+    transition: filter 0.1s steps(2), transform 0.1s steps(2);
+    user-select: none;
+    line-height: 1;
+  }
+  .hotspot:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+    filter: drop-shadow(0 0 6px var(--gold));
+  }
+  .hotspot.found {
+    pointer-events: none;
+    opacity: 0.45;
+    animation: foundPulse 0.6s steps(3);
+  }
+  @keyframes foundPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.6); filter: drop-shadow(0 0 14px var(--gold)); }
+  }
+  .discoveredBar {
+    background: #0a0a1a;
+    border: 3px solid var(--paper);
+    padding: 8px;
+    margin-bottom: 8px;
+    min-height: 56px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .discoveredBar .empty {
+    font-size: 9px;
+    color: var(--paper);
+    opacity: 0.5;
+    margin: 0 auto;
+  }
+  .symBtn {
+    font-family: inherit;
+    font-size: 22px;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: var(--paper);
+    border: 3px solid var(--gold);
+    cursor: pointer;
+    position: relative;
+    line-height: 1;
+  }
+  .symBtn:hover { background: var(--gold); transform: translateY(-2px); }
+  .symBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .symBtn .pos {
+    position: absolute;
+    top: -10px; right: -10px;
+    font-size: 8px;
+    background: var(--pink);
+    color: #fff;
+    padding: 2px 4px;
+    border: 2px solid #000;
+    line-height: 1;
+  }
+  .slotPad {
+    display: flex; gap: 8px; justify-content: center;
+    margin-bottom: 8px;
+    background: #0a0a1a;
+    border: 3px dashed var(--gold);
+    padding: 10px;
+  }
+  .slot {
+    width: 54px; height: 54px;
+    border: 3px solid var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    background: var(--ink);
+    position: relative;
+    cursor: pointer;
+  }
+  .slot::before {
+    content: attr(data-num);
+    position: absolute;
+    top: -10px; left: -8px;
+    font-size: 8px;
+    color: var(--teal);
+    background: #000;
+    padding: 2px 4px;
+    border: 2px solid var(--teal);
+    line-height: 1;
+  }
+  .slot.filled { border-color: var(--gold); }
+  .slot.filled:hover { background: #2b0a2b; }
+
+  /* Star-order puzzle */
+  .starHotspot {
+    position: absolute;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--paper);
+    font-size: 18px;
+    cursor: pointer;
+    background: rgba(255,255,255,0.04);
+    border: 2px solid rgba(255,255,255,0.2);
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s steps(2), color 0.1s steps(2);
+  }
+  .starHotspot:hover { color: var(--gold); transform: translate(-50%, -50%) scale(1.3); }
+  .starHotspot.lit {
+    color: var(--gold);
+    border-color: var(--gold);
+    background: rgba(255,210,63,0.2);
+    text-shadow: 0 0 10px var(--gold);
+    animation: starLit 0.4s steps(2);
+  }
+  @keyframes starLit {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.6); }
+    100% { transform: translate(-50%, -50%) scale(1.1); }
+  }
+  .runeTablet {
+    background: #0a0a1a;
+    border: 3px solid var(--teal);
+    padding: 10px;
+    margin-bottom: 8px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--teal);
+    letter-spacing: 6px;
+  }
+  .runeTablet .label {
+    color: var(--paper);
+    font-size: 8px;
+    display: block;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .shakeBad { animation: shake 0.4s steps(4); }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+  .progressDots { text-align: center; font-size: 10px; color: var(--gold); margin-bottom: 8px; letter-spacing: 4px; }
+
+  /* Reserve heights to prevent layout shift in puzzles */
+  #feedback { min-height: 36px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+  #feedback:empty { border: none; }
+  .scene--puzzle .flavor { min-height: 80px; margin-bottom: 10px; }
+
+  .feedback {
+    font-size: 10px;
+    padding: 6px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .feedback.good { color: var(--green); border: 2px solid var(--green); }
+  .feedback.bad { color: var(--red); border: 2px solid var(--red); }
+
+  /* Coin pop */
+  .coinPop {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--gold);
+    font-size: 32px;
+    text-shadow: 4px 4px 0 #000;
+    animation: coinFly 1s steps(4) forwards;
+    pointer-events: none;
+    z-index: 100;
+  }
+  @keyframes coinFly {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+    30% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+    100% { transform: translate(-50%, -200%) scale(0.8); opacity: 0; }
+  }
+
+  /* Ending */
+  .endingTitle {
+    font-size: 18px; color: var(--pink);
+    text-align: center; margin: 20px 0;
+    animation: bob 1s steps(2) infinite;
+    text-shadow: 4px 4px 0 #000;
+  }
+
+  @media (max-width: 600px) {
+    .bigTitle { font-size: 18px; letter-spacing: 3px; }
+    .panel { padding: 16px; }
+    .gameTitle { font-size: 9px; }
+    .topbar { font-size: 8px; }
+    .flavor { font-size: 9px; }
+    button.choice { font-size: 9px; }
+  }
+</style>
+</head>
+<body>
+  <div id="game"></div>
+
+<script>
+'use strict';
+
+const State = {
+  coins: 0,
+  visited: new Set(),
+  stops: 0,
+  current: 'title',
+  flags: {},
+  player: 'porky', // 'porky' | 'squid'
+};
+
+// =============== SCENE ART RENDERERS ==================
+function art_antarctica() {
+  let stars = '';
+  for (let i = 0; i < 8; i++) stars += `<div class="snowflake" style="left:${Math.random()*100}%; animation-delay:${Math.random()*4}s;">❄</div>`;
+  return `<div class="sceneArt bg-ice">
+    ${stars}
+    <div class="igloo"></div>
+    <div class="penguinPair" style="bottom:6px;">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart" style="top:0;">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_tokyo() {
+  return `<div class="sceneArt bg-tokyo">
+    <div class="star" style="top:10%;left:15%;">✦</div>
+    <div class="star" style="top:8%;left:75%;">✦</div>
+    <div class="neon">寿司 SUSHI</div>
+    <div class="torii"></div>
+    <div class="penguinPair" style="bottom:6px;left:25%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_paris() {
+  return `<div class="sceneArt bg-paris">
+    <div class="moon"></div>
+    <div class="star" style="top:15%;left:20%;">✦</div>
+    <div class="star" style="top:25%;left:70%;">✦</div>
+    <div class="eiffel"></div>
+    <div class="penguinPair" style="bottom:6px;left:15%;transform:none;">
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_egypt() {
+  return `<div class="sceneArt bg-egypt">
+    <div class="sun"></div>
+    <div class="pyramid"></div>
+    <div class="sphinx">𓁢</div>
+    <div class="penguinPair" style="bottom:50px;left:75%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_amazon() {
+  return `<div class="sceneArt bg-amazon">
+    <div class="tree" style="left:10%;"></div>
+    <div class="tree" style="left:70%;"></div>
+    <div class="tree" style="left:40%; height:90px;"></div>
+    <div style="position:absolute;top:20px;right:20px;font-size:24px;">🦜</div>
+    <div style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);font-size:24px;">🐍</div>
+    <div class="penguinPair" style="bottom:0;left:20%;transform:none;">
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_iceland() {
+  let stars = '';
+  for (let i = 0; i < 12; i++) stars += `<div class="star" style="top:${Math.random()*40}%;left:${Math.random()*100}%;animation-delay:${Math.random()*1.5}s;">✦</div>`;
+  return `<div class="sceneArt bg-iceland">
+    <div class="aurora"></div>
+    ${stars}
+    <div style="position:absolute;bottom:0;left:0;right:0;height:30px;background:#fff;"></div>
+    <div class="penguinPair" style="bottom:20px;">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart" style="top:-10px;">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_venice() {
+  return `<div class="sceneArt bg-venice">
+    <div class="moon"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:60px;background:#1a5c8a;"></div>
+    <div class="gondola"></div>
+    <div class="penguinPair" style="bottom:55px;left:50%;transform:translateX(-50%);">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart" style="top:-20px;">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_hawaii() {
+  return `<div class="sceneArt bg-hawaii">
+    <div class="sun" style="top:15px;left:30px;right:auto;"></div>
+    <div class="palm"></div>
+    <div class="palm" style="left:auto;right:30px;"></div>
+    <div class="wave"></div>
+    <div style="position:absolute;bottom:25px;right:80px;font-size:20px;">🍹</div>
+    <div class="penguinPair" style="bottom:35px;">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_everest() {
+  let snow = '';
+  for (let i = 0; i < 10; i++) snow += `<div class="snowflake" style="left:${Math.random()*100}%; animation-delay:${Math.random()*4}s;">❄</div>`;
+  return `<div class="sceneArt bg-everest">
+    ${snow}
+    <div class="mountain"></div>
+    <div class="penguinPair" style="bottom:0;left:20%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_nyc() {
+  let windows = '';
+  for (let i = 0; i < 25; i++) {
+    windows += `<div class="window" style="left:${Math.random()*100}%; bottom:${5+Math.random()*80}px; animation-delay:${Math.random()*2}s;"></div>`;
+  }
+  return `<div class="sceneArt bg-nyc">
+    <div class="moon" style="top:10px;left:30px;right:auto;"></div>
+    <div class="building" style="left:5%; width:30px; height:80px;"></div>
+    <div class="building" style="left:20%; width:40px; height:100px;"></div>
+    <div class="building" style="left:40%; width:35px; height:120px;"></div>
+    <div class="building" style="left:60%; width:50px; height:90px;"></div>
+    <div class="building" style="left:80%; width:30px; height:70px;"></div>
+    ${windows}
+    <div class="penguinPair" style="bottom:0;left:50%;transform:translateX(-50%);">
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_gbr() {
+  let bubbles = '';
+  for (let i = 0; i < 8; i++) bubbles += `<div class="bubble" style="left:${Math.random()*100}%; animation-delay:${Math.random()*3}s;"></div>`;
+  return `<div class="sceneArt bg-gbr">
+    ${bubbles}
+    <div class="coral" style="left:10%;">🪸</div>
+    <div class="coral" style="left:80%;">🪸</div>
+    <div style="position:absolute;top:30%;left:50%;font-size:24px;">🐠</div>
+    <div style="position:absolute;top:50%;left:20%;font-size:20px;">🐟</div>
+    <div style="position:absolute;top:60%;right:15%;font-size:24px;">🐢</div>
+    <div class="penguinPair" style="bottom:0;left:50%;transform:translateX(-50%);">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_credits() {
+  let stars = '';
+  for (let i = 0; i < 20; i++) stars += `<div class="star" style="top:${Math.random()*100}%;left:${Math.random()*100}%;animation-delay:${Math.random()*1.5}s;">✦</div>`;
+  return `<div class="sceneArt bg-credits" style="height:240px;">
+    ${stars}
+    <div class="penguinPair" style="bottom:30px;">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart" style="top:-20px;font-size:36px;">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_morocco() {
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#ff9f4a 0%,#c94a0a 50%,#8a2a0a 100%);">
+    <div class="sun" style="top:12px;left:20px;right:auto;background:#ffd23f;width:28px;height:28px;"></div>
+    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:70px;height:90px;background:#c94a0a;border-radius:35px 35px 0 0;box-shadow:0 0 0 4px #000;"></div>
+    <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30px;height:45px;background:#8a2a0a;border-radius:15px 15px 0 0;box-shadow:0 0 0 3px #000;margin-left:-15px;"></div>
+    <div style="position:absolute;bottom:20px;left:15%;font-size:20px;">🏺</div>
+    <div style="position:absolute;bottom:20px;right:15%;font-size:20px;">🪄</div>
+    <div style="position:absolute;top:15px;right:15px;color:var(--gold);font-size:18px;text-shadow:2px 2px 0 #000;">✦ ✦</div>
+    <div class="penguinPair" style="bottom:6px;left:20%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_scotland() {
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#6ec5ff 0%,#b3d9ff 40%,#4a7a3a 40%,#2a5a1a 100%);">
+    <div style="position:absolute;bottom:40px;left:20%;width:0;height:0;border-left:50px solid transparent;border-right:50px solid transparent;border-bottom:80px solid #5a8a3a;"></div>
+    <div style="position:absolute;bottom:60px;right:15%;width:0;height:0;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid #4a7a2a;"></div>
+    <div style="position:absolute;top:20px;left:20px;font-size:18px;opacity:0.8;">☁</div>
+    <div style="position:absolute;top:15px;right:30px;font-size:22px;opacity:0.9;">☁</div>
+    <div style="position:absolute;bottom:30px;right:25%;font-size:18px;">🐑</div>
+    <div style="position:absolute;top:25px;left:45%;font-size:24px;">🏰</div>
+    <div class="penguinPair" style="bottom:46px;left:30%;transform:none;">
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_india() {
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#ffe4b8 0%,#ffb84a 60%,#c8883a 100%);">
+    <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:60px;height:70px;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 0 0 3px #000;"></div>
+    <div style="position:absolute;bottom:70px;left:50%;transform:translateX(-50%);width:12px;height:30px;background:#fff;box-shadow:0 0 0 2px #000;margin-left:-6px;border-radius:6px 6px 0 0;"></div>
+    <div style="position:absolute;bottom:10px;left:28%;width:12px;height:50px;background:#fff;box-shadow:0 0 0 2px #000;"></div>
+    <div style="position:absolute;bottom:10px;right:28%;width:12px;height:50px;background:#fff;box-shadow:0 0 0 2px #000;"></div>
+    <div style="position:absolute;top:15px;left:15px;font-size:20px;">🌸</div>
+    <div style="position:absolute;top:15px;right:15px;font-size:20px;">🌸</div>
+    <div class="penguinPair" style="bottom:6px;left:10%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_peru() {
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#4cd2ff 0%,#b3e5ff 40%,#6bdc6b 40%,#2a5a1a 100%);">
+    <div style="position:absolute;bottom:0;left:0;right:0;height:100px;background:linear-gradient(to bottom,#6bdc6b,#2a5a1a);"></div>
+    <div style="position:absolute;bottom:80px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:60px solid transparent;border-right:60px solid transparent;border-bottom:90px solid #8a7a5a;"></div>
+    <div style="position:absolute;bottom:120px;left:50%;transform:translateX(-50%);width:40px;height:20px;background:#8a7a5a;margin-left:-20px;"></div>
+    <div style="position:absolute;bottom:90px;left:18%;font-size:20px;">🦙</div>
+    <div style="position:absolute;top:20px;right:15px;font-size:18px;color:var(--gold);">☀</div>
+    <div class="penguinPair" style="bottom:82px;right:20%;transform:none;">
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+
+// =============== GAME SCENES ==================
+const Scenes = {
+  // Antarctica — start of journey
+  antarctica: {
+    name: 'ANTARCTICA — HOME ICEBERG',
+    art: art_antarctica,
+    text: () => P(
+      `Mr Porky waddles up to Squid (real name: Izzy) outside their cozy igloo. "My darling herring," he says, beak trembling with excitement, "let us see the world together. Pick our first stop, my love?"`,
+      `Squid (real name: Izzy) has been VIBRATING with excitement for approximately three weeks. She drags Mr Porky out of the igloo by his flipper. "PORKY. I've booked us tickets. We are going everywhere. You don't get a vote on IF we go — only WHERE." She shoves the world map at him. "First stop. Choose wisely."`
+    ),
+    choices: () => [
+      { text: '✈ Tokyo — neon lights & sushi', next: 'tokyo' },
+      { text: '✈ Paris — moonlit Eiffel Tower', next: 'paris' },
+      { text: '✈ Egypt — pyramids & a Sphinx riddle', next: 'egypt' },
+      { text: '✈ Morocco — spice markets & starry nights', next: 'morocco' },
+      { text: '✈ Scotland — highlands & a castle mystery', next: 'scotland' },
+    ],
+  },
+
+  // === TOKYO BRANCH ===
+  tokyo: {
+    name: 'TOKYO, JAPAN',
+    art: art_tokyo,
+    text: () => `Neon kanji flicker. Mr Porky's flippers smell like teriyaki already. Izzy is HYPNOTISED by the conveyor-belt sushi. "Porky," she whispers, "I bet you can't guess my favourite roll."`,
+    choices: () => [
+      { text: '🧩 Try to guess (PUZZLE)', next: 'tokyo_puzzle', cls: 'puzzle' },
+      { text: '🍣 Just order everything (-0 coins, +romance)', next: 'tokyo_finish', effect: () => { addCoins(2); State.flags.lavish = true; } },
+      { text: '🎤 Drag her to karaoke instead', next: 'tokyo_karaoke' },
+    ],
+  },
+
+  tokyo_puzzle: {
+    name: 'TOKYO — SUSHI RIDDLE',
+    art: art_tokyo,
+	text: () => `Izzy's eyes sparkle. "Three clues, my chubby snowball:<br>① I'm chewy. ② I turn ink-black when I'm scared. ③ I'm also what you call ME every single day. What's my favourite sushi?"`,
+    puzzle: {
+      prompt: 'Type your answer:',
+      validate: (s) => /squid/i.test(s.trim()),
+      onWin: 'tokyo_finish_win',
+      onLose: 'tokyo_finish_lose',
+      hint: '(Hint: you literally call her this 24/7 🦑)',
+    },
+  },
+  tokyo_finish_win: {
+    name: 'TOKYO — 🦑 SUCCESS',
+    art: art_tokyo,
+    text: () => { addCoins(5); return `"SQUID!" you shout. Izzy turns as pink as a flamingo and flippers you square in the beak. The sushi chef winks and slides over a free squid ink roll. +5 Fish Coins!`; },
+    choices: () => [{ text: '➡ Where to next?', next: 'choose2', effect: countStop }],
+  },
+  tokyo_finish_lose: {
+    name: 'TOKYO — close enough',
+    art: art_tokyo,
+    text: () => { addCoins(1); return `"Tuna? TUNA?? Porky we've been dating four years." She forgives you (eventually). The chef takes pity. +1 Fish Coin.`; },
+    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+  },
+  tokyo_finish: {
+    name: 'TOKYO — feast',
+    art: art_tokyo,
+    text: () => `You ate so much sushi the chef bows three times. Izzy is glowing. Mr Porky cannot move.`,
+    choices: () => [{ text: '➡ Roll yourselves to the next stop', next: 'choose2', effect: countStop }],
+  },
+  tokyo_karaoke: {
+    name: 'TOKYO — KARAOKE BOX',
+    art: art_tokyo,
+    text: () => { addCoins(3); return `Mr Porky belts out "Ice Ice Baby" off-key. Izzy films it. The whole bar applauds the brave little penguin. +3 Fish Coins (tips!)`; },
+    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+  },
+
+  // === PARIS BRANCH ===
+  paris: {
+    name: 'PARIS, FRANCE',
+    art: art_paris,
+    text: () => `The Eiffel Tower glitters. Izzy gasps so loud a passing baker drops a baguette. Mr Porky considers his options carefully — this is a ROMANCE moment.`,
+    choices: () => [
+      { text: '🥖 Buy the dropped baguette and feed her bites of it', next: 'paris_bread', cls: 'special' },
+      { text: '🎨 Sketch her under the tower (artiste mode)', next: 'paris_sketch' },
+      { text: '☕ Café au lait at a tiny bistro', next: 'paris_cafe' },
+    ],
+  },
+  paris_bread: {
+    name: 'PARIS — Baguette love',
+    art: art_paris,
+    text: () => { addCoins(4); return `She declares it "the most romantic carb of her life." A nearby accordion player begins playing softly. +4 Fish Coins (the baker tips YOU).`; },
+    choices: () => [{ text: '➡ Continue the journey', next: 'choose2', effect: countStop }],
+  },
+  paris_sketch: {
+    name: 'PARIS — Artiste',
+    art: art_paris,
+    text: () => { addCoins(2); return `Your sketch looks more like a potato with eyes, but Izzy LOVES it. She frames it later. +2 Fish Coins.`; },
+    choices: () => [{ text: '➡ Continue the journey', next: 'choose2', effect: countStop }],
+  },
+  paris_cafe: {
+    name: 'PARIS — Café',
+    art: art_paris,
+    text: () => { addCoins(3); return `You both share a chocolat chaud. ${partner()} gets whipped cream on their beak. ${me()} melts. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Continue the journey', next: 'choose2', effect: countStop }],
+  },
+
+  // === MOROCCO BRANCH ===
+  morocco: {
+    name: 'MARRAKECH, MOROCCO',
+    art: art_morocco,
+    text: () => P(
+      `The souk is an explosion of colour, spice, and chaos. Mr Porky nearly gets carried off by a carpet salesman who mistakes him for a very expensive stuffed toy. Izzy is already haggling in broken French.`,
+      `The souk is overwhelming — in the BEST way. Squid drags Mr Porky from stall to stall at top speed. He is carrying seventeen bags and has lost the feeling in his left flipper. He's never been happier.`
+    ),
+    choices: () => [
+      { text: '🏺 Explore the spice souk', next: 'morocco_souk', cls: 'special' },
+      { text: '🍵 Mint tea ceremony', next: 'morocco_tea' },
+      { text: '🌙 Rooftop stargazing over the medina', next: 'morocco_stars' },
+    ],
+  },
+  morocco_souk: {
+    name: 'MOROCCO — Spice Souk',
+    art: art_morocco,
+    text: () => { addCoins(5); State.flags.romantic = true; return `${P('Mr Porky', 'Squid')} finds a stall selling tiny glass lanterns. Picks the brightest one for ${partner()}. ${partner()} holds it the whole way home. +5 Fish Coins (the vendor was so moved they gave a discount).`; },
+    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+  },
+  morocco_tea: {
+    name: 'MOROCCO — Mint Tea',
+    art: art_morocco,
+    text: () => { addCoins(3); return `The tea is poured from a tremendous height by a man with a tremendous moustache. ${P('Izzy', 'Mr Porky')} spills it immediately. The man with the moustache sighs deeply. +3 Fish Coins anyway.`; },
+    choices: () => [{ text: '➡ Continue!', next: 'choose2', effect: countStop }],
+  },
+  morocco_stars: {
+    name: 'MOROCCO — Rooftop Night',
+    art: art_morocco,
+    text: () => { addCoins(4); State.flags.romantic = true; return `The entire city glitters below. A call to prayer echoes across the rooftops. ${P('Izzy', 'Mr Porky')} leans on ${P("Mr Porky's", "Squid's")} wing and sighs contentedly. +4 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next adventure!', next: 'choose2', effect: countStop }],
+  },
+
+  // === SCOTLAND BRANCH ===
+  scotland: {
+    name: 'SCOTTISH HIGHLANDS',
+    art: art_scotland,
+    text: () => P(
+      `Grey skies. Green hills. A sheep judges Mr Porky's waddling technique. Izzy has already made friends with the sheep. Its name is apparently Gerald.`,
+      `Squid immediately announces Scotland is "basically Antarctica but with better food." Mr Porky has been swept up in a kilt and is unsure how to feel about it. Gerald the sheep watches everything.`
+    ),
+    choices: () => [
+      { text: '🏰 Investigate the ancient castle', next: 'scotland_castle', cls: 'puzzle' },
+      { text: '🦕 Loch Ness monster hunt', next: 'scotland_loch' },
+      { text: '🥃 Try the local "fish juice" (whisky for penguins)', next: 'scotland_whisky' },
+      { text: '🐑 Spend time with Gerald', next: 'scotland_gerald', cls: 'special' },
+    ],
+  },
+  scotland_castle: {
+    name: 'SCOTLAND — Castle Mystery',
+    art: art_scotland,
+    text: () => { addCoins(6); return `Inside the castle a ghost (friendly, also confused by penguins) reveals a hidden gold coin stash behind a portrait of a very serious man. +6 Fish Coins!`; },
+    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+  },
+  scotland_loch: {
+    name: 'SCOTLAND — Loch Ness',
+    art: art_scotland,
+    text: () => { addCoins(2); return `You wait four hours. Nessie does not appear. Then ${P('Izzy', 'Mr Porky')} spots a large suspicious ripple and SCREAMS. It's a duck. +2 Fish Coins for the effort.`; },
+    choices: () => [{ text: '➡ Continue!', next: 'choose2', effect: countStop }],
+  },
+  scotland_whisky: {
+    name: 'SCOTLAND — Fish Juice',
+    art: art_scotland,
+    text: () => { addCoins(3); return `One sip each. ${P('Mr Porky', 'Squid')} declares it "aggressively smoky." ${P('Izzy', 'Mr Porky')} orders a second glass immediately. You carry ${P('Izzy', 'Mr Porky')} home. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+  },
+  scotland_gerald: {
+    name: 'SCOTLAND — Gerald',
+    art: art_scotland,
+    text: () => { addCoins(4); State.flags.romantic = true; return `Gerald the sheep gives ${P('Mr Porky', 'Squid')} a very knowing look. Then headbutts ${P('Mr Porky', 'Squid')} gently into ${P("Izzy's", "Mr Porky's")} arms. ${P('Izzy', 'Mr Porky')} laughs until they can't breathe. Gerald nods. +4 Fish Coins (Gerald had coins in his wool somehow).`; },
+    choices: () => [{ text: '➡ Next stop!', next: 'choose2', effect: countStop }],
+  },
+
+  // === EGYPT BRANCH ===
+  egypt: {
+    name: 'EGYPT — GIZA',
+    art: art_egypt,
+    text: () => `The sun is BLAZING. Mr Porky regrets not packing sunscreen. A Sphinx blocks the path to the Great Pyramid. "ANSWER MY RIDDLE, FLIGHTLESS BIRDS, OR SUFFER A MILDLY INCONVENIENT DAY."`,
+    choices: () => [
+      { text: '🧩 Accept the riddle (PUZZLE)', next: 'egypt_puzzle', cls: 'puzzle' },
+      { text: '🐪 Try to bribe the Sphinx with fish (-3 coins)', next: 'egypt_bribe' },
+    ],
+  },
+  egypt_puzzle: {
+    name: 'EGYPT — SPHINX TRIAL',
+    text: () => `The Sphinx grins. "Find the four sigils hidden around me, my flightless guests. Each tells you its order. Place them in the slots correctly."<br><br>🔍 <span style="color:var(--gold);">Click around the scene to find symbols.</span>`,
+    puzzle: {
+      kind: 'discover-sequence',
+      sceneClass: 'bg-egypt',
+      sceneArt: `
+        <div style="position:absolute;top:18px;right:20px;width:36px;height:36px;background:var(--gold);border-radius:50%;box-shadow:0 0 0 3px #ff9f4a, 0 0 20px var(--gold);pointer-events:none;"></div>
+        <div class="pyramid" style="pointer-events:none;"></div>
+        <div style="position:absolute;bottom:60px;left:20px;font-size:32px;pointer-events:none;">𓁢</div>
+        <div style="position:absolute;bottom:5px;left:0;right:0;height:30px;background:linear-gradient(to bottom, transparent, rgba(0,0,0,0.2));pointer-events:none;"></div>
+      `,
+      hotspots: [
+        { x: '85%', y: '18%', symbol: '☀', pos: 3, size: 30, label: 'sun' },
+        { x: '50%', y: '60%', symbol: '🔺', pos: 1, size: 36, label: 'pyramid' },
+        { x: '14%', y: '70%', symbol: '𓁢', pos: 4, size: 32, label: 'sphinx' },
+        { x: '72%', y: '88%', symbol: '🪲', pos: 2, size: 22, label: 'scarab in sand' },
+      ],
+      onWin: 'egypt_finish_win',
+      onLose: 'egypt_finish_lose',
+      hint: 'Each symbol shows a number when found. Drop them into matching slots.',
+    },
+  },
+  egypt_finish_win: {
+    name: 'EGYPT — Sphinx is impressed',
+    art: art_egypt,
+    text: () => { addCoins(6); return `"...That's actually pretty good." The Sphinx steps aside. You explore tombs full of gold. +6 Fish Coins!`; },
+    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+  },
+  egypt_finish_lose: {
+    name: 'EGYPT — Sphinx is unimpressed',
+    art: art_egypt,
+    text: () => `The Sphinx sighs. "It was 'penguin'." You both walk away politely. No coins, but Izzy laughs about it for three weeks.`,
+    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+  },
+  egypt_bribe: {
+    name: 'EGYPT — Bribery',
+    art: art_egypt,
+    text: () => {
+      if (State.coins >= 3) { State.coins -= 3; renderTopBar(); return `The Sphinx accepts three frozen herring and waves you through. "I really shouldn't, but Tuesdays are slow."`; }
+      return `You can't afford it. The Sphinx looks disappointed in you AND your wallet.`;
+    },
+    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+  },
+
+  // ===== CHOOSE 2 (mid-journey — pick first of two stops) =====
+  choose2: {
+    name: 'WHERE TO NEXT?',
+    art: () => `<div class="sceneArt" style="background:linear-gradient(135deg,#0a0a23,#2b0a4a);">
+        <div style="font-size:32px;">🌍 ✈ 🐧</div>
+      </div>`,
+    text: () => P(
+      `Izzy unfolds a giant pixelated map. "Pick our next stop, my snowflake. We've got time for two more before the grand finale."`,
+      `Squid grabs the map out of Mr Porky's flippers before he can even unfold it. "I'll pick. You carry the bags." She pauses. "Actually you pick. But carry the bags anyway."`
+    ),
+    choices: () => filterChoices([
+      { text: '🌳 Amazon Rainforest', next: 'amazon', requires: () => !State.visited.has('amazon') },
+      { text: '🌌 Iceland — Northern Lights', next: 'iceland', requires: () => !State.visited.has('iceland') },
+      { text: '🚣 Venice — gondola ride', next: 'venice', requires: () => !State.visited.has('venice') },
+      { text: '🌴 Hawaii — beach time', next: 'hawaii', requires: () => !State.visited.has('hawaii') },
+      { text: '🕌 India — Taj Mahal & chaos', next: 'india', requires: () => !State.visited.has('india') },
+      { text: '🏔 Peru — Machu Picchu & llamas', next: 'peru', requires: () => !State.visited.has('peru') },
+    ]),
+  },
+
+  // === AMAZON ===
+  amazon: {
+    name: 'AMAZON RAINFOREST',
+    art: art_amazon,
+    text: () => `Hot. Wet. A toucan judges Mr Porky's outfit. Izzy spots a path leading deeper into the green.`,
+    choices: () => [
+      { text: '🦋 Follow a glowing butterfly', next: 'amazon_butterfly', cls: 'special' },
+      { text: '🛶 Take a canoe down the river', next: 'amazon_river' },
+      { text: '🐍 Make friends with the snake', next: 'amazon_snake' },
+    ],
+  },
+  amazon_butterfly: {
+    name: 'AMAZON — Hidden Waterfall',
+    art: art_amazon,
+    text: () => { addCoins(7); return `The butterfly leads you to a SECRET waterfall full of gold-flecked fish. Izzy kisses you on the beak. +7 Fish Coins!`; },
+    choices: () => [{ text: '➡ To the final destination!', next: midNext, effect: countStop }],
+  },
+  amazon_river: {
+    name: 'AMAZON — River Ride',
+    art: art_amazon,
+    text: () => { addCoins(2); return `You see river dolphins. Izzy waves. They wave back. +2 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+  amazon_snake: {
+    name: 'AMAZON — Surprisingly Polite Snake',
+    art: art_amazon,
+    text: () => { addCoins(1); return `The snake's name is Carl. He gives you a tiny map. +1 Fish Coin.`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+
+  // === ICELAND ===
+  iceland: {
+    name: 'ICELAND — AURORA',
+    art: art_iceland,
+    text: () => `The sky is a swirl of green and pink — Izzy's two favourite colours. She's quiet. This is rare. A wandering star-counter offers a challenge: "Match the constellation, win a prize."`,
+    choices: () => [
+      { text: '🧩 Take the star challenge (PUZZLE)', next: 'iceland_puzzle', cls: 'puzzle' },
+      { text: '♥ Just hold flipper and watch the lights', next: 'iceland_quiet', cls: 'special' },
+    ],
+  },
+  iceland_puzzle: {
+    name: 'ICELAND — CONSTELLATION',
+    text: () => `The star-counter unfurls a glowing rune tablet. "Click the stars in the order shown. One wrong star and it all resets, my chilly friend."`,
+    puzzle: {
+      kind: 'star-order',
+      sceneClass: 'bg-iceland',
+      sceneArt: `
+        <div class="aurora" style="pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:30px;background:#fff;pointer-events:none;"></div>
+      `,
+      stars: [
+        { id: 'A', x: '15%', y: '25%' },
+        { id: 'B', x: '72%', y: '18%' },
+        { id: 'C', x: '42%', y: '40%' },
+        { id: 'D', x: '85%', y: '55%' },
+        { id: 'E', x: '25%', y: '60%' },
+        { id: 'F', x: '60%', y: '70%' },
+      ],
+      order: ['B', 'E', 'C', 'A', 'D'],
+      onWin: 'iceland_finish_win',
+      onLose: 'iceland_finish_lose',
+      hint: 'Match the rune tablet exactly. F is a decoy!',
+    },
+  },
+  iceland_finish_win: {
+    name: 'ICELAND — Stargazer',
+    art: art_iceland,
+    text: () => { addCoins(8); State.flags.starWin = true; return `"FIVE!" The star-counter hands you a glowing aurora-fish. +8 Fish Coins! Izzy is impressed. Mr Porky is smug.`; },
+    choices: () => [{ text: '➡ One last stop...', next: midNext, effect: countStop }],
+  },
+  iceland_finish_lose: {
+    name: 'ICELAND — Maths is hard',
+    art: art_iceland,
+    text: () => `The star-counter pats you on the head. Izzy laughs and squeezes your flipper anyway.`,
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+  iceland_quiet: {
+    name: 'ICELAND — Quiet Moment',
+    art: art_iceland,
+    text: () => { addCoins(5); State.flags.romantic = true; return `You don't say a word for an hour. You just hold flipper and watch the universe paint the sky. +5 Fish Coins (life is wealth, baby).`; },
+    choices: () => [{ text: '➡ One last stop...', next: midNext, effect: countStop }],
+  },
+
+  // === VENICE ===
+  venice: {
+    name: 'VENICE, ITALY',
+    art: art_venice,
+    text: () => `A gondolier penguin (yes, really) offers a moonlit ride. The canals smell like garlic and old stone. Izzy is wearing a tiny pixelated beret.`,
+    choices: () => [
+      { text: '🚣 Take the gondola ride (-2 coins)', next: 'venice_gondola', cls: 'special' },
+      { text: '🍕 Get pizza on a bridge', next: 'venice_pizza' },
+      { text: '🎭 Crash a masquerade ball', next: 'venice_masque' },
+    ],
+  },
+  venice_gondola: {
+    name: 'VENICE — Gondola',
+    art: art_venice,
+    text: () => {
+      if (State.coins >= 2) State.coins -= 2;
+      State.flags.romantic = true;
+      addCoins(4);
+      return `The gondolier sings off-key. Izzy rests her head on your wing. The moon reflects in the water. +4 Fish Coins (singing tips for the gondolier from passing tourists who you accidentally caught).`;
+    },
+    choices: () => [{ text: '➡ One last stop...', next: midNext, effect: countStop }],
+  },
+  venice_pizza: {
+    name: 'VENICE — Pizza Bridge',
+    art: art_venice,
+    text: () => { addCoins(3); return `Best pizza of your lives. A pigeon tries to steal a slice. Mr Porky honks at it. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+  venice_masque: {
+    name: 'VENICE — Masquerade',
+    art: art_venice,
+    text: () => { addCoins(5); return `Nobody recognises the penguins. You dance until 4am. +5 Fish Coins (someone tips you for the entertainment value).`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+
+  // === HAWAII ===
+  hawaii: {
+    name: 'HAWAII',
+    art: art_hawaii,
+    text: () => `Sun. Sand. Pineapple drinks bigger than Izzy's head. Mr Porky considers the meaning of life from inside a hammock.`,
+    choices: () => [
+      { text: '🏄 Surf lesson (chaos)', next: 'hawaii_surf' },
+      { text: '🌺 Lei her with a flower (romance)', next: 'hawaii_lei', cls: 'special' },
+      { text: '🍍 Just nap together', next: 'hawaii_nap' },
+    ],
+  },
+  hawaii_surf: {
+    name: 'HAWAII — Surf School',
+    art: art_hawaii,
+    text: () => { addCoins(3); return `Mr Porky face-plants seven times. Izzy stands up first try. She always was better at the sea bit. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+  hawaii_lei: {
+    name: 'HAWAII — Aloha',
+    art: art_hawaii,
+    text: () => { addCoins(6); State.flags.romantic = true; return `You weave a flower lei from hibiscus. Izzy cries the GOOD kind of tears. +6 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+  hawaii_nap: {
+    name: 'HAWAII — Hammock Nap',
+    art: art_hawaii,
+    text: () => { addCoins(2); return `Three hours of synchronized snoring. Bliss. +2 Fish Coins (somebody put coins in the hammock as a joke).`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+
+  // ===== CHOOSE 2B (second mid-stop from same pool) =====
+  choose2b: {
+    name: 'ONE MORE STOP!',
+    art: () => `<div class="sceneArt" style="background:linear-gradient(135deg,#0a2b0a,#2b0a4a);">
+        <div style="font-size:32px;">🗺 ✈ 🌏</div>
+      </div>`,
+    text: () => P(
+      `"We've got time for ONE more stop before the grand finale," Mr Porky announces, pretending he planned this all along. Izzy has already circled three places on the map.`,
+      `Squid has circled three things on the map. "Only time for one more though," she admits. "That's called TENSION, Porky." He looks mildly terrified. She counts that as a win.`
+    ),
+    choices: () => filterChoices([
+      { text: '🌳 Amazon Rainforest', next: 'amazon', requires: () => !State.visited.has('amazon') },
+      { text: '🌌 Iceland — Northern Lights', next: 'iceland', requires: () => !State.visited.has('iceland') },
+      { text: '🚣 Venice — gondola ride', next: 'venice', requires: () => !State.visited.has('venice') },
+      { text: '🌴 Hawaii — beach time', next: 'hawaii', requires: () => !State.visited.has('hawaii') },
+      { text: '🕌 India — Taj Mahal & chaos', next: 'india', requires: () => !State.visited.has('india') },
+      { text: '🏔 Peru — Machu Picchu & llamas', next: 'peru', requires: () => !State.visited.has('peru') },
+    ]),
+  },
+
+  // === INDIA ===
+  india: {
+    name: 'INDIA — TAJ MAHAL',
+    art: art_india,
+    text: () => P(
+      `The Taj Mahal gleams white in the sunrise. Mr Porky is too short to see over the crowd. Izzy hoists him onto her shoulders and immediately regrets this.`,
+      `Squid has nineteen things she wants to do TODAY. Mr Porky has one: stand still and take it in. They compromise: seventeen things, at speed.`
+    ),
+    choices: () => [
+      { text: '🌸 Visit the Taj Mahal at dawn', next: 'india_taj', cls: 'special' },
+      { text: '🌶 Accept the spicy curry challenge', next: 'india_curry' },
+      { text: '🛺 Rickshaw race through the city', next: 'india_rickshaw' },
+      { text: '🎨 Get henna painted on your flippers', next: 'india_henna' },
+    ],
+  },
+  india_taj: {
+    name: 'INDIA — Dawn at the Taj',
+    art: art_india,
+    text: () => { addCoins(7); State.flags.romantic = true; return `The reflection pool mirrors the Taj perfectly. Nobody speaks for several minutes. ${P('Mr Porky', 'Squid')} squeezes ${P("Izzy's", "Mr Porky's")} flipper. ${P('Izzy', 'Mr Porky')} squeezes back. +7 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+  },
+  india_curry: {
+    name: 'INDIA — Curry Challenge',
+    art: art_india,
+    text: () => { addCoins(4); return `Level 1: fine. Level 2: fine. Level 3: ${P('Mr Porky', 'Squid')} begins sweating in ways not normal for a penguin. Level 4: ${P('Izzy', 'Mr Porky')} wins. Obviously. +4 Fish Coins (prize money).`; },
+    choices: () => [{ text: '➡ Continue (with milk)', next: midNext, effect: countStop }],
+  },
+  india_rickshaw: {
+    name: 'INDIA — Rickshaw Chaos',
+    art: art_india,
+    text: () => { addCoins(3); return `The driver takes twelve wrong turns on purpose because the penguins are causing traffic jams. Somehow you still win the race. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards!', next: midNext, effect: countStop }],
+  },
+  india_henna: {
+    name: 'INDIA — Henna Flippers',
+    art: art_india,
+    text: () => { addCoins(2); State.flags.romantic = true; return `The artist paints tiny penguins on both their flippers. ${P('Izzy', 'Mr Porky')} cries a little. It's completely cute. +2 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next stop!', next: midNext, effect: countStop }],
+  },
+
+  // === PERU ===
+  peru: {
+    name: 'PERU — MACHU PICCHU',
+    art: art_peru,
+    text: () => P(
+      `The ancient citadel rises from the cloud forest. Mr Porky is immediately adopted by a llama named Rodrigo, who follows him everywhere.`,
+      `Squid immediately climbs the highest rock and declares herself Queen of Machu Picchu. Mr Porky photographs this from a safe distance.`
+    ),
+    choices: () => [
+      { text: '🦙 Bond with the llamas', next: 'peru_llama', cls: 'special' },
+      { text: '⛰ Hike up to the Sun Gate', next: 'peru_hike' },
+      { text: '🏛 Explore the ancient temples', next: 'peru_temple' },
+      { text: '🌽 Try the local market food', next: 'peru_market' },
+    ],
+  },
+  peru_llama: {
+    name: 'PERU — Rodrigo the Llama',
+    art: art_peru,
+    text: () => { addCoins(5); State.flags.romantic = true; return `Rodrigo the llama decides ${P('Mr Porky', 'Squid')} is his new best friend and spits at everyone who comes near. ${P('Izzy', 'Mr Porky')} has never laughed harder in their life. +5 Fish Coins.`; },
+    choices: () => [{ text: '➡ Farewell Rodrigo', next: midNext, effect: countStop }],
+  },
+  peru_hike: {
+    name: 'PERU — Sun Gate',
+    art: art_peru,
+    text: () => { addCoins(6); return `At the top, the whole citadel spreads below. A condor circles overhead. ${P('Mr Porky', 'Squid')} raises both flippers in triumph. ${P('Izzy', 'Mr Porky')} photographs it. +6 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards!', next: midNext, effect: countStop }],
+  },
+  peru_temple: {
+    name: 'PERU — Ancient Temples',
+    art: art_peru,
+    text: () => { addCoins(4); return `Deep inside a temple, carvings on the wall seem to depict... two penguins? The archaeologist looks baffled. You choose not to explain. +4 Fish Coins.`; },
+    choices: () => [{ text: '➡ Continue', next: midNext, effect: countStop }],
+  },
+  peru_market: {
+    name: 'PERU — Food Market',
+    art: art_peru,
+    text: () => { addCoins(3); return `Corn in seventeen colours. Potatoes in forty-seven sizes. ${P('Izzy', 'Mr Porky')} buys everything. They eat until they physically cannot waddle. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Onwards!', next: midNext, effect: countStop }],
+  },
+  choose3: {
+    name: 'ONE LAST STOP',
+    art: () => `<div class="sceneArt" style="background:linear-gradient(135deg,#2b0a4a,#0a0a23);">
+        <div style="font-size:36px;">🗺 ♥ 🐧</div>
+      </div>`,
+    text: () => P(
+      `Izzy looks at Mr Porky with that look. The "I would follow you anywhere" look. He gulps. Something is pressing against the inside of his wing. He's been carrying it the whole trip. "One last stop, my love — where shall it be?"`,
+      `Mr Porky has gone quiet. Not tired-quiet. Thinking-quiet. Squid notices but doesn't say anything yet. "One last stop," she says softly. "You pick this one, Porky."`
+    ),
+    choices: () => filterChoices([
+      { text: '⛰ Mount Everest base camp', next: 'everest', requires: () => !State.visited.has('everest') },
+      { text: '🌃 New York City rooftop', next: 'nyc', requires: () => !State.visited.has('nyc') },
+      { text: '🐠 Great Barrier Reef dive', next: 'gbr', requires: () => !State.visited.has('gbr') },
+    ]),
+  },
+
+  // === EVEREST ===
+  everest: {
+    name: 'MT. EVEREST BASE CAMP',
+    art: art_everest,
+    text: () => P(
+      `Cold. Familiar cold. Penguin cold. Izzy giggles. "Reminds me of home, Porky." He has been carrying something the entire trip. Through every country. Every ocean. Every ridiculous situation. The moment is now.`,
+      `Cold. Familiar cold. Penguin cold. Squid laughs out loud. "Porky, this is basically our GARDEN." Mr Porky is rummaging under his wing with unusual intensity. Squid raises an eyebrow.`
+    ),
+    choices: () => [{ text: '🪨 Present the pebble...', next: 'finale', cls: 'special' }],
+  },
+  // === NYC ===
+  nyc: {
+    name: 'NYC — ROOFTOP',
+    art: art_nyc,
+    text: () => P(
+      `Lights stretch to the horizon. Izzy spins around, arms out, a tiny pixel pinwheel. She has no idea. He has been carrying it the entire trip — through every country, every disaster, every fish-related incident. The moment is now.`,
+      `Lights stretch to the horizon. Squid spins around, arms out, a tiny pixel pinwheel. Mr Porky watches her. Then looks down at his wing. At what's hidden inside it. He's been carrying it the whole trip. He takes a breath.`
+    ),
+    choices: () => [{ text: '🪨 Present the pebble...', next: 'finale', cls: 'special' }],
+  },
+  // === GBR ===
+  gbr: {
+    name: 'GREAT BARRIER REEF',
+    art: art_gbr,
+    text: () => P(
+      `Underwater. Surrounded by coral the colours of every sunset. A turtle floats by, unbothered. Mr Porky has been carrying something the whole trip in his beak — getting odd looks at every airport. The moment is now.`,
+      `Underwater. Coral in every colour. A turtle drifts past, completely unbothered by the penguins. Squid is pointing excitedly at a fish. Mr Porky taps her on the shoulder. She turns. He's holding something.`
+    ),
+    choices: () => [{ text: '🪨 Present the pebble...', next: 'finale', cls: 'special' }],
+  },
+
+  // === FINALE ===
+  finale: {
+    name: '🪨 THE PEBBLE 🪨',
+    art: art_credits,
+    text: () => {
+      const r = State.flags.romantic ? (P(' He collected one tiny chip from every place they visited, fused them all together into one perfect stone.', ' Squid notices tiny flecks in it — different colours, one from every place they visited.')) : '';
+      if (State.player === 'squid') {
+        return `Mr Porky produces a small, perfectly smooth pebble from under his wing. In penguin culture, a pebble is everything — it means <em>you</em>. It means <em>always</em>.${r}<br><br>"Squid. I picked this up on the first day." His voice is steady. His flipper is shaking slightly. "I was going to give it to you at home. Then I thought — no. She deserves the whole world first."<br><br>He holds it out. He looks absolutely terrified.`;
+      }
+      return `Mr Porky produces a small, perfectly smooth pebble from under his wing. In penguin culture, a pebble is everything — it means <em>you</em>. It means <em>always</em>.${r}<br><br>"Squid. I picked this up on the first day. I was going to give it to you at home. Then I thought — no. She deserves the whole world first."<br><br>Izzy stares at the pebble. Then at Mr Porky. Then at the pebble again.`;
+    },
+    choices: () => State.player === 'squid' ? [
+      { text: '🪨 Take the pebble immediately', next: 'ending', cls: 'special' },
+      { text: '...stare at him for a really long time first... then take it 💗', next: 'ending', cls: 'special' },
+    ] : [
+      { text: '...she takes the pebble 🪨💗', next: 'ending', cls: 'special' },
+    ],
+  },
+
+  ending: {
+    name: 'THE END',
+    art: art_credits,
+    text: () => {
+      if (State.player === 'squid') {
+        const grade = State.coins >= 25 ? 'CHAOTIC GOOD GIRLFRIEND' :
+                      State.coins >= 15 ? 'CERTIFIED ADVENTURE QUEEN' :
+                      State.coins >= 8 ? 'SOLID SQUID' : 'TRIED HER BEST';
+        return `<div class="endingTitle">SHE KEPT THE PEBBLE 🪨💗</div>
+          Squid holds the pebble to her chest. Says nothing for a very long time. Then she honks directly into Mr Porky's face with joy. He takes it as a yes to everything, forever.<br><br>
+          The penguins waddle off into the sunset. Together. Always.<br><br>
+          <span style="color:var(--gold);">Final Fish Coins: ${State.coins}</span><br>
+          <span style="color:var(--teal);">Stops visited: ${State.stops}</span><br>
+          <span style="color:var(--pink);">Squid rating: ${grade}</span><br><br>
+          <span style="font-size:9px;color:var(--paper);">Made with ♥ — Santo Loves Izzy. Forever and always.</span>`;
+      }
+      const grade = State.coins >= 25 ? 'LEGENDARY ROMANTIC' :
+                    State.coins >= 15 ? 'CERTIFIED CHARMER' :
+                    State.coins >= 8 ? 'SOLID BOYFRIEND' : 'TRIED HIS BEST';
+      return `<div class="endingTitle">SHE KEPT THE PEBBLE 🪨💗</div>
+        Izzy holds it to her chest, says nothing for a long time, then honks directly into Mr Porky's face with joy. He takes that as a yes to everything, forever.<br><br>
+        The penguins waddle off into the sunset. Together. Always.<br><br>
+        <span style="color:var(--gold);">Final Fish Coins: ${State.coins}</span><br>
+        <span style="color:var(--teal);">Stops visited: ${State.stops}</span><br>
+        <span style="color:var(--pink);">Mr Porky rating: ${grade}</span><br><br>
+        <span style="font-size:9px;color:var(--paper);">Made with ♥ — Santo Loves Izzy. Forever and always.</span>`;
+    },
+    choices: () => [{ text: '↻ Play again (different paths!)', next: 'restart' }],
+  },
+
+  restart: {
+    name: 'RESTART',
+    art: () => '',
+    text: () => '',
+    onEnter: () => {
+      State.coins = 0;
+      State.visited = new Set();
+      State.stops = 0;
+      State.flags = {};
+      State.player = 'porky';
+      goTo('title');
+    },
+  },
+};
+
+// ============= HELPERS =============
+// Character-aware text swap
+function P(porkyText, squidText) { return State.player === 'porky' ? porkyText : squidText; }
+function me() { return State.player === 'porky' ? 'Mr Porky' : 'Squid'; }
+function partner() { return State.player === 'porky' ? 'Squid' : 'Mr Porky'; }
+// Smart mid-journey routing: first mid-stop → choose2b, second → choose3
+function midNext() { return State.visited.has('choose2b') ? 'choose3' : 'choose2b'; }
+function addCoins(n) {
+  State.coins += n;
+  renderTopBar();
+  popCoins(n);
+}
+function popCoins(n) {
+  const el = document.createElement('div');
+  el.className = 'coinPop';
+  el.textContent = '+' + n + ' 🪙';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+function countStop() {
+  State.stops += 1;
+  renderTopBar();
+}
+function filterChoices(arr) {
+  return arr.filter(c => !c.requires || c.requires());
+}
+
+// ============= RENDERING =============
+function renderTopBar() {
+  const tb = document.getElementById('topbar');
+  if (tb) {
+    tb.innerHTML = `
+      <span class="gameTitle">🐧 PENGUIN TRAVELS 🐧</span>
+      <span class="coins">🪙 ${State.coins}</span>
+      <span class="stops">📍 STOPS: ${State.stops}</span>
+    `;
+  }
+}
+
+function renderTitle() {
+  const game = document.getElementById('game');
+  game.innerHTML = `
+    <div class="panel">
+      <div class="banner">♥ SANTO LOVES IZZY ♥</div>
+      <div id="title">
+        <div class="titleArt">
+          <div class="penguinPair" style="bottom:30px;">
+            <div class="penguin"><div class="body"></div></div>
+            <div class="heart">♥</div>
+            <div class="penguin izzy"><div class="body"></div></div>
+          </div>
+        </div>
+        <div class="bigTitle">PENGUIN<br>TRAVELS</div>
+        <div class="subtitle">A Mr Porky &amp; Squid Adventure</div>
+        <div class="charSelectLabel">— WHO ARE YOU PLAYING AS? —</div>
+        <div class="charSelectRow">
+          <button class="charBtn" id="btnPorky">
+            🐧<br>MR PORKY
+          </button>
+          <button class="charBtn squidBtn" id="btnSquid">
+            🦑<br>SQUID
+          </button>
+        </div>
+        <div style="font-size:8px;margin-top:10px;color:var(--paper);opacity:0.7;letter-spacing:1px;">
+          15+ destinations • puzzles • branching paths<br>
+          you cannot reach them all in one run!
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('btnPorky').onclick = () => { State.player = 'porky'; goTo('antarctica'); };
+  document.getElementById('btnSquid').onclick = () => { State.player = 'squid'; goTo('antarctica'); };
+}
+
+function renderScene(key) {
+  const sc = Scenes[key];
+  if (!sc) { console.error('Missing scene:', key); return; }
+  if (sc.onEnter) { sc.onEnter(); return; }
+
+  State.current = key;
+  State.visited.add(key);
+
+  const game = document.getElementById('game');
+  const interactivePuzzle = sc.puzzle && (sc.puzzle.kind === 'discover-sequence' || sc.puzzle.kind === 'star-order');
+  let inner;
+  if (interactivePuzzle) {
+    inner = `
+      <div class="panel">
+        <div class="banner">♥ SANTO LOVES IZZY ♥</div>
+        <div id="topbar" class="topbar"></div>
+        <div class="scene scene--puzzle">
+          <div class="locationName">${sc.name}</div>
+          <div class="puzzleLayout">
+            <div class="puzzleLeft" id="puzzleLeft">
+              <div class="flavor">${sc.text()}</div>
+            </div>
+            <div class="puzzleRight">
+              <div class="choices" id="choices"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    inner = `
+      <div class="panel">
+        <div class="banner">♥ SANTO LOVES IZZY ♥</div>
+        <div id="topbar" class="topbar"></div>
+        <div class="scene">
+          <div class="locationName">${sc.name}</div>
+          ${sc.art ? sc.art() : ''}
+          <div class="flavor">${sc.text()}</div>
+          <div class="choices" id="choices"></div>
+        </div>
+      </div>
+    `;
+  }
+  game.innerHTML = inner;
+  renderTopBar();
+
+  const choicesDiv = document.getElementById('choices');
+
+  if (sc.puzzle) {
+    renderPuzzle(choicesDiv, sc.puzzle);
+  } else if (sc.choices) {
+    sc.choices().forEach(c => {
+      const b = document.createElement('button');
+      b.className = 'choice ' + (c.cls || '');
+      b.innerHTML = c.text;
+      b.onclick = () => {
+        if (c.effect) c.effect();
+        goTo(typeof c.next === 'function' ? c.next() : c.next);
+      };
+      choicesDiv.appendChild(b);
+    });
+  }
+}
+
+function renderPuzzle(container, p) {
+  if (p.kind === 'discover-sequence') return renderDiscoverSequence(container, p);
+  if (p.kind === 'star-order') return renderStarOrder(container, p);
+
+  const box = document.createElement('div');
+  box.className = 'puzzleBox';
+  box.innerHTML = `
+    <p>${p.prompt}</p>
+    <input class="puzzleInput" id="puzInput" autocomplete="off" />
+    <div id="feedback"></div>
+  `;
+  container.appendChild(box);
+
+  const submit = document.createElement('button');
+  submit.className = 'choice puzzle';
+  submit.innerHTML = '✔ SUBMIT';
+  container.appendChild(submit);
+
+  const hint = document.createElement('button');
+  hint.className = 'choice';
+  hint.innerHTML = '💡 Hint';
+  container.appendChild(hint);
+
+  const skip = document.createElement('button');
+  skip.className = 'choice';
+  skip.innerHTML = '🏳 Give up & continue';
+  container.appendChild(skip);
+
+  let attempts = 0;
+  const input = document.getElementById('puzInput');
+  input.focus();
+
+  const check = () => {
+    attempts++;
+    const fb = document.getElementById('feedback');
+    if (p.validate(input.value)) {
+      fb.className = 'feedback good'; fb.textContent = '★ CORRECT! ★';
+      setTimeout(() => goTo(p.onWin), 800);
+    } else {
+      fb.className = 'feedback bad';
+      fb.textContent = attempts >= 3 ? 'Try the hint, my love.' : '✗ Not quite. Try again!';
+    }
+  };
+  submit.onclick = check;
+  input.onkeydown = (e) => { if (e.key === 'Enter') check(); };
+  hint.onclick = () => {
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback';
+    fb.style.color = 'var(--teal)';
+    fb.style.border = '2px solid var(--teal)';
+    fb.textContent = p.hint || '(no hint, you got this!)';
+  };
+  skip.onclick = () => goTo(p.onLose);
+}
+
+// === Cube-Escape style: discover symbols, then place in sequence ===
+function renderDiscoverSequence(container, p) {
+  const left = document.getElementById('puzzleLeft');
+  const flavorEl = left.querySelector('.flavor');
+
+  const wrap = document.createElement('div');
+  wrap.className = `escapeScene ${p.sceneClass || ''}`;
+  wrap.innerHTML = p.sceneArt || '';
+  p.hotspots.forEach((h, idx) => {
+    const dot = document.createElement('div');
+    dot.className = 'hotspot';
+    dot.style.left = h.x; dot.style.top = h.y;
+    dot.style.fontSize = (h.size || 28) + 'px';
+    dot.style.opacity = '0.001';
+    dot.title = '';
+    dot.dataset.idx = idx;
+    dot.textContent = h.symbol;
+    dot.onclick = () => discoverHotspot(idx);
+    wrap.appendChild(dot);
+  });
+  left.insertBefore(wrap, flavorEl);
+
+  const discovered = document.createElement('div');
+  discovered.className = 'discoveredBar';
+  discovered.id = 'discoveredBar';
+  discovered.innerHTML = '<span class="empty">FOUND SIGILS WILL APPEAR HERE</span>';
+  container.appendChild(discovered);
+
+  const pad = document.createElement('div');
+  pad.className = 'slotPad';
+  pad.id = 'slotPad';
+  for (let i = 1; i <= p.hotspots.length; i++) {
+    const s = document.createElement('div');
+    s.className = 'slot';
+    s.dataset.num = i;
+    s.dataset.slotIdx = i;
+    s.onclick = () => clearSlot(i);
+    pad.appendChild(s);
+  }
+  container.appendChild(pad);
+
+  const fb = document.createElement('div');
+  fb.id = 'feedback';
+  container.appendChild(fb);
+
+  const submit = document.createElement('button');
+  submit.className = 'choice puzzle';
+  submit.innerHTML = '✔ CHECK SIGILS';
+  submit.onclick = () => checkSequence(p);
+  container.appendChild(submit);
+
+  const reset = document.createElement('button');
+  reset.className = 'choice';
+  reset.innerHTML = '↻ Clear slots';
+  reset.onclick = () => {
+    document.querySelectorAll('#slotPad .slot').forEach(s => { s.classList.remove('filled'); s.textContent = ''; });
+    document.querySelectorAll('#discoveredBar .symBtn').forEach(b => { b.disabled = false; });
+  };
+  container.appendChild(reset);
+
+  const hint = document.createElement('button');
+  hint.className = 'choice';
+  hint.innerHTML = '💡 Hint';
+  hint.onclick = () => {
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback';
+    fb.style.color = 'var(--teal)';
+    fb.style.border = '2px solid var(--teal)';
+    fb.textContent = p.hint;
+  };
+  container.appendChild(hint);
+
+  const skip = document.createElement('button');
+  skip.className = 'choice';
+  skip.innerHTML = '🏳 Give up & continue';
+  skip.onclick = () => goTo(p.onLose);
+  container.appendChild(skip);
+
+  // store puzzle data on element for handlers
+  wrap.__puzzle = p;
+  wrap.__found = new Set();
+}
+
+function discoverHotspot(idx) {
+  const wrap = document.querySelector('.escapeScene');
+  if (!wrap) return;
+  const p = wrap.__puzzle;
+  const found = wrap.__found;
+  if (found.has(idx)) return;
+  found.add(idx);
+
+  const dot = wrap.querySelector(`.hotspot[data-idx="${idx}"]`);
+  dot.style.opacity = '1';
+  dot.classList.add('found');
+
+  const h = p.hotspots[idx];
+  const bar = document.getElementById('discoveredBar');
+  const empty = bar.querySelector('.empty');
+  if (empty) empty.remove();
+
+  const btn = document.createElement('button');
+  btn.className = 'symBtn';
+  btn.dataset.symbol = h.symbol;
+  btn.dataset.pos = h.pos;
+  btn.title = h.label;
+  btn.innerHTML = `${h.symbol}<span class="pos">POS ${h.pos}</span>`;
+  btn.onclick = () => placeSymbol(btn);
+  bar.appendChild(btn);
+
+  const fb = document.getElementById('feedback');
+  if (fb) {
+    fb.className = 'feedback';
+    fb.style.color = 'var(--gold)';
+    fb.style.border = '2px solid var(--gold)';
+    fb.textContent = `Found ${h.label}: ${h.symbol} (position ${h.pos})`;
+  }
+}
+
+function placeSymbol(btn) {
+  const slots = document.querySelectorAll('#slotPad .slot');
+  for (const s of slots) {
+    if (!s.classList.contains('filled')) {
+      s.classList.add('filled');
+      s.textContent = btn.dataset.symbol;
+      s.dataset.symbol = btn.dataset.symbol;
+      s.dataset.pos = btn.dataset.pos;
+      btn.disabled = true;
+      return;
+    }
+  }
+}
+
+function clearSlot(num) {
+  const slots = document.querySelectorAll('#slotPad .slot');
+  const s = slots[num - 1];
+  if (!s.classList.contains('filled')) return;
+  const sym = s.dataset.symbol;
+  s.classList.remove('filled');
+  s.textContent = '';
+  delete s.dataset.symbol;
+  delete s.dataset.pos;
+  document.querySelectorAll(`#discoveredBar .symBtn[data-symbol="${sym}"]`).forEach(b => b.disabled = false);
+}
+
+function checkSequence(p) {
+  const slots = document.querySelectorAll('#slotPad .slot');
+  let allFilled = true;
+  let allCorrect = true;
+  slots.forEach((s, i) => {
+    if (!s.classList.contains('filled')) allFilled = false;
+    else if (parseInt(s.dataset.pos) !== i + 1) allCorrect = false;
+  });
+  const fb = document.getElementById('feedback');
+  if (!allFilled) {
+    fb.className = 'feedback bad';
+    fb.textContent = 'Fill every slot first, my love.';
+    return;
+  }
+  if (allCorrect) {
+    fb.className = 'feedback good';
+    fb.textContent = '★ THE SLABS GLOW! THE PATH OPENS! ★';
+    setTimeout(() => goTo(p.onWin), 900);
+  } else {
+    fb.className = 'feedback bad';
+    fb.textContent = '✗ The Sphinx hisses. Wrong order!';
+    document.getElementById('slotPad').classList.add('shakeBad');
+    setTimeout(() => document.getElementById('slotPad').classList.remove('shakeBad'), 400);
+  }
+}
+
+// === Star-order puzzle: click stars in correct sequence ===
+function renderStarOrder(container, p) {
+  const left = document.getElementById('puzzleLeft');
+  const flavorEl = left.querySelector('.flavor');
+
+  const wrap = document.createElement('div');
+  wrap.className = `escapeScene ${p.sceneClass || ''}`;
+  wrap.innerHTML = p.sceneArt || '';
+  p.stars.forEach(st => {
+    const s = document.createElement('div');
+    s.className = 'starHotspot';
+    s.style.left = st.x; s.style.top = st.y;
+    s.dataset.id = st.id;
+    s.textContent = '✦';
+    const label = document.createElement('span');
+    label.style.cssText = 'position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-size:7px;color:var(--paper);opacity:0.7;letter-spacing:0;';
+    label.textContent = st.id;
+    s.appendChild(label);
+    s.onclick = () => clickStar(st.id);
+    wrap.appendChild(s);
+  });
+  left.insertBefore(wrap, flavorEl);
+
+  const tablet = document.createElement('div');
+  tablet.className = 'runeTablet';
+  tablet.innerHTML = `<span class="label">🪨 RUNE TABLET — CLICK STARS IN THIS ORDER 🪨</span>${p.order.map(id => '✦' + id).join(' → ')}`;
+  container.appendChild(tablet);
+
+  const dots = document.createElement('div');
+  dots.className = 'progressDots';
+  dots.id = 'starProgress';
+  dots.innerHTML = p.order.map(() => '○').join(' ');
+  container.appendChild(dots);
+
+  const fb = document.createElement('div');
+  fb.id = 'feedback';
+  container.appendChild(fb);
+
+  const reset = document.createElement('button');
+  reset.className = 'choice';
+  reset.innerHTML = '↻ Reset stars';
+  reset.onclick = () => resetStars();
+  container.appendChild(reset);
+
+  const hint = document.createElement('button');
+  hint.className = 'choice';
+  hint.innerHTML = '💡 Hint';
+  hint.onclick = () => {
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback';
+    fb.style.color = 'var(--teal)';
+    fb.style.border = '2px solid var(--teal)';
+    fb.textContent = p.hint;
+  };
+  container.appendChild(hint);
+
+  const skip = document.createElement('button');
+  skip.className = 'choice';
+  skip.innerHTML = '🏳 Give up & continue';
+  skip.onclick = () => goTo(p.onLose);
+  container.appendChild(skip);
+
+  wrap.__puzzle = p;
+  wrap.__progress = 0;
+}
+
+function clickStar(id) {
+  const wrap = document.querySelector('.escapeScene');
+  if (!wrap) return;
+  const p = wrap.__puzzle;
+  const expected = p.order[wrap.__progress];
+  const star = wrap.querySelector(`.starHotspot[data-id="${id}"]`);
+  const fb = document.getElementById('feedback');
+
+  if (id === expected) {
+    star.classList.add('lit');
+    wrap.__progress++;
+    updateStarProgress(wrap.__progress, p.order.length);
+    if (wrap.__progress === p.order.length) {
+      fb.className = 'feedback good';
+      fb.textContent = '★ THE CONSTELLATION IS COMPLETE! ★';
+      setTimeout(() => goTo(p.onWin), 900);
+    } else {
+      fb.className = 'feedback';
+      fb.style.color = 'var(--gold)';
+      fb.style.border = '2px solid var(--gold)';
+      fb.textContent = `Good! ${wrap.__progress} of ${p.order.length} lit.`;
+    }
+  } else {
+    fb.className = 'feedback bad';
+    fb.textContent = '✗ Wrong star! The pattern resets.';
+    wrap.classList.add('shakeBad');
+    setTimeout(() => { wrap.classList.remove('shakeBad'); resetStars(); }, 500);
+  }
+}
+
+function updateStarProgress(done, total) {
+  const dots = document.getElementById('starProgress');
+  if (!dots) return;
+  let s = '';
+  for (let i = 0; i < total; i++) s += (i < done ? '●' : '○') + ' ';
+  dots.textContent = s.trim();
+}
+
+function resetStars() {
+  const wrap = document.querySelector('.escapeScene');
+  if (!wrap) return;
+  wrap.__progress = 0;
+  wrap.querySelectorAll('.starHotspot.lit').forEach(s => s.classList.remove('lit'));
+  const p = wrap.__puzzle;
+  updateStarProgress(0, p.order.length);
+}
+
+function goTo(key) {
+  if (key === 'title') { renderTitle(); return; }
+  renderScene(key);
+}
+
+// === BOOT ===
+renderTitle();
+</script>
+</body>
+</html>

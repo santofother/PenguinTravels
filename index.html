@@ -746,6 +746,82 @@
   .slot.filled { border-color: var(--gold); }
   .slot.filled:hover { background: #2b0a2b; }
 
+  /* Inventory tool buttons (selectable) */
+  .symBtn.tool {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+  .symBtn.tool:hover { background: var(--teal); color: var(--ink); }
+  .symBtn.tool.selected {
+    border-color: var(--pink);
+    background: #3a0a3a;
+    color: var(--pink);
+    box-shadow: 0 0 12px var(--pink);
+    animation: toolPulse 0.6s steps(2) infinite;
+  }
+  .symBtn.tool.selected:hover { background: var(--pink); color: #fff; }
+  @keyframes toolPulse {
+    0%, 100% { transform: translateY(-2px); }
+    50% { transform: translateY(0); }
+  }
+  .symBtn .toolTag {
+    position: absolute;
+    bottom: -10px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    background: #000;
+    color: var(--paper);
+    padding: 2px 4px;
+    border: 2px solid currentColor;
+    line-height: 1;
+    letter-spacing: 1px;
+    white-space: nowrap;
+  }
+
+  /* Sealed door visualization (Egypt) */
+  .sealedDoor {
+    position: absolute;
+    left: 50%; bottom: 18%;
+    transform: translateX(-50%);
+    width: 56px; height: 78px;
+    background: #5a3a1a;
+    border: 3px solid #000;
+    box-shadow: inset 0 0 0 4px #3a1a0a, 0 0 0 4px #2a1a0a;
+    pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold);
+    font-size: 8px;
+    letter-spacing: 1px;
+    writing-mode: vertical-rl;
+  }
+
+  /* Cracked-wall texture for hotspot */
+  .hotspot.dusty {
+    filter: grayscale(0.6) brightness(0.7) drop-shadow(0 0 4px #000);
+  }
+
+  .feedback.info { color: var(--teal); border: 2px solid var(--teal); }
+
+  /* Memory-walk activity effects */
+  @keyframes stonePlop {
+    0%   { transform: translateY(-40px) scale(0.7); opacity: 0; }
+    70%  { transform: translateY(4px) scale(1.05); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes lanternRise {
+    0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    20%  { transform: translate(-50%, -60%) scale(1.2); opacity: 1; filter: drop-shadow(0 0 10px var(--gold)); }
+    100% { transform: translate(-50%, -260%) scale(0.8); opacity: 0; filter: drop-shadow(0 0 18px var(--gold)); }
+  }
+  @keyframes pearlFloat {
+    0%   { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    40%  { transform: translate(-50%, -90%) scale(1.3); opacity: 1; filter: drop-shadow(0 0 12px var(--gold)); }
+    100% { transform: translate(-50%, -180%) scale(0.6); opacity: 0; }
+  }
+  .hotspot.memoryDot.found {
+    pointer-events: none;
+  }
+
   /* Star-order puzzle */
   .starHotspot {
     position: absolute;
@@ -811,6 +887,112 @@
   .feedback.good { color: var(--green); border: 2px solid var(--green); }
   .feedback.bad { color: var(--red); border: 2px solid var(--red); }
 
+  /* SCENE TRANSITIONS */
+  .scene-fadeOut { animation: sceneOut 0.18s steps(2) forwards; transform-origin: center; }
+  .scene-fadeIn  { animation: sceneIn  0.26s steps(3); transform-origin: center; }
+  @keyframes sceneOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.97); }
+  }
+  @keyframes sceneIn {
+    0%   { opacity: 0; transform: scale(1.03); }
+    60%  { opacity: 1; transform: scale(0.99); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* Travel overlay (between major locations) */
+  .travelOverlay {
+    position: fixed; inset: 0;
+    z-index: 200;
+    background: linear-gradient(135deg, #0a0a23 0%, #2b0a4a 60%, #0a0a23 100%);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column;
+    overflow: hidden;
+    pointer-events: none;
+    animation: travelIn 0.18s steps(2) forwards;
+  }
+  .travelOverlay.exit { animation: travelOut 0.22s steps(2) forwards; }
+  @keyframes travelIn  { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes travelOut { from { opacity: 1; } to { opacity: 0; } }
+
+  .travelSky {
+    position: relative;
+    width: 100%; height: 80px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .travelStars {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .travelStars .streak {
+    position: absolute;
+    width: 50px; height: 2px;
+    background: var(--paper);
+    box-shadow: 0 0 6px var(--paper);
+    opacity: 0.5;
+    animation: streakBy 0.7s linear infinite;
+  }
+  @keyframes streakBy {
+    from { transform: translateX(110vw); opacity: 0.7; }
+    to   { transform: translateX(-30vw); opacity: 0; }
+  }
+  .travelPlane {
+    position: absolute;
+    top: 18px;
+    left: 0;
+    font-size: 28px;
+    letter-spacing: 4px;
+    text-shadow: 4px 4px 0 #000, 0 0 12px var(--gold);
+    white-space: nowrap;
+    animation: travelFly 1.05s steps(14) 0.18s forwards;
+    transform: translateX(-30vw);
+  }
+  @keyframes travelFly {
+    from { transform: translateX(-30vw); }
+    to   { transform: translateX(110vw); }
+  }
+  .travelLabel {
+    font-family: inherit;
+    font-size: 11px;
+    color: var(--paper);
+    letter-spacing: 4px;
+    text-align: center;
+    text-shadow: 3px 3px 0 #000;
+    animation: travelLabel 0.5s steps(2) 0.4s both;
+  }
+  .travelLabel .lead {
+    display: block;
+    color: var(--pink);
+    font-size: 10px;
+    margin-bottom: 10px;
+    letter-spacing: 6px;
+  }
+  .travelLabel .dest {
+    display: block;
+    color: var(--gold);
+    font-size: 16px;
+    letter-spacing: 4px;
+    text-shadow: 4px 4px 0 #000, 0 0 12px var(--gold);
+  }
+  .travelLabel .dots {
+    display: block;
+    margin-top: 10px;
+    color: var(--teal);
+    font-size: 10px;
+    letter-spacing: 3px;
+    animation: travelDots 0.6s steps(3) 0.6s infinite;
+  }
+  @keyframes travelLabel {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes travelDots {
+    0%, 33%   { opacity: 0.4; }
+    34%, 66%  { opacity: 0.7; }
+    67%, 100% { opacity: 1; }
+  }
+
   /* Coin pop */
   .coinPop {
     position: fixed;
@@ -860,6 +1042,8 @@ const State = {
   current: 'title',
   flags: {},
   player: 'porky', // 'porky' | 'squid'
+  inventory: [],
+  selectedItem: null,
 };
 
 // =============== SCENE ART RENDERERS ==================
@@ -1253,25 +1437,73 @@ const Scenes = {
   },
   egypt_puzzle: {
     name: 'EGYPT — SPHINX TRIAL',
-    text: () => `The Sphinx grins. "Find the four sigils hidden around me, my flightless guests. Each tells you its order. Place them in the slots correctly."<br><br>🔍 <span style="color:var(--gold);">Click around the scene to find symbols.</span>`,
+    text: () => `A sealed door stands before the Great Pyramid, marked with four empty slots. The Sphinx watches silently. "Earn each sigil, flightless one. Some secrets need tools to uncover."<br><br>🔍 <span style="color:var(--gold);">Click objects to inspect. Pick up tools, then click a tool to <em>select</em> it before using it on something.</span>`,
     puzzle: {
-      kind: 'discover-sequence',
+      kind: 'escape-room',
       sceneClass: 'bg-egypt',
+      slots: 4,
+      resetFlags: ['sandSearched', 'wallBrushed', 'jarOpened', 'sphinxEyeOpened', 'sunRevealed', 'sunRotation'],
       sceneArt: `
-        <div style="position:absolute;top:18px;right:20px;width:36px;height:36px;background:var(--gold);border-radius:50%;box-shadow:0 0 0 3px #ff9f4a, 0 0 20px var(--gold);pointer-events:none;"></div>
+        <div style="position:absolute;top:18px;right:14%;width:34px;height:34px;background:var(--gold);border-radius:50%;box-shadow:0 0 0 3px #ff9f4a, 0 0 20px var(--gold);pointer-events:none;"></div>
         <div class="pyramid" style="pointer-events:none;"></div>
-        <div style="position:absolute;bottom:60px;left:20px;font-size:32px;pointer-events:none;">𓁢</div>
-        <div style="position:absolute;bottom:5px;left:0;right:0;height:30px;background:linear-gradient(to bottom, transparent, rgba(0,0,0,0.2));pointer-events:none;"></div>
+        <div class="sealedDoor">SEALED</div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:34px;background:linear-gradient(to bottom, transparent, rgba(0,0,0,0.35));pointer-events:none;"></div>
       `,
       hotspots: [
-        { x: '85%', y: '18%', symbol: '☀', pos: 3, size: 30, label: 'sun' },
-        { x: '50%', y: '60%', symbol: '🔺', pos: 1, size: 36, label: 'pyramid' },
-        { x: '14%', y: '70%', symbol: '𓁢', pos: 4, size: 32, label: 'sphinx' },
-        { x: '72%', y: '88%', symbol: '🪲', pos: 2, size: 22, label: 'scarab in sand' },
+        { id: 'sand', type: 'collect', x: '85%', y: '88%', symbol: '🏖', label: 'sand pile', size: 30,
+          visibleIf: () => !State.flags.sandSearched,
+          onUse: () => {
+            State.flags.sandSearched = true;
+            addToInventory('brush', '🪶', 'feather brush');
+            showFeedback('You dig through the sand and uncover a feather brush!', 'good');
+          }
+        },
+        { id: 'wall', type: 'interact', x: '38%', y: '52%', symbol: '🧱', label: 'cracked wall', size: 34,
+          visibleIf: () => !State.flags.wallBrushed,
+          requires: 'brush',
+          failMessage: 'A thick layer of dust covers the wall. You need something to brush it clean.',
+          onUse: () => {
+            State.flags.wallBrushed = true;
+            revealSymbol('ankh', '𓋹', 4, 'ankh');
+            showFeedback('Dust falls away. The inscription glows: 🪲 → 𓂀 → ☀ → 𓋹  (the sigil order). The ankh sigil flares loose.', 'good');
+          }
+        },
+        { id: 'jar', type: 'collect', x: '12%', y: '88%', symbol: '🏺', label: 'half-buried jar', size: 30,
+          visibleIf: () => !State.flags.jarOpened,
+          onUse: () => {
+            State.flags.jarOpened = true;
+            addToInventory('scarab_key', '🗝', 'scarab key');
+            revealSymbol('scarab', '🪲', 1, 'scarab');
+            showFeedback('Inside the jar: a scarab-shaped key — and the scarab sigil itself!', 'good');
+          }
+        },
+        { id: 'sphinx', type: 'interact', x: '17%', y: '60%', symbol: '𓁢', label: 'sphinx', size: 40,
+          visibleIf: () => !State.flags.sphinxEyeOpened,
+          requires: 'scarab_key',
+          failMessage: 'The sphinx stares forward, eye sealed shut. A scarab-shaped slot sits below it.',
+          onUse: () => {
+            State.flags.sphinxEyeOpened = true;
+            revealSymbol('eye', '𓂀', 2, 'eye of horus');
+            showFeedback('The scarab key clicks into place. The sphinx\'s eye opens — the Eye of Horus is revealed!', 'good');
+          }
+        },
+        { id: 'sundial', type: 'interact', x: '62%', y: '82%', symbol: '𓇳', label: 'stone sundial', size: 34,
+          visibleIf: () => !State.flags.sunRevealed,
+          onUse: () => {
+            State.flags.sunRotation = (State.flags.sunRotation || 0) + 1;
+            if (State.flags.sunRotation >= 3) {
+              State.flags.sunRevealed = true;
+              revealSymbol('sun', '☀', 3, 'sun');
+              showFeedback('The sundial locks into place — sunlight strikes the pyramid and a sun sigil ignites in the air!', 'good');
+            } else {
+              showFeedback(`You rotate the sundial. Light shifts across the sand... (${State.flags.sunRotation}/3)`, 'info');
+            }
+          }
+        },
       ],
       onWin: 'egypt_finish_win',
       onLose: 'egypt_finish_lose',
-      hint: 'Each symbol shows a number when found. Drop them into matching slots.',
+      hint: 'Find the brush in the sand. Brush the wall to read the order. Open the jar for a key + scarab sigil. Use the key on the sphinx. Rotate the sundial 3 times.',
     },
   },
   egypt_finish_win: {
@@ -1584,30 +1816,155 @@ const Scenes = {
     name: 'MT. EVEREST BASE CAMP',
     art: art_everest,
     text: () => P(
-      `Cold. Familiar cold. Penguin cold. Izzy giggles. "Reminds me of home, Porky." He has been carrying something the entire trip. Through every country. Every ocean. Every ridiculous situation. The moment is now.`,
-      `Cold. Familiar cold. Penguin cold. Squid laughs out loud. "Porky, this is basically our GARDEN." Mr Porky is rummaging under his wing with unusual intensity. Squid raises an eyebrow.`
+      `Cold. Familiar cold. Penguin cold. Izzy giggles. "Reminds me of home, Porky." Three small stones rest in the snow at his feet. An old climber's tradition: stack a cairn before the moment that matters most.`,
+      `Cold. Familiar cold. Penguin cold. Squid laughs out loud. "Porky, this is basically our GARDEN." Three small stones rest in the snow at her feet. An old climber's tradition, Mr Porky whispers — stack them, one for each memory worth carrying.`
     ),
-    choices: () => [{ text: '🪨 Present the pebble...', next: 'finale', cls: 'special' }],
+    choices: () => [{ text: '🪨 Build a memory-cairn together', next: 'everest_activity', cls: 'special' }],
   },
+  everest_activity: {
+    name: 'EVEREST — CAIRN OF MEMORIES',
+    text: () => `${P('Mr Porky', 'Squid')} kneels in the snow. Three stones. Three memories. Stack each, and the moment will find you.<br><br>🪨 <span style="color:var(--gold);">Click each stone in the snow.</span>`,
+    puzzle: {
+      kind: 'memory-walk',
+      sceneClass: 'bg-everest',
+      sceneArt: `
+        <div class="mountain" style="pointer-events:none;"></div>
+        <div id="cairnPile" style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column-reverse;align-items:center;gap:2px;pointer-events:none;z-index:2;"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:18px;background:#fff;pointer-events:none;"></div>
+      `,
+      hotspots: [
+        { id: 's1', x: '18%', y: '85%', symbol: '🪨', size: 26,
+          memory: () => P('Tokyo karaoke. Izzy filmed his off-key Ice Ice Baby and watches it weekly to this day.',
+                          'Tokyo karaoke. Mr Porky belted off-key for an hour. She secretly has the video bookmarked.') },
+        { id: 's2', x: '50%', y: '92%', symbol: '🪨', size: 32,
+          memory: () => P('Iceland aurora — that perfect quiet hour. He didn\'t need to say a word, and neither did she.',
+                          'Iceland aurora — that quiet hour. He didn\'t say a word and neither did she. It said everything.') },
+        { id: 's3', x: '80%', y: '85%', symbol: '🪨', size: 28,
+          memory: () => P('Gerald the sheep. Just... Gerald. He\'ll always be a little in love with Gerald.',
+                          'Gerald the sheep. Headbutting them gently together. Squid still writes him postcards.') },
+      ],
+      onClick: () => {
+        const cairn = document.getElementById('cairnPile');
+        if (!cairn) return;
+        const stone = document.createElement('div');
+        const widths = [40, 34, 28];
+        stone.style.cssText = `width:${widths[cairn.children.length] || 24}px;height:14px;background:#8a7a5a;border:2px solid #000;border-radius:3px 3px 0 0;animation:stonePlop 0.45s steps(3);`;
+        cairn.appendChild(stone);
+      },
+      completeMessage: 'Three stones. A cairn for safe travels — and for everything that comes next.',
+      completeButton: '🪨 Take a deep breath...',
+      completeEffect: () => addCoins(3),
+      onComplete: 'finale',
+      hint: 'Click each of the three stones half-buried in the snow.',
+      intro: 'Click each stone to add it to the cairn — and remember.',
+    },
+  },
+
   // === NYC ===
   nyc: {
     name: 'NYC — ROOFTOP',
     art: art_nyc,
     text: () => P(
-      `Lights stretch to the horizon. Izzy spins around, arms out, a tiny pixel pinwheel. She has no idea. He has been carrying it the entire trip — through every country, every disaster, every fish-related incident. The moment is now.`,
-      `Lights stretch to the horizon. Squid spins around, arms out, a tiny pixel pinwheel. Mr Porky watches her. Then looks down at his wing. At what's hidden inside it. He's been carrying it the whole trip. He takes a breath.`
+      `Lights stretch to the horizon. Izzy spins around, arms out, a tiny pixel pinwheel. She has no idea. He has been carrying it the entire trip — through every country, every disaster, every fish-related incident. He notices three windows blinking in the city below. He smiles.`,
+      `Lights stretch to the horizon. Squid spins under the city's neon. Three windows in the buildings below catch her eye, blinking in time. "Porky," she breathes. "It's like the city is winking at us." He's already rummaging under his wing.`
     ),
-    choices: () => [{ text: '🪨 Present the pebble...', next: 'finale', cls: 'special' }],
+    choices: () => [{ text: '✨ Light up the skyline together', next: 'nyc_activity', cls: 'special' }],
   },
+  nyc_activity: {
+    name: 'NYC — SKYLINE WISHES',
+    text: () => `Three rooftop lanterns flicker at the edge of the city. ${P('Mr Porky', 'Squid')} reaches out — a wish for each one.<br><br>🏮 <span style="color:var(--gold);">Click each lantern to send it skyward.</span>`,
+    puzzle: {
+      kind: 'memory-walk',
+      sceneClass: 'bg-nyc',
+      sceneArt: `
+        <div class="moon" style="position:absolute;top:10px;left:30px;right:auto;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:90px;background:#1a1a2e;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:5%;width:30px;height:80px;background:#2b1a4e;box-shadow:0 0 0 2px #000;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:25%;width:40px;height:100px;background:#2b1a4e;box-shadow:0 0 0 2px #000;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:50%;width:35px;height:120px;background:#2b1a4e;box-shadow:0 0 0 2px #000;pointer-events:none;"></div>
+        <div style="position:absolute;bottom:0;left:72%;width:50px;height:90px;background:#2b1a4e;box-shadow:0 0 0 2px #000;pointer-events:none;"></div>
+      `,
+      hotspots: [
+        { id: 'lantern1', x: '20%', y: '70%', symbol: '🏮', size: 28,
+          memory: () => P('Paris bistro. Izzy with whipped cream on her beak. He wants forty more mornings exactly like that.',
+                          'Paris bistro. Whipped cream on her beak, and Mr Porky melting like the chocolat chaud. She knew right then.') },
+        { id: 'lantern2', x: '48%', y: '60%', symbol: '🏮', size: 32,
+          memory: () => P('Egypt sphinx. Five steps to crack the code, and Izzy yelling each one beside him. Best teammate, period.',
+                          'Egypt sphinx. Five steps and Squid leading the charge — yelling at the desert as if it owed her something.') },
+        { id: 'lantern3', x: '78%', y: '74%', symbol: '🏮', size: 26,
+          memory: () => P('Hawaii hammock. Three hours of synchronized snoring. He\'d sign up for a lifetime of that.',
+                          'Hawaii hammock. Three hours of synchronised snoring. She\'d sign up for a lifetime of exactly that.') },
+      ],
+      onClick: (h) => {
+        const wrap = document.getElementById('memoryWalkScene');
+        if (!wrap) return;
+        const dot = wrap.querySelector(`.hotspot[data-idx="${h.__idx}"]`);
+        if (dot) {
+          dot.style.animation = 'lanternRise 1.6s steps(8) forwards';
+          dot.style.color = 'var(--gold)';
+          dot.style.textShadow = '0 0 14px var(--gold)';
+        }
+      },
+      completeMessage: 'Three lanterns rise above Manhattan. The whole city holds its breath.',
+      completeButton: '🪨 Now... the moment',
+      completeEffect: () => addCoins(3),
+      onComplete: 'finale',
+      hint: 'Click each red rooftop lantern.',
+      intro: 'Click each lantern to send it up.',
+    },
+  },
+
   // === GBR ===
   gbr: {
     name: 'GREAT BARRIER REEF',
     art: art_gbr,
     text: () => P(
-      `Underwater. Surrounded by coral the colours of every sunset. A turtle floats by, unbothered. Mr Porky has been carrying something the whole trip in his beak — getting odd looks at every airport. The moment is now.`,
-      `Underwater. Coral in every colour. A turtle drifts past, completely unbothered by the penguins. Squid is pointing excitedly at a fish. Mr Porky taps her on the shoulder. She turns. He's holding something.`
+      `Underwater. Surrounded by coral the colours of every sunset. A turtle floats by, unbothered. Three glimmers wink in the reef — old penguin lore says you find one for every promise worth keeping.`,
+      `Underwater. Coral in every colour. A turtle drifts past, completely unbothered by the penguins. Three glimmers wink between the corals — old penguin lore: find one for every promise worth keeping. Squid is already counting.`
     ),
-    choices: () => [{ text: '🪨 Present the pebble...', next: 'finale', cls: 'special' }],
+    choices: () => [{ text: '🐚 Find the three glimmers', next: 'gbr_activity', cls: 'special' }],
+  },
+  gbr_activity: {
+    name: 'REEF — TROVE OF PROMISES',
+    text: () => `Three small treasures shimmer between the corals. Each one a memory the reef has been keeping for them.<br><br>🐚 <span style="color:var(--gold);">Click each glimmer to gather it.</span>`,
+    puzzle: {
+      kind: 'memory-walk',
+      sceneClass: 'bg-gbr',
+      sceneArt: `
+        <div class="coral" style="left:8%;pointer-events:none;">🪸</div>
+        <div class="coral" style="left:82%;pointer-events:none;">🪸</div>
+        <div class="coral" style="left:45%;bottom:0;pointer-events:none;">🪸</div>
+        <div style="position:absolute;top:25%;left:55%;font-size:24px;pointer-events:none;">🐠</div>
+        <div style="position:absolute;top:55%;right:10%;font-size:24px;pointer-events:none;">🐢</div>
+      `,
+      hotspots: [
+        { id: 'pearl', x: '20%', y: '78%', symbol: '🐚', size: 28,
+          memory: () => P('Morocco souk. The tiny glass lantern Izzy still keeps on her bedside.',
+                          'Morocco souk. The tiny glass lantern she still keeps on her bedside table. He never knows she watches it before sleep.') },
+        { id: 'starfish', x: '52%', y: '60%', symbol: '⭐', size: 30,
+          memory: () => P('Iceland constellation. Five stars in a row. Izzy whispered each one like a spell.',
+                          'Iceland constellation. Five stars in a row. Squid said each name like a spell that worked.') },
+        { id: 'coin', x: '80%', y: '78%', symbol: '🪙', size: 26,
+          memory: () => P('Every flipper-squeeze on every continent. He has counted them. There have been many.',
+                          'Every flipper-squeeze on every continent. She has counted them too. Forty-seven so far. (He is at fifty-one. She doesn\'t know.)') },
+      ],
+      onClick: (h) => {
+        const wrap = document.getElementById('memoryWalkScene');
+        if (!wrap) return;
+        const dot = wrap.querySelector(`.hotspot[data-idx="${h.__idx}"]`);
+        if (dot) {
+          dot.style.animation = 'pearlFloat 1.4s steps(8) forwards';
+          dot.style.color = 'var(--gold)';
+          dot.style.textShadow = '0 0 14px var(--gold)';
+        }
+      },
+      completeMessage: 'Three glimmers gathered. The reef hums with old approval.',
+      completeButton: '🪨 Surface for the moment',
+      completeEffect: () => addCoins(3),
+      onComplete: 'finale',
+      hint: 'Click each glowing trinket between the coral.',
+      intro: 'Click each glimmer to gather it.',
+    },
   },
 
   // === FINALE ===
@@ -1669,6 +2026,8 @@ const Scenes = {
       State.stops = 0;
       State.flags = {};
       State.player = 'porky';
+      State.inventory = [];
+      State.selectedItem = null;
       goTo('title');
     },
   },
@@ -1757,7 +2116,7 @@ function renderScene(key) {
   State.visited.add(key);
 
   const game = document.getElementById('game');
-  const interactivePuzzle = sc.puzzle && (sc.puzzle.kind === 'discover-sequence' || sc.puzzle.kind === 'star-order');
+  const interactivePuzzle = sc.puzzle && (sc.puzzle.kind === 'discover-sequence' || sc.puzzle.kind === 'star-order' || sc.puzzle.kind === 'escape-room' || sc.puzzle.kind === 'memory-walk');
   let inner;
   if (interactivePuzzle) {
     inner = `
@@ -1815,6 +2174,8 @@ function renderScene(key) {
 function renderPuzzle(container, p) {
   if (p.kind === 'discover-sequence') return renderDiscoverSequence(container, p);
   if (p.kind === 'star-order') return renderStarOrder(container, p);
+  if (p.kind === 'escape-room') return renderEscapeRoom(container, p);
+  if (p.kind === 'memory-walk') return renderMemoryWalk(container, p);
 
   const box = document.createElement('div');
   box.className = 'puzzleBox';
@@ -2150,9 +2511,368 @@ function resetStars() {
   updateStarProgress(0, p.order.length);
 }
 
+// ============= INVENTORY + ESCAPE-ROOM SYSTEM =============
+function addToInventory(id, symbol, label, opts) {
+  if (State.inventory.some(i => i.id === id)) return;
+  State.inventory.push(Object.assign({ id, symbol, label }, opts || {}));
+  rerenderInventory();
+}
+function revealSymbol(id, symbol, pos, label) {
+  addToInventory(id, symbol, label || id, { pos });
+}
+function hasItem(id) {
+  return State.inventory.some(i => i.id === id);
+}
+function showFeedback(msg, kind) {
+  const fb = document.getElementById('feedback');
+  if (!fb) return;
+  if (!msg) {
+    fb.className = '';
+    fb.textContent = '';
+    fb.removeAttribute('style');
+    return;
+  }
+  fb.removeAttribute('style');
+  if (kind === 'good') fb.className = 'feedback good';
+  else if (kind === 'bad') fb.className = 'feedback bad';
+  else if (kind === 'info') fb.className = 'feedback info';
+  else fb.className = 'feedback';
+  fb.textContent = msg;
+}
+
+function renderEscapeRoom(container, p) {
+  // Reset puzzle-scoped state
+  State.inventory = [];
+  State.selectedItem = null;
+  if (p.resetFlags) p.resetFlags.forEach(f => { delete State.flags[f]; });
+
+  const left = document.getElementById('puzzleLeft');
+  const flavorEl = left.querySelector('.flavor');
+
+  const wrap = document.createElement('div');
+  wrap.className = `escapeScene ${p.sceneClass || ''}`;
+  wrap.id = 'escapeRoomScene';
+  wrap.innerHTML = p.sceneArt || '';
+  left.insertBefore(wrap, flavorEl);
+  wrap.__puzzle = p;
+
+  const inv = document.createElement('div');
+  inv.className = 'discoveredBar';
+  inv.id = 'discoveredBar';
+  container.appendChild(inv);
+
+  const pad = document.createElement('div');
+  pad.className = 'slotPad';
+  pad.id = 'slotPad';
+  const slotCount = p.slots || 4;
+  for (let i = 1; i <= slotCount; i++) {
+    const s = document.createElement('div');
+    s.className = 'slot';
+    s.dataset.num = i;
+    s.dataset.slotIdx = i;
+    s.onclick = () => clearSlot(i);
+    pad.appendChild(s);
+  }
+  container.appendChild(pad);
+
+  const fb = document.createElement('div');
+  fb.id = 'feedback';
+  container.appendChild(fb);
+
+  const submit = document.createElement('button');
+  submit.className = 'choice puzzle';
+  submit.innerHTML = '✔ CHECK SIGILS';
+  submit.onclick = () => checkSequence(p);
+  container.appendChild(submit);
+
+  const reset = document.createElement('button');
+  reset.className = 'choice';
+  reset.innerHTML = '↻ Clear slots';
+  reset.onclick = () => {
+    document.querySelectorAll('#slotPad .slot').forEach(s => {
+      s.classList.remove('filled');
+      s.textContent = '';
+      delete s.dataset.symbol;
+      delete s.dataset.pos;
+    });
+    rerenderInventory();
+  };
+  container.appendChild(reset);
+
+  const hint = document.createElement('button');
+  hint.className = 'choice';
+  hint.innerHTML = '💡 Hint';
+  hint.onclick = () => showFeedback(p.hint || '(no hint)', 'info');
+  container.appendChild(hint);
+
+  const skip = document.createElement('button');
+  skip.className = 'choice';
+  skip.innerHTML = '🏳 Give up & continue';
+  skip.onclick = () => goTo(p.onLose);
+  container.appendChild(skip);
+
+  rerenderEscapeHotspots();
+  rerenderInventory();
+  showFeedback('Click around. Some objects need a tool — pick one up, click to select, then click an object.', 'info');
+}
+
+function rerenderEscapeHotspots() {
+  const wrap = document.getElementById('escapeRoomScene');
+  if (!wrap) return;
+  const p = wrap.__puzzle;
+  wrap.querySelectorAll('.hotspot').forEach(h => h.remove());
+  p.hotspots.forEach(h => {
+    if (h.visibleIf && !h.visibleIf()) return;
+    const dot = document.createElement('div');
+    dot.className = 'hotspot';
+    dot.style.left = h.x;
+    dot.style.top = h.y;
+    dot.style.fontSize = (h.size || 28) + 'px';
+    dot.style.opacity = '1';
+    dot.title = h.label;
+    dot.dataset.hotspotId = h.id;
+    dot.textContent = h.symbol;
+    if (h.type === 'interact' && h.requires && !hasItem(h.requires)) {
+      dot.classList.add('dusty');
+    }
+    dot.onclick = () => handleEscapeHotspot(h);
+    wrap.appendChild(dot);
+  });
+}
+
+function handleEscapeHotspot(h) {
+  if (h.type === 'collect') {
+    if (h.onUse) h.onUse();
+    rerenderEscapeHotspots();
+    return;
+  }
+  // interact
+  if (h.requires) {
+    if (State.selectedItem === h.requires) {
+      if (h.onUse) h.onUse();
+      State.selectedItem = null;
+      rerenderEscapeHotspots();
+      rerenderInventory();
+    } else if (hasItem(h.requires)) {
+      const item = State.inventory.find(i => i.id === h.requires);
+      showFeedback(`Select the ${item.label} from your inventory first, then click here.`, 'bad');
+    } else {
+      showFeedback(h.failMessage || 'You might need a tool for this.', 'bad');
+    }
+  } else {
+    if (h.onUse) h.onUse();
+    rerenderEscapeHotspots();
+  }
+}
+
+function rerenderInventory() {
+  const bar = document.getElementById('discoveredBar');
+  if (!bar) return;
+  bar.innerHTML = '';
+  if (State.inventory.length === 0) {
+    bar.innerHTML = '<span class="empty">INVENTORY — TOOLS &amp; SIGILS APPEAR HERE</span>';
+    return;
+  }
+  // Tools first, then symbols
+  const tools = State.inventory.filter(i => !i.pos);
+  const syms = State.inventory.filter(i => i.pos);
+
+  tools.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'symBtn tool';
+    btn.dataset.toolId = item.id;
+    if (State.selectedItem === item.id) btn.classList.add('selected');
+    btn.innerHTML = `${item.symbol}<span class="toolTag">${item.label.toUpperCase()}</span>`;
+    btn.title = item.label;
+    btn.onclick = () => {
+      State.selectedItem = (State.selectedItem === item.id) ? null : item.id;
+      rerenderInventory();
+      if (State.selectedItem) {
+        showFeedback(`${item.label} selected — click on something to use it.`, 'info');
+      } else {
+        showFeedback('Deselected.', '');
+      }
+    };
+    bar.appendChild(btn);
+  });
+
+  syms.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'symBtn';
+    btn.dataset.symbol = item.symbol;
+    btn.dataset.pos = item.pos;
+    btn.title = item.label;
+    btn.innerHTML = `${item.symbol}<span class="pos">POS ${item.pos}</span>`;
+    const placed = Array.from(document.querySelectorAll('#slotPad .slot.filled'))
+      .some(s => s.dataset.symbol === item.symbol);
+    if (placed) btn.disabled = true;
+    btn.onclick = () => placeSymbol(btn);
+    bar.appendChild(btn);
+  });
+}
+
+// ============= MEMORY WALK (pre-finale activity) =============
+function renderMemoryWalk(container, p) {
+  const left = document.getElementById('puzzleLeft');
+  const flavorEl = left.querySelector('.flavor');
+
+  const wrap = document.createElement('div');
+  wrap.className = `escapeScene ${p.sceneClass || ''}`;
+  wrap.id = 'memoryWalkScene';
+  wrap.innerHTML = p.sceneArt || '';
+  left.insertBefore(wrap, flavorEl);
+  wrap.__puzzle = p;
+  wrap.__found = new Set();
+
+  p.hotspots.forEach((h, idx) => {
+    h.__idx = idx;
+    const dot = document.createElement('div');
+    dot.className = 'hotspot memoryDot';
+    dot.style.left = h.x;
+    dot.style.top = h.y;
+    dot.style.fontSize = (h.size || 28) + 'px';
+    dot.style.opacity = '1';
+    dot.dataset.idx = idx;
+    dot.textContent = h.symbol;
+    dot.onclick = () => discoverMemory(idx);
+    wrap.appendChild(dot);
+  });
+
+  const dots = document.createElement('div');
+  dots.className = 'progressDots';
+  dots.id = 'memoryProgress';
+  dots.innerHTML = p.hotspots.map(() => '○').join(' ');
+  container.appendChild(dots);
+
+  const fb = document.createElement('div');
+  fb.id = 'feedback';
+  container.appendChild(fb);
+
+  const continueBtn = document.createElement('button');
+  continueBtn.className = 'choice special';
+  continueBtn.id = 'memoryContinue';
+  continueBtn.style.display = 'none';
+  continueBtn.innerHTML = p.completeButton || '➡ Continue';
+  continueBtn.onclick = () => {
+    if (p.completeEffect) p.completeEffect();
+    goTo(p.onComplete);
+  };
+  container.appendChild(continueBtn);
+
+  const hint = document.createElement('button');
+  hint.className = 'choice';
+  hint.innerHTML = '💡 Hint';
+  hint.onclick = () => showFeedback(p.hint || 'Look around the scene.', 'info');
+  container.appendChild(hint);
+
+  showFeedback(p.intro || 'Click the items in the scene.', 'info');
+}
+
+function discoverMemory(idx) {
+  const wrap = document.getElementById('memoryWalkScene');
+  if (!wrap) return;
+  const p = wrap.__puzzle;
+  const found = wrap.__found;
+  if (found.has(idx)) return;
+  found.add(idx);
+
+  const h = p.hotspots[idx];
+  const dot = wrap.querySelector(`.hotspot[data-idx="${idx}"]`);
+  if (dot) dot.classList.add('found');
+
+  const memory = (typeof h.memory === 'function') ? h.memory() : h.memory;
+  showFeedback(memory, 'good');
+
+  if (p.onClick) p.onClick(h, idx);
+
+  const dots = document.getElementById('memoryProgress');
+  if (dots) {
+    let s = '';
+    for (let i = 0; i < p.hotspots.length; i++) s += (found.has(i) ? '●' : '○') + ' ';
+    dots.textContent = s.trim();
+  }
+
+  if (found.size === p.hotspots.length) {
+    setTimeout(() => {
+      showFeedback(p.completeMessage || 'The moment crystallizes.', 'good');
+      const btn = document.getElementById('memoryContinue');
+      if (btn) {
+        btn.style.display = '';
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 1100);
+  }
+}
+
+// ============= SCENE TRANSITIONS =============
+const TRAVEL_SCENES = new Set([
+  'antarctica', 'tokyo', 'paris', 'egypt', 'morocco', 'scotland',
+  'amazon', 'iceland', 'venice', 'hawaii', 'india', 'peru',
+  'everest', 'nyc', 'gbr',
+]);
+let _transitionLock = false;
+
+function playTravelTransition(destKey, done) {
+  const sc = Scenes[destKey];
+  const dest = (sc && sc.name) || destKey.toUpperCase();
+  const overlay = document.createElement('div');
+  overlay.className = 'travelOverlay';
+  let streaks = '';
+  for (let i = 0; i < 10; i++) {
+    streaks += `<div class="streak" style="top:${5 + Math.random() * 90}%;animation-delay:${(Math.random() * 0.6).toFixed(2)}s;animation-duration:${(0.5 + Math.random() * 0.5).toFixed(2)}s;"></div>`;
+  }
+  overlay.innerHTML = `
+    <div class="travelSky">
+      <div class="travelStars">${streaks}</div>
+      <div class="travelPlane">✈ 🐧</div>
+    </div>
+    <div class="travelLabel">
+      <span class="lead">— NEXT STOP —</span>
+      <span class="dest">${dest}</span>
+      <span class="dots">. . .</span>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(() => { done(); }, 780);
+  setTimeout(() => {
+    overlay.classList.add('exit');
+    setTimeout(() => { overlay.remove(); _transitionLock = false; }, 230);
+  }, 1000);
+}
+
+function playFadeTransition(done) {
+  const panel = document.querySelector('.panel');
+  if (!panel) { done(); _transitionLock = false; return; }
+  panel.classList.add('scene-fadeOut');
+  setTimeout(() => {
+    done();
+    const newPanel = document.querySelector('.panel');
+    if (newPanel) {
+      newPanel.classList.add('scene-fadeIn');
+      setTimeout(() => newPanel.classList.remove('scene-fadeIn'), 280);
+    }
+    _transitionLock = false;
+  }, 190);
+}
+
 function goTo(key) {
-  if (key === 'title') { renderTitle(); return; }
-  renderScene(key);
+  if (key === 'title') {
+    if (_transitionLock) return;
+    _transitionLock = true;
+    playFadeTransition(() => renderTitle());
+    return;
+  }
+  // Meta-scenes (onEnter routers like 'restart') run inline so nested goTo isn't blocked.
+  const sc = Scenes[key];
+  if (sc && sc.onEnter) { sc.onEnter(); return; }
+  if (_transitionLock) return;
+  _transitionLock = true;
+  const isTravel = TRAVEL_SCENES.has(key) && State.current !== key;
+  if (isTravel) {
+    playTravelTransition(key, () => renderScene(key));
+  } else {
+    playFadeTransition(() => renderScene(key));
+  }
 }
 
 // === BOOT ===

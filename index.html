@@ -629,14 +629,18 @@
   .puzzleLeft, .puzzleRight {
     display: flex; flex-direction: column;
     min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
   }
-  .puzzleRight { overflow-y: auto; padding-right: 4px; }
+  .puzzleLeft::-webkit-scrollbar,
   .puzzleRight::-webkit-scrollbar { width: 8px; }
+  .puzzleLeft::-webkit-scrollbar-track,
   .puzzleRight::-webkit-scrollbar-track { background: #000; }
+  .puzzleLeft::-webkit-scrollbar-thumb,
   .puzzleRight::-webkit-scrollbar-thumb { background: var(--paper); }
   @media (max-width: 900px) {
     .puzzleLayout { grid-template-columns: 1fr; }
-    .puzzleRight { overflow-y: visible; }
+    .puzzleLeft, .puzzleRight { overflow-y: visible; }
   }
   .escapeScene {
     position: relative;
@@ -1175,92 +1179,164 @@
 
 // =====================================================================
 //  AUDIO MANAGER — Penguin Travels
-//  Sprite sheet: SoundEffects/Heart_of_the_High_Score.mp3
-//  Music folder: Music/
+//  SFX: synthesized via Web Audio API (see SFX recipes below)
+//  Music: Music/ folder (see PLAYLIST)
 // =====================================================================
 const AudioManager = (() => {
-  // ── SFX sprite timings (milliseconds) ──────────────────────────────
-  const SPRITES = {
-    ui_click:       { start:    0, end:  150 },
-    travel:         { start:  150, end: 1150 },
-    coin:           { start: 1150, end: 1650 },
-    success:        { start: 1650, end: 2200 },
-    error:          { start: 2200, end: 2500 },
-    heart:          { start: 2500, end: 2750 },
-    adventure_loop: { start: 2750, end: null }, // plays to file end
+  // ── SFX synth recipes — every UI sound is generated live with the
+  //    Web Audio API. To tweak: edit the functions below. To add a new
+  //    sound: add a key here and call playSFX('your_key') from anywhere.
+  let _audioCtx = null;
+
+  function _ctx() {
+    if (_audioCtx) return _audioCtx;
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    _audioCtx = new Ctor();
+    return _audioCtx;
+  }
+
+  // Schedule an oscillator note with a short ADSR-ish envelope.
+  function _note(ctx, dest, t0, type, freq, dur, peak, sweepTo) {
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (sweepTo !== undefined) {
+      osc.frequency.exponentialRampToValueAtTime(Math.max(1, sweepTo), t0 + dur);
+    }
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + Math.min(0.012, dur * 0.2));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(g).connect(dest);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+
+  // Short burst of filtered white noise — used for the travel whoosh.
+  function _noiseBurst(ctx, dest, t0, dur, peak, freqStart, freqEnd, q) {
+    const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const filt = ctx.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.Q.value = q;
+    filt.frequency.setValueAtTime(freqStart, t0);
+    filt.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), t0 + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + dur * 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(filt).connect(g).connect(dest);
+    src.start(t0);
+    src.stop(t0 + dur + 0.02);
+  }
+
+  const SFX = {
+    // Crisp tactile blip for buttons.
+    ui_click(ctx, dest, t) {
+      _note(ctx, dest, t, 'triangle', 1100, 0.05, 0.30, 650);
+    },
+    // Soft airy whoosh for scene/travel transitions.
+    travel(ctx, dest, t) {
+      _noiseBurst(ctx, dest, t,        0.55, 0.18,  400, 2200, 1.4);
+      _noiseBurst(ctx, dest, t + 0.05, 0.45, 0.10, 1800,  500, 1.2);
+    },
+    // Two ascending blips — coin / fish coin earned.
+    coin(ctx, dest, t) {
+      _note(ctx, dest, t,         'triangle', 1320, 0.09, 0.28);
+      _note(ctx, dest, t + 0.07,  'triangle', 1976, 0.18, 0.26);
+    },
+    // Three-note rising chime for correct answers / unlocks.
+    success(ctx, dest, t) {
+      _note(ctx, dest, t,         'triangle', 523.25, 0.18, 0.22);
+      _note(ctx, dest, t + 0.10,  'triangle', 659.25, 0.18, 0.22);
+      _note(ctx, dest, t + 0.20,  'triangle', 783.99, 0.32, 0.24);
+    },
+    // Buzzy descending two-tone for wrong answers.
+    error(ctx, dest, t) {
+      _note(ctx, dest, t,         'square', 220.0, 0.14, 0.18);
+      _note(ctx, dest, t + 0.12,  'square', 146.83, 0.22, 0.20);
+    },
+    // Warm two-note pulse for romantic / heart moments.
+    heart(ctx, dest, t) {
+      _note(ctx, dest, t,         'sine', 698.46, 0.50, 0.18);
+      _note(ctx, dest, t + 0.04,  'sine', 880.00, 0.55, 0.16);
+    },
   };
 
-  // ── PLAYLIST ───────────────────────────────────────────────────────
-  // Songs play in order, looping back to the start when all have played.
-  // To add a new song: just add another 'Music/YourSong.mp3' entry here.
+  // ── Music playlist — add/remove tracks here; the player loops through
+  //    the list in order forever. Order is randomised once on load so
+  //    different sessions feel fresh, but each track plays end-to-end.
   const PLAYLIST = [
     'Music/Tokyo_To_The_Sand.mp3',
-    'Music/Latitude_of_Home.mp3',
     'Music/Captain_of_the_Cloudship.mp3',
+    'Music/Latitude_of_Home.mp3',
     'Music/Aurora_of_My_Nights.mp3',
-	'Music/Aurora_of_My_Nights (1).mp3',
-	'Home_Against_The_Freeze.mp3',
-	'Polar_Night_Ascent.mp3',
-	'Where_the_Stars_Bloom.mp3',
+    'Music/Home_Against_The_Freeze.mp3',
+    'Music/Polar_Night_Ascent.mp3',
+    'Music/Where_the_Stars_Bloom.mp3',
+    'Music/This_Silent_Film.mp3',
+    'Music/Table_for_Two.mp3',
+    'Music/Hickory_and_Home.mp3',
+    'Music/Your_Quiet_Orbit.mp3',
+	'Music/Jazz_1.mp3',
+	'Music/Jazz_2.mp3',
+	'Music/Jazz_3.mp3',
+	'Music/Jazz_4.mp3',
+	'Music/Jazz_5.mp3',
   ];
 
   // ── Internal state ─────────────────────────────────────────────────
-  let _unlocked       = false;
-  let _masterVolume   = 0.8;
-  let _musicEnabled   = true;
-  let _sfxEnabled     = true;
-  let _musicEl        = null;   // single persistent <audio> for music
-  let _currentSrc     = null;   // src currently loaded in _musicEl
-  let _fadeOutTimer   = null;   // interval handle for the fade-out step
-  let _playlistIndex  = 0;      // which song in PLAYLIST is playing
+  let _unlocked     = false;
+  let _masterVolume = 0.8;
+  let _musicEnabled = true;
+  let _sfxEnabled   = true;
+  let _musicEl      = null;  // single persistent <audio> for music
+  let _playOrder    = null;  // shuffled copy of PLAYLIST indices
+  let _playIdx      = 0;     // position within _playOrder
+  let _started      = false; // becomes true after first track kicks off
+  let _errorStreak  = 0;     // consecutive failed tracks — bail after a full pass
 
   // ── Helpers ────────────────────────────────────────────────────────
   function _setMusicVolume(v) {
     if (_musicEl) _musicEl.volume = Math.max(0, Math.min(1, v));
   }
 
-  // Advance to the next track in the playlist (wraps around).
-  function _nextTrack() {
-    _playlistIndex = (_playlistIndex + 1) % PLAYLIST.length;
-    _currentSrc = null; // allow crossfade to same file if playlist has one entry
-    _crossfadeTo(PLAYLIST[_playlistIndex]);
+  function _buildOrder() {
+    const idx = PLAYLIST.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [idx[i], idx[j]] = [idx[j], idx[i]];
+    }
+    _playOrder = idx;
+    _playIdx   = 0;
   }
 
-  // Crossfade to a new src. Music and SFX each use their own Audio
-  // objects so they are completely independent — SFX can never touch
-  // the music element and vice versa.
-  function _crossfadeTo(src) {
-    if (!_unlocked || !_musicEnabled) return;
-    if (_currentSrc === src) return;  // same track already playing — do nothing
-    _currentSrc = src;
-
-    // Fade out the old element in its own closure so it finishes cleanly
-    // even if _crossfadeTo is called again before it completes.
+  function _playTrack(src) {
+    // Stop any element that might still be running so we never stack tracks.
     if (_musicEl) {
-      const old = _musicEl;
-      old.onended = null; // detach playlist handler before discarding
+      try { _musicEl.pause(); } catch (e) {}
+      _musicEl.src = '';
       _musicEl = null;
-      clearInterval(_fadeOutTimer);
-      _fadeOutTimer = setInterval(() => {
-        if (old.volume > 0.06) {
-          old.volume = Math.max(0, old.volume - 0.07);
-        } else {
-          old.pause();
-          old.src = '';
-          clearInterval(_fadeOutTimer);
-        }
-      }, 50);
     }
 
     const el = new Audio(src);
-    el.loop    = false;  // we manage looping ourselves via the playlist
+    el.loop    = false;            // playlist advances on ended
     el.volume  = 0;
     el.preload = 'auto';
-    _musicEl   = el;
-
-    // When a track finishes, automatically advance to the next one
-    el.onended = () => { if (_musicEl === el) _nextTrack(); };
-
+    el.addEventListener('ended',  () => { _errorStreak = 0; _advance(); });
+    el.addEventListener('playing', () => { _errorStreak = 0; });
+    // If the file 404s or fails to decode, skip to the next one rather
+    // than stalling the whole playlist. Bail after one full failed pass.
+    el.addEventListener('error', () => {
+      if (_musicEl !== el) return;
+      if (++_errorStreak >= PLAYLIST.length) { console.warn('AudioManager: all playlist tracks failed to load'); return; }
+      _advance();
+    });
+    _musicEl = el;
     el.play().catch(() => {});
 
     const targetVol = _masterVolume * 0.65;
@@ -1271,10 +1347,21 @@ const AudioManager = (() => {
     }, 60);
   }
 
-  // Start the playlist from the beginning (called once on unlock).
+  function _advance() {
+    if (!PLAYLIST.length) return;
+    if (!_playOrder) _buildOrder();
+    _playIdx = (_playIdx + 1) % _playOrder.length;
+    if (_playIdx === 0) _buildOrder();   // reshuffle each loop around
+    if (!_unlocked || !_musicEnabled) return;
+    _playTrack(PLAYLIST[_playOrder[_playIdx]]);
+  }
+
   function _startPlaylist() {
-    _playlistIndex = 0;
-    _crossfadeTo(PLAYLIST[0]);
+    if (!PLAYLIST.length) return;
+    if (!_unlocked || !_musicEnabled) return;
+    if (!_playOrder) _buildOrder();
+    _started = true;
+    _playTrack(PLAYLIST[_playOrder[_playIdx]]);
   }
 
   // ── Public API ─────────────────────────────────────────────────────
@@ -1284,33 +1371,32 @@ const AudioManager = (() => {
     unlock() {
       if (_unlocked) return;
       _unlocked = true;
-      _startPlaylist();
     },
 
-    // SFX: each call creates its own throw-away Audio element targeting
-    // the sprite file. It is completely separate from _musicEl so it
-    // can never interrupt or restart the music track.
+    // SFX: synthesized live in the Web Audio API so they never share an
+    // element or buffer with the music track and can never interrupt it.
     playSFX(type) {
       if (!_unlocked || !_sfxEnabled) return;
-      const sp = SPRITES[type];
-      if (!sp) return;
-      const el = new Audio('SoundEffects/Heart_of_the_High_Score.mp3');
-      el.volume      = _masterVolume;
-      el.currentTime = sp.start / 1000;
-      el.play().catch(() => {});
-      if (sp.end !== null) {
-        setTimeout(() => { el.pause(); el.src = ''; }, sp.end - sp.start);
-      }
+      const recipe = SFX[type];
+      if (!recipe) return;
+      const ctx = _ctx();
+      if (!ctx) return;
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      const master = ctx.createGain();
+      master.gain.value = _masterVolume;
+      master.connect(ctx.destination);
+      recipe(ctx, master, ctx.currentTime + 0.005);
     },
 
-    // Called from renderScene / renderTitle — now a no-op for music routing.
-    // The playlist runs independently of scene changes; music never restarts
-    // or skips because of navigation. This method is kept so existing
-    // renderScene / renderTitle call sites don't need any changes.
+    // Called from renderScene / renderTitle.
+    // Kicks off the playlist on the first scene render; afterwards it
+    // does nothing so navigation never interrupts the current track.
     playMusicForScene(_key) {
-      // Music plays continuously through the playlist regardless of location.
-      // No action needed here — unlock() already started it.
+      if (!_started) _startPlaylist();
     },
+
+    // Skip to the next track in the playlist (handy for testing).
+    nextTrack() { _advance(); },
 
     // Volume slider
     setMasterVolume(v) {
@@ -1326,16 +1412,13 @@ const AudioManager = (() => {
       _musicEnabled = !_musicEnabled;
       const btn = document.getElementById('btnMusic');
       if (btn) { btn.textContent = _musicEnabled ? 'ON' : 'OFF'; btn.className = 'audioToggle ' + (_musicEnabled ? 'on' : 'off'); }
-      if (!_musicEnabled && _musicEl) {
-        _musicEl.pause();
-      } else if (_musicEnabled && _unlocked) {
-        if (_musicEl) {
-          // Resume the paused track
+      if (!_musicEnabled) {
+        if (_musicEl) { try { _musicEl.pause(); } catch (e) {} }
+      } else if (_unlocked) {
+        if (_musicEl && _musicEl.paused && _musicEl.src) {
           _musicEl.play().catch(() => {});
-        } else {
-          // Restart playlist from current index
-          _currentSrc = null;
-          _crossfadeTo(PLAYLIST[_playlistIndex]);
+        } else if (!_started) {
+          _startPlaylist();
         }
       }
     },
@@ -1369,6 +1452,8 @@ const State = {
   inventory: [],
   selectedItem: null,
   vibes: { romantic: 0, silly: 0, sentimental: 0, adventure: 0 },
+  // Hidden personality stats shaped by every choice
+  stats: { adventurous: 0, curious: 0, social: 0, cautious: 0 },
 };
 
 // =============== SCENE ART RENDERERS ==================
@@ -1602,154 +1687,805 @@ const Scenes = {
 
   // === TOKYO BRANCH ===
   tokyo: {
-    name: 'TOKYO, JAPAN',
+    name: 'TOKYO, JAPAN — ARRIVAL',
     art: art_tokyo,
-    text: () => `Neon kanji flicker. Mr Porky's flippers smell like teriyaki already. Izzy is HYPNOTISED by the conveyor-belt sushi. "Porky," she whispers, "I bet you can't guess my favourite roll."`,
+    text: () => P(
+      `Neon kanji flicker. Mr Porky's flippers smell like teriyaki already. Izzy is HYPNOTISED by the conveyor-belt sushi. "Porky," she whispers, "I bet you can't guess my favourite roll."`,
+      `Neon, kanji, conveyor belts spinning faster than seems legal. Squid is already at the counter pointing at things, Mr Porky two paces behind clutching the menu like a shield. "PORKY," she calls back, "guess my favourite roll. You get one shot."`
+    ),
     choices: () => [
-      { text: '🧩 Try to guess (PUZZLE)', next: 'tokyo_puzzle', cls: 'puzzle' },
-      { text: '🍣 Just order everything (-0 coins, +romance)', next: 'tokyo_finish', effect: () => { addCoins(2); State.flags.lavish = true; } },
-      { text: '🎤 Drag her to karaoke instead', next: 'tokyo_karaoke' },
+      { text: P('🧩 Try to guess her favourite sushi (PUZZLE)', "🧩 Take Mr Porky's three-clue dare (PUZZLE)"), next: 'tokyo_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
+      { text: P('🍣 Order everything on the menu', '🍣 Order EVERYTHING — Mr Porky is already saying no'), next: 'tokyo_orderall', effect: () => { addStat('social'); addCoins(2); State.flags.lavish = true; } },
+      { text: P('🎤 Drag her to karaoke instead', '🎤 Yank Mr Porky to the karaoke booth across the street'), next: 'tokyo_karaoke', effect: () => addStat('adventurous') },
+      { text: P('📸 Take a careful photo of the menu first', '📸 Photograph the menu so Mr Porky can study it (he likes that)'), next: 'tokyo_photo', effect: () => addStat('cautious') },
+      ...( statUnlocked('social') ? [{ text: P('🗣 Chat up the sushi chef for secret recommendations', "🗣 You're already three jokes deep with the chef — push for the secret stuff"), next: 'tokyo_chef', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
+  },
+  tokyo_photo: {
+    name: 'TOKYO — Menu Research',
+    art: art_tokyo,
+    text: () => { addCoins(2); return statFlavor({
+      cau: P(
+        `You photograph each menu page systematically. Izzy finds this adorable. You order perfectly with zero waste. +2 Fish Coins.`,
+        `Squid photographs each menu page so Mr Porky can study it without panic. He goes through them with deep concentration. She decides his furrowed brow is the cutest thing in Tokyo. +2 Fish Coins.`
+      ),
+      def: P(
+        `You photograph the menu carefully. Izzy watches, amused. You end up ordering perfectly. +2 Fish Coins.`,
+        `Squid snaps the menu so Mr Porky can decide in peace. He whispers each item to himself. She orders whatever he points at and it's perfect. +2 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
+  },
+  tokyo_chef: {
+    name: "TOKYO — Chef's Secrets",
+    art: art_tokyo,
+    text: () => { addCoins(6); return P(
+      `The chef whispers the off-menu omakase. It's extraordinary. Three other tables try to order it. The chef shakes his head. Only for the charismatic penguin. +6 Fish Coins.`,
+      `Squid and the chef are now best friends. He breaks out the off-menu omakase for the table that made him laugh hardest in years. Three other tables try to order it. He shakes his head. Mr Porky just stares at her, smitten. +6 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
+  },
+  tokyo_orderall: {
+    name: 'TOKYO — THE FEAST',
+    art: art_tokyo,
+    text: () => { return P(
+      `You ate so much sushi the chef bows three times. Izzy is glowing. Mr Porky cannot move. `,
+      `Squid orders by pointing at every single thing on the belt. Twice. The chef bows three times. Mr Porky says he is full after plate seven and is still eating at plate fourteen because Squid keeps sliding things at him. `
+    )+statFlavor({
+      soc: P(
+        `A neighbouring table toasts you both. New friends made over eel rolls.`,
+        `Squid has somehow merged your table with the one beside you. The toasts are in three languages. Mr Porky knows none of them and beams anyway.`
+      ),
+      adv: P(
+        `You even tried the sea urchin. Results: controversial.`,
+        `Squid dares Mr Porky to try the sea urchin. He does. His face goes through six emotions. She will treasure the photo forever.`
+      ),
+      def: P(
+        `Everyone nearby is impressed by the sheer scale of the order.`,
+        `The whole restaurant has stopped pretending not to watch. Squid takes a small bow with a piece of tamago in her flipper.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
   },
 
   tokyo_puzzle: {
     name: 'TOKYO — SUSHI RIDDLE',
     art: art_tokyo,
-	text: () => `Izzy's eyes sparkle. "Three clues, my chubby snowball:<br>① I'm chewy. ② I turn ink-black when I'm scared. ③ I'm also what you call ME every single day. What's my favourite sushi?"`,
+	text: () => P(
+      `Izzy's eyes sparkle. "Three clues, my chubby snowball:<br>① I'm chewy. ② I turn ink-black when I'm scared. ③ I'm also what you call ME every single day. What's my favourite sushi?"`,
+      `Mr Porky clears his throat with great ceremony. "Three clues, my love. I have decided your favourite sushi is —<br>① chewy. ② turns ink-black when scared. ③ the thing I have called you every day for four years. Guess what I'm thinking of."`
+    ),
     puzzle: {
       prompt: 'Type your answer:',
       validate: (s) => /squid/i.test(s.trim()),
       onWin: 'tokyo_finish_win',
       onLose: 'tokyo_finish_lose',
-      hint: '(Hint: you literally call her this 24/7 🦑)',
+      hint: '(Hint: there is, in fact, a squid at this table 🦑)',
     },
   },
   tokyo_finish_win: {
     name: 'TOKYO — 🦑 SUCCESS',
     art: art_tokyo,
-    text: () => { addCoins(5); return `"SQUID!" you shout. Izzy turns as pink as a flamingo and flippers you square in the beak. The sushi chef winks and slides over a free squid ink roll. +5 Fish Coins!`; },
-    choices: () => [{ text: '➡ Where to next?', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(5); return P(
+      `"SQUID!" you shout. Izzy turns as pink as a flamingo and flippers you square in the beak. The sushi chef winks and slides over a free squid ink roll. +5 Fish Coins!`,
+      `"SQUID — Porky that's me, you're describing ME." She turns pink, kisses him on the beak in front of the entire restaurant, and the chef slides over a free squid ink roll on the house. +5 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
   },
   tokyo_finish_lose: {
     name: 'TOKYO — close enough',
     art: art_tokyo,
-    text: () => { addCoins(1); return `"Tuna? TUNA?? Porky we've been dating four years." She forgives you (eventually). The chef takes pity. +1 Fish Coin.`; },
-    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(1); return P(
+      `"Tuna? TUNA?? Porky we've been dating four years." She forgives you (eventually). The chef takes pity. +1 Fish Coin.`,
+      `"Tuna." Mr Porky stares. "My love. The clues were chewy and ink-black. You ARE a squid." She blames the conveyor belt for distracting her. The chef takes pity. +1 Fish Coin.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
   },
   tokyo_finish: {
     name: 'TOKYO — feast',
     art: art_tokyo,
-    text: () => `You ate so much sushi the chef bows three times. Izzy is glowing. Mr Porky cannot move.`,
-    choices: () => [{ text: '➡ Roll yourselves to the next stop', next: 'choose2', effect: countStop }],
+    text: () => P(
+      `You ate so much sushi the chef bows three times. Izzy is glowing. Mr Porky cannot move.`,
+      `You ate so much sushi the chef bows three times. Mr Porky has not stopped smiling. Squid considers ordering one more thing for the road.`
+    ),
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
   },
   tokyo_karaoke: {
     name: 'TOKYO — KARAOKE BOX',
     art: art_tokyo,
-    text: () => { addCoins(3); return `Mr Porky belts out "Ice Ice Baby" off-key. Izzy films it. The whole bar applauds the brave little penguin. +3 Fish Coins (tips!)`; },
-    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(3); return P(
+      `Mr Porky belts out "Ice Ice Baby" off-key. Izzy films it. The whole bar applauds the brave little penguin. +3 Fish Coins (tips!)`,
+      `Squid books the biggest booth, picks "Bohemian Rhapsody," and hands the second mic to Mr Porky who pleads with his eyes for mercy. He gets none. He nails the falsetto. The whole bar tips. +3 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'tokyo_r2' }],
+  },
+
+  tokyo_r2: {
+    name: 'TOKYO — EVENING IN THE CITY',
+    art: art_tokyo,
+    text: () => P(
+      `The neon deepens as night falls. Tokyo has ten thousand more faces to show you.`,
+      `The neon deepens. Squid has Mr Porky by the flipper and is already walking before either of you has decided where. Tokyo has ten thousand more faces to show you and she intends to see them all tonight.`
+    )+statFlavor({
+      adv: P(
+        ` You spot a side-street crowd. Something interesting is happening.`,
+        ` Mr Porky spots a side-street crowd doing something probably illegal. Squid lights up.`
+      ),
+      cur: P(
+        ` A tiny bookshop glows in an alley — stuffed with manga and maps.`,
+        ` A tiny bookshop glows in an alley. Mr Porky is already stopped, peering in. Squid would like to look but mostly she would like to watch HIM look.`
+      ),
+      soc: P(
+        ` A group of locals invites you to join their street food crawl.`,
+        ` A group of locals has somehow already invited Squid onto their street-food crawl. Mr Porky has not yet been consulted.`
+      ),
+      cau: P(
+        ` You check the guidebook and find a perfectly reviewed evening spot.`,
+        ` Mr Porky has the guidebook open. Squid lets him pick — she'll like it because he picked it.`
+      ),
+      def: P(
+        ` The night is yours. What calls to you?`,
+        ` The night is yours. What does Squid drag Mr Porky toward first?`
+      ),
+    }),
+    choices: () => [
+      { text: P('🏯 Visit Senso-ji temple at dusk', '🏯 Drag Mr Porky to Senso-ji for the lanterns'), next: 'tokyo_temple', effect: () => addStat('curious') },
+      { text: P('🛍 Harajuku fashion district', '🛍 Harajuku — Squid wants to dress Mr Porky up'), next: 'tokyo_harajuku', effect: () => addStat('social') },
+      { text: P('🎮 Akihabara arcade', '🎮 Akihabara — Squid wants to BEAT Mr Porky at something'), next: 'tokyo_arcade', effect: () => addStat('adventurous') },
+      { text: P('🌃 Quiet rooftop garden', '🌃 Quiet rooftop garden — Mr Porky needs a breather'), next: 'tokyo_rooftop', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🍜 Hidden ramen spot only locals know', '🍜 Hidden ramen spot only locals know — Squid is HUNGRY'), next: 'tokyo_hidden_ramen', cls: 'special', effect: () => { addStat('adventurous'); addStat('social'); } }] : [] ),
+    ],
+  },
+  tokyo_temple: {
+    name: 'TOKYO — Senso-ji at Dusk',
+    art: art_tokyo,
+    text: () => { addCoins(3); return statFlavor({
+      cur: P(
+        `You read every placard, learn the temple's history, and light incense for the journey ahead. Izzy is moved. +3 Fish Coins.`,
+        `Mr Porky reads every placard. Squid reads two and then watches him read the rest with the kind of focus he saves for things he loves. She lights incense for him. +3 Fish Coins.`
+      ),
+      soc: P(
+        `A kind monk explains the rituals. You both try your hand at fortune sticks. Yours says \"great luck in love.\" Izzy's says \"beware the penguin.\" You're fine with both. +3 Fish Coins.`,
+        `Squid is already mid-conversation with a kind monk by the time Mr Porky catches up. Fortune sticks: hers says \"great luck in love,\" his says \"beware the squid.\" She finds this hilarious. +3 Fish Coins.`
+      ),
+      def: P(
+        `The lanterns glow golden. Tourists part for the penguins. You stand quietly and feel very small, in the best way. +3 Fish Coins.`,
+        `The lanterns glow golden. Squid stops talking — actually stops — for a full minute. Mr Porky notices and squeezes her flipper. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  tokyo_harajuku: {
+    name: 'TOKYO — Harajuku',
+    art: art_tokyo,
+    text: () => { addCoins(4); return statFlavor({
+      soc: P(
+        `Izzy tries on six outfits. You get adopted into someone's street-fashion photoshoot. Tokyo Instagram famous for 48hrs. +4 Fish Coins.`,
+        `Squid tries on twelve outfits and the entire shop is now in her photoshoot. Mr Porky is wearing a beret he did not consent to. Tokyo Instagram famous for a week. +4 Fish Coins.`
+      ),
+      adv: P(
+        `You pick the most outrageous costume items available. Izzy looks delighted and slightly terrified. +4 Fish Coins.`,
+        `Squid styles Mr Porky in the most ridiculous combination she can assemble — sequins, sunglasses, a feather boa. He bears it with quiet dignity. She nearly cries laughing. +4 Fish Coins.`
+      ),
+      def: P(
+        `Colour everywhere. Izzy buys a tiny accessory. You buy a hat that doesn't fit your beak but you love it. +4 Fish Coins.`,
+        `Colour everywhere. Squid buys six tiny accessories and pins them all on Mr Porky. He keeps the smallest one and refuses to take it off for the rest of the trip. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  tokyo_arcade: {
+    name: 'TOKYO — Akihabara',
+    art: art_tokyo,
+    text: () => { addCoins(3); return statFlavor({
+      adv: P(
+        `You attempt the claw machine fourteen times and WIN. Izzy gets the stuffed penguin. It now lives on her bed. +3 Fish Coins.`,
+        `Squid attempts the claw machine seventeen times. On the eighteenth she WINS, presents the stuffed penguin to Mr Porky like a trophy, and refuses to admit how proud she is. He sleeps with it that night. +3 Fish Coins.`
+      ),
+      cur: P(
+        `You dissect every game mechanic, explain them all to Izzy, who beats you at all of them. +3 Fish Coins.`,
+        `Mr Porky studies every game mechanic carefully and explains them with great patience. Squid listens with great patience. Then she beats him at all of them. He is delighted. +3 Fish Coins.`
+      ),
+      def: P(
+        `Lights, sounds, and chaos. Mr Porky wins a prize. The prize is a tiny rubber fish. He is very pleased. +3 Fish Coins.`,
+        `Lights, sounds, and chaos — Squid's natural habitat. She wins a tiny rubber fish and presents it to Mr Porky who treats it like an heirloom. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  tokyo_rooftop: {
+    name: 'TOKYO — Rooftop Garden',
+    art: art_tokyo,
+    text: () => { addCoins(3); State.flags.romantic = true; return statFlavor({
+      cau: P(
+        `A quiet garden above the city. You arrived early, got the best spot, and watched the city lights come on one by one. Worth every careful coin. +3 Fish Coins.`,
+        `Squid brought Mr Porky here because she could see he was getting overwhelmed. The garden is quiet. She sits next to him and stops moving entirely, which is its own kind of love letter. +3 Fish Coins.`
+      ),
+      def: P(
+        `Peace above the noise. Izzy rests her head on your wing. The city hums far below. +3 Fish Coins.`,
+        `Peace above the noise. Squid rests her head on Mr Porky's wing for once instead of the other way around. The city hums far below. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  tokyo_hidden_ramen: {
+    name: 'TOKYO — Secret Ramen',
+    art: art_tokyo,
+    text: () => { addCoins(8); return P(
+      `No sign. No menu. The chef looks you in the eye and nods. What arrives is transcendent. Izzy cries into her broth. Happy tears. The best ramen on earth. +8 Fish Coins.`,
+      `No sign. No menu. The chef looks Squid in the eye and nods — she found this place, she earned it. What arrives is transcendent. Mr Porky stops eating to watch her face. She is crying happy tears into the broth. +8 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
   },
 
   // === PARIS BRANCH ===
   paris: {
-    name: 'PARIS, FRANCE',
+    name: 'PARIS, FRANCE — ARRIVAL',
     art: art_paris,
-    text: () => `The Eiffel Tower glitters. Izzy gasps so loud a passing baker drops a baguette. Mr Porky considers his options carefully — this is a ROMANCE moment.`,
+    text: () => P(
+      `The Eiffel Tower glitters. Izzy gasps so loud a passing baker drops a baguette. Mr Porky considers his options carefully — this is a ROMANCE moment.`,
+      `The Eiffel Tower glitters. Squid gasps so loud a passing baker drops a baguette. Mr Porky catches it on instinct, looks at the tower, looks at her, and goes very still — he is having a quiet ROMANCE moment that Squid has not yet noticed.`
+    ),
     choices: () => [
-      { text: '🥖 Buy the dropped baguette and feed her bites of it', next: 'paris_bread', cls: 'special' },
-      { text: '🎨 Sketch her under the tower (artiste mode)', next: 'paris_sketch' },
-      { text: '☕ Café au lait at a tiny bistro', next: 'paris_cafe' },
+      { text: P('🥖 Buy the dropped baguette and feed her bites', '🥖 Tear the baguette and feed Mr Porky a bite first'), next: 'paris_bread', cls: 'special', effect: () => addStat('social') },
+      { text: P('🎨 Sketch her portrait under the tower', '🎨 Demand Mr Porky sit still — sketch HIM under the tower'), next: 'paris_sketch', effect: () => addStat('curious') },
+      { text: P('☕ Café au lait at a tiny bistro', '☕ Café au lait — Squid spotted the bistro three streets back'), next: 'paris_cafe', effect: () => addStat('cautious') },
+      { text: P('🗼 Race to the top of the Eiffel Tower', '🗼 Mr Porky just dared you to race the steps — accept'), next: 'paris_tower', effect: () => addStat('adventurous') },
+      ...( statUnlocked('curious') ? [{ text: P('🖼 Sneak into the Louvre after hours', '🖼 Talk your way into the Louvre after hours (Squid is feeling persuasive)'), next: 'paris_louvre', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
     ],
   },
-  paris_bread: {
-    name: 'PARIS — Baguette love',
+  paris_tower: {
+    name: 'PARIS — Top of the Tower',
     art: art_paris,
-    text: () => { addCoins(4); return `She declares it "the most romantic carb of her life." A nearby accordion player begins playing softly. +4 Fish Coins (the baker tips YOU).`; },
-    choices: () => [{ text: '➡ Continue the journey', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(5); return statFlavor({
+      adv: P(
+        `You race up all 1,665 steps. Izzy beats you by two seconds, which she will mention every day for the rest of your lives. +5 Fish Coins.`,
+        `Squid takes all 1,665 steps two at a time and beats Mr Porky by a clear thirty seconds. He arrives gasping and dignified. She will mention the win every day for the rest of their lives. +5 Fish Coins.`
+      ),
+      def: P(
+        `The view from the top is everything. Paris spreads below like a golden map. Izzy stands at the railing and laughs. +5 Fish Coins.`,
+        `The view from the top is everything. Squid leans on the railing and laughs at the size of it. Mr Porky leans on her. +5 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'paris_r2' }],
+  },
+  paris_louvre: {
+    name: 'PARIS — After-Hours Louvre',
+    art: art_paris,
+    text: () => { addCoins(9); State.flags.romantic = true; return P(
+      `Just you, Izzy, and seven thousand years of art. A security guard finds you. He is a penguin enthusiast. He gives you a private tour instead. +9 Fish Coins.`,
+      `Just you, Mr Porky, and seven thousand years of art. A security guard finds you — Squid greets him by name within thirty seconds because she made friends at the entrance. He turns out to be a penguin enthusiast. Private tour, just for you. +9 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'paris_r2' }],
+  },
+  paris_bread: {
+    name: 'PARIS — Baguette Love',
+    art: art_paris,
+    text: () => { addCoins(4); return statFlavor({
+      soc: P(
+        `She declares it "the most romantic carb of her life." The baker, moved, plays accordion from his doorstep. You have made a new friend. +4 Fish Coins.`,
+        `Mr Porky takes the bite Squid offers and goes pink — declares it "the best bread of his entire life," loud enough that the baker hears. The baker, moved, plays accordion from his doorstep. Squid has somehow already learned his name. +4 Fish Coins.`
+      ),
+      def: P(
+        `She declares it "the most romantic carb of her life." A nearby accordion player begins playing softly. The baker tips YOU. +4 Fish Coins.`,
+        `Mr Porky takes the bite Squid offers, goes pink, and won't let go of her flipper. A nearby accordion player begins playing softly. The baker tips Squid. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'paris_r2' }],
   },
   paris_sketch: {
     name: 'PARIS — Artiste',
     art: art_paris,
-    text: () => { addCoins(2); return `Your sketch looks more like a potato with eyes, but Izzy LOVES it. She frames it later. +2 Fish Coins.`; },
-    choices: () => [{ text: '➡ Continue the journey', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(2); return statFlavor({
+      cur: P(
+        `You study her face very carefully before drawing. The result is still a potato with eyes, but an extremely thoughtful potato. She frames it immediately. +2 Fish Coins.`,
+        `Squid studies Mr Porky's face very carefully — the way his beak crinkles when he's trying not to fidget. The result is a potato with eyes. He calls it a masterpiece and frames it that night. +2 Fish Coins.`
+      ),
+      def: P(
+        `Your sketch looks more like a potato with eyes, but Izzy LOVES it. She frames it later. +2 Fish Coins.`,
+        `Squid's sketch looks more like a potato with a beak, but Mr Porky LOVES it. He carries it folded in his coat for the rest of the trip. +2 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'paris_r2' }],
   },
   paris_cafe: {
     name: 'PARIS — Café',
     art: art_paris,
-    text: () => { addCoins(3); return `You both share a chocolat chaud. ${partner()} gets whipped cream on their beak. ${me()} melts. +3 Fish Coins.`; },
-    choices: () => [{ text: '➡ Continue the journey', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(3); return P(
+      `You both share a chocolat chaud. ${partner()} gets whipped cream on their beak. ${me()} melts. `,
+      `Squid had this café bookmarked before they even landed. The chocolat chaud is exactly as advertised. Mr Porky gets whipped cream on his beak. Squid laughs so hard she snorts. He pretends to be wounded; he is not. `
+    )+statFlavor({
+      cau: P(
+        `You'd read three reviews before choosing this exact café. Perfect choice. +3 Fish Coins.`,
+        `Squid had read seven reviews and a blog post. Mr Porky doesn't say anything but he is impressed. +3 Fish Coins.`
+      ),
+      def: `+3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'paris_r2' }],
+  },
+  paris_r2: {
+    name: 'PARIS — AFTERNOON IN THE CITY OF LIGHT',
+    art: art_paris,
+    text: () => P(
+      `The afternoon light turns golden over the Seine. Paris has one more gift for you.`,
+      `The afternoon light turns golden over the Seine. Squid has already eaten one ice cream and is eyeing a second. Paris has one more gift for you.`
+    )+statFlavor({
+      adv: P(
+        ` You hear music coming from a bridge. Something is happening down there.`,
+        ` Music drifts up from a bridge. Mr Porky perks up — he wants to investigate.`
+      ),
+      cur: P(
+        ` A bookstall along the river catches your eye — ancient maps and curious books.`,
+        ` Mr Porky is already stopped at a bookstall, fingers on a leather spine. Squid waits patiently for him, which is its own miracle.`
+      ),
+      soc: P(
+        ` A couple nearby asks if you'd join their picnic. Strangers become friends here.`,
+        ` Squid has been talking to a couple by the railing for the last two minutes. They have invited you both to their picnic.`
+      ),
+      cau: P(
+        ` You find a quiet bench by the river. Perfect. Just right.`,
+        ` Squid spots a quiet bench by the river. She sits Mr Porky down because he's been on his flippers all afternoon.`
+      ),
+      def: P(
+        ` The afternoon is yours.`,
+        ` The afternoon is yours. What does Squid pull Mr Porky toward next?`
+      ),
+    }),
+    choices: () => [
+      { text: P('🌉 Dance on the Pont des Arts bridge', '🌉 Dance on the bridge — Mr Porky is already humming'), next: 'paris_dance', effect: () => addStat('adventurous') },
+      { text: P('📚 Browse the Seine bookstalls', '📚 Let Mr Porky get lost in the bookstalls'), next: 'paris_books', effect: () => addStat('curious') },
+      { text: P('🧺 Picnic on the riverbank', '🧺 Join the strangers Squid is already laughing with'), next: 'paris_picnic', effect: () => { addStat('social'); addStat('cautious'); } },
+      { text: P('🎡 Ferris wheel at the Tuileries', '🎡 Ferris wheel — Squid wants the WHOLE city laid out'), next: 'paris_ferris', effect: () => addStat('romantic') },
+      ...( statUnlocked('social') ? [{ text: P("🥂 Join a stranger's anniversary toast", "🥂 Squid already said yes for both of you — go toast"), next: 'paris_toast', cls: 'special', effect: () => addStat('social') }] : [] ),
+    ],
+  },
+  paris_dance: {
+    name: 'PARIS — Bridge Dancing',
+    art: art_paris,
+    text: () => { addCoins(5); return statFlavor({
+      adv: P(
+        `You grab Izzy and waltz directly into the middle of the crowd. They cheer. You have no idea how to waltz. You do it anyway. +5 Fish Coins.`,
+        `Squid grabs Mr Porky and tows him into the middle of the crowd. He turns out to know exactly how to waltz, which neither of you saw coming. The crowd goes wild. She is so proud she could burst. +5 Fish Coins.`
+      ),
+      def: P(
+        `A busker plays. You and Izzy sway on the bridge while Paris watches. Someone photographs it. +5 Fish Coins.`,
+        `A busker plays. Squid leans into Mr Porky and sways. Paris watches. Someone takes the photo that will live on their fridge for the rest of their lives. +5 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  paris_books: {
+    name: 'PARIS — Bouquinistes',
+    art: art_paris,
+    text: () => { addCoins(3); return statFlavor({
+      cur: P(
+        `You find a 1902 map of the world with Antarctic penguins illustrated in the corner. Fate. You buy it. Izzy cries a little. +3 Fish Coins.`,
+        `Mr Porky finds a 1902 map of the world with Antarctic penguins illustrated in the corner. He goes very quiet. Squid buys it for him before he can think about whether to splurge. He cries a little. +3 Fish Coins.`
+      ),
+      def: P(
+        `You find a beautiful old map. Izzy picks a tiny illustrated story. You both sit and read on the riverbank. +3 Fish Coins.`,
+        `Mr Porky picks a beautiful old map. Squid picks a children's book in French that she absolutely cannot read. They sit on the riverbank pretending to read in unison. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  paris_picnic: {
+    name: 'PARIS — Seine Picnic',
+    art: art_paris,
+    text: () => { addCoins(4); State.flags.romantic = true; return statFlavor({
+      soc: P(
+        `The strangers turn out to be a lovely family from Lyon. You exchange addresses. Izzy promises to send a postcard from Antarctica. She absolutely will. +4 Fish Coins.`,
+        `The strangers turn out to be a lovely family from Lyon — Squid already has the grandmother's recipe for tarte tatin. She promises to send a postcard from Antarctica. She absolutely will. +4 Fish Coins.`
+      ),
+      def: P(
+        `Cheese, fruit, and the sound of the river. Izzy falls asleep on your wing for twenty minutes. Bliss. +4 Fish Coins.`,
+        `Cheese, fruit, and the sound of the river. Mr Porky falls asleep with his head on Squid's wing for twenty minutes. She doesn't move a muscle the entire time. Bliss. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  paris_ferris: {
+    name: 'PARIS — Grande Roue',
+    art: art_paris,
+    text: () => { addCoins(4); State.flags.romantic = true; return P(
+      `At the top, you can see the whole city. Izzy points out the Eiffel Tower. "We were just there," she says softly. The wheel turns. You wish it wouldn't. +4 Fish Coins.`,
+      `At the top, the whole city is laid out. Squid points out the Eiffel Tower, the bistro, the bridge — everywhere they have already been today. Mr Porky leans into her shoulder and quietly wishes the wheel wouldn't turn. +4 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  paris_toast: {
+    name: 'PARIS — Anniversary Toast',
+    art: art_paris,
+    text: () => { addCoins(7); State.flags.romantic = true; return P(
+      `The couple has been married forty years. They insist you join their toast. The champagne is extraordinary. The speech the husband gives makes everyone cry. "Find someone who looks at you the way that penguin looks at the other penguin," he says, pointing at you both. +7 Fish Coins.`,
+      `The couple has been married forty years. Squid had befriended them within ninety seconds of arriving. They insist you join their toast. The champagne is extraordinary. The husband's speech makes everyone cry. "Find someone who looks at you the way that penguin looks at the other penguin," he says, pointing at Mr Porky who is currently looking only at Squid. +7 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
   },
 
   // === MOROCCO BRANCH ===
   morocco: {
-    name: 'MARRAKECH, MOROCCO',
+    name: 'MARRAKECH, MOROCCO — ARRIVAL',
     art: art_morocco,
     text: () => P(
       `The souk is an explosion of colour, spice, and chaos. Mr Porky nearly gets carried off by a carpet salesman who mistakes him for a very expensive stuffed toy. Izzy is already haggling in broken French.`,
       `The souk is overwhelming — in the BEST way. Squid drags Mr Porky from stall to stall at top speed. He is carrying seventeen bags and has lost the feeling in his left flipper. He's never been happier.`
     ),
     choices: () => [
-      { text: '🏺 Explore the spice souk', next: 'morocco_souk', cls: 'special' },
-      { text: '🍵 Mint tea ceremony', next: 'morocco_tea' },
-      { text: '🌙 Rooftop stargazing over the medina', next: 'morocco_stars' },
+      { text: P('🏺 Explore the spice souk', '🏺 Squid is sniffing every spice — let her loose'), next: 'morocco_souk', cls: 'special', effect: () => addStat('curious') },
+      { text: P('🍵 Mint tea ceremony', '🍵 Mint tea ceremony — Squid wants Mr Porky to do the formal sit'), next: 'morocco_tea', effect: () => addStat('cautious') },
+      { text: P('🌙 Rooftop stargazing over the medina', '🌙 Drag Mr Porky up for rooftop stargazing'), next: 'morocco_stars', effect: () => addStat('social') },
+      { text: P('🐪 Camel ride through the outskirts', '🐪 Mr Porky just signed up for camels — go with him'), next: 'morocco_camel', effect: () => addStat('adventurous') },
+      ...( statUnlocked('curious') ? [{ text: P('🗺 Find the hidden hammam the guidebook missed', '🗺 Charm directions to the hidden hammam from a stranger'), next: 'morocco_hammam', cls: 'special', effect: () => addStat('curious') }] : [] ),
     ],
+  },
+  morocco_camel: {
+    name: 'MOROCCO — Camel Ride',
+    art: art_morocco,
+    text: () => { addCoins(4); return statFlavor({
+      adv: P(
+        `Your camel, Abdul, is extremely opinionated and races ahead of the tour group. You are briefly the leader of a camel stampede. Izzy laughs until she falls off hers (safely). +4 Fish Coins.`,
+        `Mr Porky's camel, Abdul, is extremely opinionated and races ahead of the tour group. He is briefly leading a camel stampede with the most dignified expression imaginable. Squid laughs until she falls off hers (safely) and Mr Porky doubles back to retrieve her, still atop Abdul. +4 Fish Coins.`
+      ),
+      def: P(
+        `Your camel is dignified. You are dignified. Izzy is having the time of her life filming both of you. +4 Fish Coins.`,
+        `Mr Porky's camel is dignified. Mr Porky is dignified. Squid is filming all of it from a camel that has personally chosen her. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'morocco_r2' }],
+  },
+  morocco_hammam: {
+    name: 'MOROCCO — Hidden Hammam',
+    art: art_morocco,
+    text: () => { addCoins(7); return P(
+      `A tiny door. A magical space. Warm tiles, rose water, and total peace. The attendant seems unsurprised by penguins. "We get all sorts," he says. +7 Fish Coins.`,
+      `A tiny door. A magical space. Squid treats the attendant like an old friend within minutes — he turns out to know exactly which tile bench Mr Porky should rest on. Warm tiles, rose water, total peace. Squid is in heaven. +7 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'morocco_r2' }],
   },
   morocco_souk: {
     name: 'MOROCCO — Spice Souk',
     art: art_morocco,
-    text: () => { addCoins(5); State.flags.romantic = true; return `${P('Mr Porky', 'Squid')} finds a stall selling tiny glass lanterns. Picks the brightest one for ${partner()}. ${partner()} holds it the whole way home. +5 Fish Coins (the vendor was so moved they gave a discount).`; },
-    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(5); State.flags.romantic = true; return statFlavor({
+      cur: P(
+        `You learn what every spice is, where it comes from, and how to use it. The vendor is delighted. Mr Porky finds a tiny lantern for Izzy. +5 Fish Coins.`,
+        `Squid is asking the vendor questions in three languages by the time Mr Porky catches up. She finds him a tiny lantern shaped like a star, mostly because of the look on his face when he sees it. +5 Fish Coins.`
+      ),
+      def: P(
+        `Mr Porky finds a stall selling tiny glass lanterns. Picks the brightest one for Izzy. Izzy holds it the whole way home. +5 Fish Coins.`,
+        `Squid finds a stall selling tiny glass lanterns. Picks the brightest one for Mr Porky. He holds it the whole way home like a prize. +5 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'morocco_r2' }],
   },
   morocco_tea: {
     name: 'MOROCCO — Mint Tea',
     art: art_morocco,
-    text: () => { addCoins(3); return `The tea is poured from a tremendous height by a man with a tremendous moustache. ${P('Izzy', 'Mr Porky')} spills it immediately. The man with the moustache sighs deeply. +3 Fish Coins anyway.`; },
-    choices: () => [{ text: '➡ Continue!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(3); return P(
+      `The tea is poured from a tremendous height by a man with a tremendous moustache. Izzy spills it immediately. The man with the moustache sighs deeply. `,
+      `The tea is poured from a tremendous height by a man with a tremendous moustache. Mr Porky concentrates with such intensity that he spills it immediately. Squid muffles a laugh. The moustache sighs deeply. `
+    )+statFlavor({
+      cau: P(
+        `You had read about this ceremony and knew exactly how to sit and receive the cup. The man with the moustache is impressed. +3 Fish Coins.`,
+        `Squid had read about this ceremony on the plane and walked Mr Porky through the steps three times. The moustache is impressed. +3 Fish Coins.`
+      ),
+      def: `+3 Fish Coins anyway.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'morocco_r2' }],
   },
   morocco_stars: {
     name: 'MOROCCO — Rooftop Night',
     art: art_morocco,
-    text: () => { addCoins(4); State.flags.romantic = true; return `The entire city glitters below. A call to prayer echoes across the rooftops. ${P('Izzy', 'Mr Porky')} leans on ${P("Mr Porky's", "Squid's")} wing and sighs contentedly. +4 Fish Coins.`; },
-    choices: () => [{ text: '➡ Next adventure!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(4); State.flags.romantic = true; return P(
+      `The entire city glitters below. A call to prayer echoes across the rooftops. Izzy leans on Mr Porky's wing and sighs contentedly. `,
+      `The entire city glitters below. A call to prayer echoes across the rooftops. Mr Porky leans on Squid's wing — for once it's her holding him up — and sighs contentedly. `
+    )+statFlavor({
+      soc: P(
+        `You get talking with the rooftop owner. He brings out better tea. You stay two hours. +4 Fish Coins.`,
+        `Squid is friends with the rooftop owner before either of them sat down. He brings out the better tea. You stay two hours. +4 Fish Coins.`
+      ),
+      def: `+4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'morocco_r2' }],
+  },
+  morocco_r2: {
+    name: 'MARRAKECH — SUNSET IN THE MEDINA',
+    art: art_morocco,
+    text: () => P(
+      `The call to prayer rolls across the city as the sun dips. The medina glows amber. One more memory to make.`,
+      `The call to prayer rolls across the city as the sun dips. The medina glows amber. Squid has Mr Porky by the flipper again — his beak is dusted with cinnamon and he hasn't noticed. One more memory to make.`
+    )+statFlavor({
+      adv: P(
+        ` Someone is lighting fire torches in the square. You're already walking towards it.`,
+        ` Someone is lighting fire torches in the square. Mr Porky is already walking towards it. Squid is impressed.`
+      ),
+      cur: P(
+        ` A storyteller is beginning a tale in the main square. The crowd leans in.`,
+        ` A storyteller is beginning a tale in the main square. Mr Porky has gone very still — he's interested. Squid wants to watch him watching the storyteller.`
+      ),
+      soc: P(
+        ` A musician waves you over. He wants to teach a penguin a Gnawa rhythm.`,
+        ` A musician waves Squid over — they were chatting earlier and she promised to come back. He wants to teach Mr Porky a Gnawa rhythm.`
+      ),
+      cau: P(
+        ` The riad courtyard is quiet and beautiful. You could sit here forever.`,
+        ` The riad courtyard is quiet and beautiful. Mr Porky is flagging a little. Squid wants to bring him there.`
+      ),
+      def: P(
+        ` The evening is yours.`,
+        ` The evening is yours. Squid intends to spend it on Mr Porky.`
+      ),
+    }),
+    choices: () => [
+      { text: P('🔥 Watch the fire performers at Jemaa el-Fna', '🔥 Follow Mr Porky to the fire performers'), next: 'morocco_fire', effect: () => addStat('adventurous') },
+      { text: P('📖 Listen to a traditional storyteller', '📖 Sit with Mr Porky for the storyteller'), next: 'morocco_story', effect: () => addStat('curious') },
+      { text: P('🎵 Learn a Gnawa drumbeat from a musician', '🎵 Drag Mr Porky over to your musician friend'), next: 'morocco_drum', effect: () => addStat('social') },
+      { text: P('🌹 Rest in the riad courtyard with mint tea', '🌹 Settle Mr Porky in the riad courtyard — he needs the breather'), next: 'morocco_riad', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🏜 Midnight desert walk outside the city', '🏜 Midnight desert walk — Squid wants the silence'), next: 'morocco_desert', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+    ],
+  },
+  morocco_fire: {
+    name: 'MOROCCO — Fire Performers',
+    art: art_morocco,
+    text: () => { addCoins(4); return statFlavor({
+      adv: P(
+        `A performer tosses you a torch. You CATCH IT. The crowd goes wild. Izzy is simultaneously proud and terrified. +4 Fish Coins.`,
+        `A performer tosses Mr Porky a torch and he CATCHES IT — neither of you knew he could do that. The crowd goes wild. Squid screams and is not embarrassed about it. +4 Fish Coins.`
+      ),
+      def: P(
+        `The fire spins in the dark. The crowd chants. You and Izzy watch, shoulder to shoulder. The heat feels good against penguin feathers. +4 Fish Coins.`,
+        `The fire spins in the dark. The crowd chants. Squid presses into Mr Porky's side because she gets cold easily. The heat feels good against penguin feathers. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  morocco_story: {
+    name: 'MOROCCO — The Storyteller',
+    art: art_morocco,
+    text: () => { addCoins(3); return statFlavor({
+      cur: P(
+        `The tale is ancient — a traveller, a lantern, and a choice. You understand it in a language you don't speak. Izzy says it was about you both. You think she's right. +3 Fish Coins.`,
+        `The tale is ancient — a traveller, a lantern, and a choice. Mr Porky is so still you'd think he was holding his breath. When it ends he says quietly that it was about both of them. Squid agrees. +3 Fish Coins.`
+      ),
+      def: P(
+        `The story weaves through the night air. You don't understand the words but the shape of it is clear. Something about love and distance and return. +3 Fish Coins.`,
+        `The story weaves through the night air. You don't understand the words but Mr Porky understands the shape — Squid can tell from his face. Something about love and distance and return. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  morocco_drum: {
+    name: 'MOROCCO — Gnawa Rhythm',
+    art: art_morocco,
+    text: () => { addCoins(5); return statFlavor({
+      soc: P(
+        `You pick it up immediately. The musician calls you a natural. He invites you back next year. You fully intend to return. +5 Fish Coins.`,
+        `Squid picks it up immediately. The musician calls her a natural. By the third song she has Mr Porky drumming a bassline he didn't know he had in him. The musician invites them back next year. They fully intend to return. +5 Fish Coins.`
+      ),
+      def: P(
+        `Your timing is terrible. Izzy's is perfect. The musician shrugs and hands you both drums anyway. The rhythm finds you eventually. +5 Fish Coins.`,
+        `Squid's timing is perfect. Mr Porky's is terrible. The musician shrugs and hands him a smaller drum and a kind expression. The rhythm finds him eventually. Squid claps every time he lands a beat. +5 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  morocco_riad: {
+    name: 'MOROCCO — Riad Courtyard',
+    art: art_morocco,
+    text: () => { addCoins(3); State.flags.romantic = true; return P(
+      `Fountain, roses, starlight. Izzy dozes briefly against Mr Porky's wing. `,
+      `Fountain, roses, starlight. Mr Porky dozes briefly against Squid's wing for the second time today and she has decided this is going to be a regular thing. `
+    )+statFlavor({
+      cau: P(
+        `You had specifically researched this riad for its courtyard. Every review was correct. +3 Fish Coins.`,
+        `Squid had specifically researched this riad for its courtyard, mostly because she knew Mr Porky would love the fountain. Every review was correct. +3 Fish Coins.`
+      ),
+      def: `Some moments are too quiet to describe. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  morocco_desert: {
+    name: 'MOROCCO — Midnight Desert',
+    art: art_morocco,
+    text: () => { addCoins(9); State.flags.romantic = true; return P(
+      `No city lights. No noise. Just sand, stars, and the two of you, so far out the city is only a warm glow on the horizon. Izzy finds this terrifying and beautiful in exactly equal measure. You agree. +9 Fish Coins.`,
+      `No city lights. No noise. Just sand, stars, and the two of you, so far out the city is only a warm glow on the horizon. Squid is quiet — actually quiet — for the first time all day. Mr Porky is the one to speak first, very softly. She nods. +9 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
   },
 
   // === SCOTLAND BRANCH ===
   scotland: {
-    name: 'SCOTTISH HIGHLANDS',
+    name: 'SCOTTISH HIGHLANDS — ARRIVAL',
     art: art_scotland,
     text: () => P(
       `Grey skies. Green hills. A sheep judges Mr Porky's waddling technique. Izzy has already made friends with the sheep. Its name is apparently Gerald.`,
       `Squid immediately announces Scotland is "basically Antarctica but with better food." Mr Porky has been swept up in a kilt and is unsure how to feel about it. Gerald the sheep watches everything.`
     ),
     choices: () => [
-      { text: '🏰 Investigate the ancient castle', next: 'scotland_castle', cls: 'puzzle' },
-      { text: '🦕 Loch Ness monster hunt', next: 'scotland_loch' },
-      { text: '🥃 Try the local "fish juice" (whisky for penguins)', next: 'scotland_whisky' },
-      { text: '🐑 Spend time with Gerald', next: 'scotland_gerald', cls: 'special' },
+      { text: P('🏰 Investigate the ancient castle', '🏰 Drag Mr Porky inside the castle'), next: 'scotland_castle', cls: 'puzzle', effect: () => addStat('curious') },
+      { text: P('🦕 Loch Ness monster hunt', '🦕 Mr Porky wants to hunt for Nessie — go with him'), next: 'scotland_loch', effect: () => addStat('adventurous') },
+      { text: P('🥃 Try the local "fish juice" (whisky)', '🥃 Squid is already at the bar ordering for both of you'), next: 'scotland_whisky', effect: () => addStat('social') },
+      { text: P('🐑 Spend time with Gerald', '🐑 Sit with Gerald — Mr Porky has been on his flippers all day'), next: 'scotland_gerald', cls: 'special', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('⛰ Hike to the misty highland peak', '⛰ Hike to the misty peak — Squid wants the WIN'), next: 'scotland_peak', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
     ],
+  },
+  scotland_peak: {
+    name: 'SCOTLAND — Highland Peak',
+    art: art_scotland,
+    text: () => { addCoins(6); return statFlavor({
+      adv: P(
+        `You summit in record time. The mist parts just for you. Scotland stretches in every direction. Izzy is crying. You pretend the wind is making your eyes water too. +6 Fish Coins.`,
+        `Squid summits in record time and drags Mr Porky up the last hundred feet by sheer momentum. The mist parts just for them. Scotland stretches in every direction. Mr Porky is crying. Squid pretends the wind is making her eyes water too. +6 Fish Coins.`
+      ),
+      def: P(
+        `The view from the top is indescribable. Just clouds and ancient green below. You both stand very still. +6 Fish Coins.`,
+        `The view from the top is indescribable. Just clouds and ancient green below. Squid stops moving for the second time today. Mr Porky takes her flipper. +6 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
   },
   scotland_castle: {
     name: 'SCOTLAND — Castle Mystery',
     art: art_scotland,
-    text: () => { addCoins(6); return `Inside the castle a ghost (friendly, also confused by penguins) reveals a hidden gold coin stash behind a portrait of a very serious man. +6 Fish Coins!`; },
-    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(6); return statFlavor({
+      cur: P(
+        `Inside the castle a ghost (friendly, also confused by penguins) reveals a hidden gold coin stash. You ask the ghost seventeen historical questions. It loves this. +6 Fish Coins!`,
+        `Inside the castle Squid greets a friendly ghost like an old friend. Mr Porky asks the ghost seventeen historical questions. The ghost loves this and reveals a hidden gold coin stash by way of thanks. +6 Fish Coins.`
+      ),
+      def: P(
+        `Inside the castle a ghost (friendly, also confused by penguins) reveals a hidden gold coin stash behind a portrait of a very serious man. +6 Fish Coins!`,
+        `Inside the castle a ghost (friendly, deeply confused by Squid's enthusiasm) reveals a hidden gold coin stash behind a portrait of a very serious man. Mr Porky bows to the ghost. The ghost bows back. +6 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
   },
   scotland_loch: {
     name: 'SCOTLAND — Loch Ness',
     art: art_scotland,
-    text: () => { addCoins(2); return `You wait four hours. Nessie does not appear. Then ${P('Izzy', 'Mr Porky')} spots a large suspicious ripple and SCREAMS. It's a duck. +2 Fish Coins for the effort.`; },
-    choices: () => [{ text: '➡ Continue!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(2); return P(
+      `You wait four hours. Nessie does not appear. Then Izzy spots a large suspicious ripple and SCREAMS. It's a duck. `,
+      `Squid waits four hours, which is itself a record. Nessie does not appear. Then Mr Porky spots a large suspicious ripple and SCREAMS in a register Squid has never heard from him. It's a duck. `
+    )+statFlavor({
+      adv: P(
+        `You wade in to investigate. The duck is unimpressed. +2 Fish Coins for the effort.`,
+        `Mr Porky wades in to investigate, full of grim purpose. The duck is unimpressed. Squid is in tears laughing. +2 Fish Coins for the effort.`
+      ),
+      def: `+2 Fish Coins for the effort.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
   },
   scotland_whisky: {
     name: 'SCOTLAND — Fish Juice',
     art: art_scotland,
-    text: () => { addCoins(3); return `One sip each. ${P('Mr Porky', 'Squid')} declares it "aggressively smoky." ${P('Izzy', 'Mr Porky')} orders a second glass immediately. You carry ${P('Izzy', 'Mr Porky')} home. +3 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(3); return P(
+      `One sip each. Mr Porky declares it "aggressively smoky." Izzy orders a second glass immediately. `,
+      `One sip each. Squid declares it "aggressively smoky" and means it as a compliment. Mr Porky orders a second glass immediately because he wants to keep up with her. `
+    )+statFlavor({
+      soc: P(
+        `The distillery owner joins your table. You close the place down at midnight. The stories shared are not repeatable in print. +3 Fish Coins.`,
+        `Squid is on a first-name basis with the distillery owner before the second pour. You close the place down at midnight. Mr Porky has told three stories the bar will retell for years. +3 Fish Coins.`
+      ),
+      def: P(
+        `You carry Izzy home. +3 Fish Coins.`,
+        `Squid carries Mr Porky home, mostly because she wants to. He is humming. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
   },
   scotland_gerald: {
     name: 'SCOTLAND — Gerald',
     art: art_scotland,
-    text: () => { addCoins(4); State.flags.romantic = true; return `Gerald the sheep gives ${P('Mr Porky', 'Squid')} a very knowing look. Then headbutts ${P('Mr Porky', 'Squid')} gently into ${P("Izzy's", "Mr Porky's")} arms. ${P('Izzy', 'Mr Porky')} laughs until they can't breathe. Gerald nods. +4 Fish Coins (Gerald had coins in his wool somehow).`; },
-    choices: () => [{ text: '➡ Next stop!', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(4); State.flags.romantic = true; return P(
+      `Gerald the sheep gives Mr Porky a very knowing look. Then headbutts Mr Porky gently into Izzy's arms. Izzy laughs until she can't breathe. Gerald nods. +4 Fish Coins (Gerald had coins in his wool somehow).`,
+      `Gerald the sheep gives Squid a very knowing look — sheep to chaos-creature, mutual respect. Then headbutts her gently into Mr Porky's arms. Mr Porky laughs until he can't breathe, which is rare and wonderful. Gerald nods. +4 Fish Coins (Gerald had coins in his wool somehow).`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
+  },
+  scotland_r2: {
+    name: 'SCOTLAND — EVENING ON THE HIGHLANDS',
+    art: art_scotland,
+    text: () => P(
+      `The sky turns purple-grey, the way only Scottish skies do. Gerald watches from a nearby hill. One more adventure before you leave.`,
+      `The sky turns purple-grey, the way only Scottish skies do. Gerald watches from a nearby hill — Squid waves to him and he nods back. One more adventure before you leave.`
+    )+statFlavor({
+      adv: P(
+        ` You can see the lights of a Highland games event in the valley.`,
+        ` Mr Porky has spotted the lights of a Highland games event in the valley. He's already half-walking.`
+      ),
+      cur: P(
+        ` The castle gift shop has a small book of Highland myths. You've been eyeing it.`,
+        ` The castle library has a small book of Highland myths. Mr Porky has been eyeing it. Squid has been eyeing him eyeing it.`
+      ),
+      soc: P(
+        ` A local pub is doing a ceilidh tonight — traditional dancing, open to all.`,
+        ` A local pub is doing a ceilidh tonight — Squid has somehow already been told to come and to "bring the small one." Mr Porky is the small one.`
+      ),
+      cau: P(
+        ` A warm bothy (a tiny highland hut) offers shelter and a perfect view.`,
+        ` A warm bothy offers shelter and a perfect view. Mr Porky is shivering in a way he is pretending not to. Squid notices.`
+      ),
+      def: P(
+        ` The evening stretches ahead.`,
+        ` The evening stretches ahead. Squid has plans for it.`
+      ),
+    }),
+    choices: () => [
+      { text: P('🏋 Enter the Highland Games', '🏋 Highland Games — Squid wants a TROPHY'), next: 'scotland_games', effect: () => addStat('adventurous') },
+      { text: P('📖 Read Highland myths in the castle library', '📖 Read myths with Mr Porky in the castle library'), next: 'scotland_myths', effect: () => addStat('curious') },
+      { text: P('💃 Join the ceilidh', '💃 Ceilidh — Squid wants to spin Mr Porky'), next: 'scotland_ceilidh', effect: () => addStat('social') },
+      { text: P('🛖 Shelter in a cozy bothy', '🛖 Get Mr Porky into the warm bothy'), next: 'scotland_bothy', effect: () => addStat('cautious') },
+      ...( statUnlocked('curious') ? [{ text: P('👻 Spend the night in the haunted castle wing', '👻 Spend the night with the ghosts — Squid wants to befriend them'), next: 'scotland_haunted', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
+    ],
+  },
+  scotland_games: {
+    name: 'SCOTLAND — Highland Games',
+    art: art_scotland,
+    text: () => { addCoins(5); return statFlavor({
+      adv: P(
+        `You enter the caber toss. The caber is four times your height. You throw it approximately three centimetres. +5 Fish Coins.`,
+        `Squid enters the caber toss. The caber is four times her height. She throws it approximately three centimetres which is THREE WHOLE CENTIMETRES. Mr Porky has never been prouder. +5 Fish Coins.`
+      ),
+      def: P(
+        `Huge humans throwing enormous logs. You and Izzy cheer everyone on. Gerald turns up somehow. Gerald wins the sheep-herding round. +5 Fish Coins.`,
+        `Huge humans throwing enormous logs. Squid cheers loud enough to shift the wind. Mr Porky cheers next to her. Gerald turns up somehow and wins the sheep-herding round. +5 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  scotland_myths: {
+    name: 'SCOTLAND — Highland Library',
+    art: art_scotland,
+    text: () => { addCoins(3); return statFlavor({
+      cur: P(
+        `You find a myth about two unlikely travellers who wander the world and find their way home to each other. You read it twice. Izzy reads it over your shoulder. Neither of you mentions it. +3 Fish Coins.`,
+        `Mr Porky finds a myth about two unlikely travellers who wander the world and find their way home to each other. He reads it twice. Squid reads it over his shoulder. Neither of them mentions it. +3 Fish Coins.`
+      ),
+      def: P(
+        `Old stories about selkies, giants, and hidden lochs. Izzy falls asleep. You keep reading. +3 Fish Coins.`,
+        `Old stories about selkies, giants, and hidden lochs. Squid falls asleep on Mr Porky's shoulder before chapter two. He keeps reading anyway and turns the pages slowly so as not to wake her. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  scotland_ceilidh: {
+    name: 'SCOTLAND — Ceilidh',
+    art: art_scotland,
+    text: () => { addCoins(6); return statFlavor({
+      soc: P(
+        `You know all the steps somehow. Izzy is suspicious. "Mr Porky, have you been PRACTISING?" You have absolutely been practising. +6 Fish Coins.`,
+        `Squid knows all the steps somehow. Mr Porky narrows his eyes. "My love. Have you been PRACTISING?" She has absolutely been practising — for him. +6 Fish Coins.`
+      ),
+      def: P(
+        `Nobody can follow the steps. Everyone dances anyway. Mr. Porky tries his best but he trips over his own feet. Izzy still looks deligted and enjoys looking into Mr. Porky's eyes.. +6 Fish Coins.`,
+        `Nobody can follow the steps. Everyone dances anyway. Mr. Porky is a bit nervous but still tries his best. Both penguins look delighted. +6 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  scotland_bothy: {
+    name: 'SCOTLAND — The Bothy',
+    art: art_scotland,
+    text: () => { addCoins(3); State.flags.romantic = true; return statFlavor({
+      cau: P(
+        `You planned for this. Blanket, thermos, the exact right spot. Izzy wraps herself in your wing. Outside: wind, dark, stars. Inside: perfect. +3 Fish Coins.`,
+        `Squid planned for this — blanket, thermos, the exact right spot, all packed by her in advance because she knew Mr Porky would forget. He wraps himself into her wing without ceremony. Outside: wind, dark, stars. Inside: perfect. +3 Fish Coins.`
+      ),
+      def: P(
+        `Rain on the roof. A candle. The moors outside. Two penguins, very warm, very content. +3 Fish Coins.`,
+        `Rain on the roof. A candle. The moors outside. Two penguins, very warm, very content. Squid has not said anything for nine minutes which is, in Mr Porky's experience, the highest compliment she can pay a place. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  scotland_haunted: {
+    name: 'SCOTLAND — Haunted Castle Wing',
+    art: art_scotland,
+    text: () => { addCoins(8); return P(
+      `Three ghosts. Two are friendly. One is extremely theatrical. You ask them all historical questions. The theatrical one eventually drops the act and gives you a fascinating 400-year account of castle life. +8 Fish Coins.`,
+      `Three ghosts. Two are friendly. One is extremely theatrical. Squid befriends all three within ten minutes — even the theatrical one drops the act for her. Mr Porky asks the historical questions. They walk out with a 400-year account of castle life and a possibly haunted scarf. +8 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
   },
 
   // === EGYPT BRANCH ===
@@ -1877,43 +2613,156 @@ const Scenes = {
 
   // === AMAZON ===
   amazon: {
-    name: 'AMAZON RAINFOREST',
+    name: 'AMAZON RAINFOREST — ARRIVAL',
     art: art_amazon,
     text: () => `Hot. Wet. A toucan judges Mr Porky's outfit. Izzy spots a path leading deeper into the green.`,
     choices: () => [
-      { text: '🦋 Follow a glowing butterfly', next: 'amazon_butterfly', cls: 'special' },
-      { text: '🛶 Take a canoe down the river', next: 'amazon_river' },
-      { text: '🐍 Make friends with the snake', next: 'amazon_snake' },
+      { text: '🦋 Follow a glowing butterfly deeper in', next: 'amazon_butterfly', cls: 'special', effect: () => addStat('adventurous') },
+      { text: '🛶 Canoe down the river', next: 'amazon_river', effect: () => addStat('cautious') },
+      { text: '🐍 Make friends with Carl the snake', next: 'amazon_snake', effect: () => addStat('social') },
+      { text: '🔭 Document the wildlife with your camera', next: 'amazon_document', effect: () => addStat('curious') },
+      ...( statUnlocked('curious') ? [{ text: '🌿 Search for a legendary plant the locals whisper about', next: 'amazon_plant', cls: 'special', effect: () => addStat('curious') }] : [] ),
     ],
+  },
+  amazon_document: {
+    name: 'AMAZON — Wildlife Record',
+    art: art_amazon,
+    text: () => { addCoins(4); return statFlavor({
+      cur: `You photograph and catalogue forty-three species in two hours. A passing biologist offers you a research position. Izzy files this information away for later. +4 Fish Coins.`,
+      def: `Toucans, sloths, a brief appearance by a very shy jaguar. Izzy names them all. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
+  },
+  amazon_plant: {
+    name: 'AMAZON — The Legendary Plant',
+    art: art_amazon,
+    text: () => { addCoins(8); return `It's real. A tiny flower that blooms once every seven years, glowing pale gold in the understory. The locals say it brings luck to those who find it. You both stand very still. +8 Fish Coins.`; },
+    choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_butterfly: {
     name: 'AMAZON — Hidden Waterfall',
     art: art_amazon,
-    text: () => { addCoins(7); return `The butterfly leads you to a SECRET waterfall full of gold-flecked fish. Izzy kisses you on the beak. +7 Fish Coins!`; },
-    choices: () => [{ text: '➡ To the final destination!', next: midNext, effect: countStop }],
+    text: () => { addCoins(7); return statFlavor({
+      adv: `The butterfly leads you deep, past three rivers and a confused sloth. The waterfall is enormous, hidden, and perfect. Izzy kisses you on the beak. +7 Fish Coins!`,
+      def: `The butterfly leads you to a SECRET waterfall full of gold-flecked fish. Izzy kisses you on the beak. +7 Fish Coins!`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_river: {
-    name: 'AMAZON — River Ride',
+    name: 'AMAZON — River Canoe',
     art: art_amazon,
-    text: () => { addCoins(2); return `You see river dolphins. Izzy waves. They wave back. +2 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(2); return `You see river dolphins. Izzy waves. They wave back. `+statFlavor({
+      cau: `You'd checked the current charts. Calm water, best route, no incidents. Perfect canoe day. +2 Fish Coins.`,
+      def: `+2 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_snake: {
-    name: 'AMAZON — Surprisingly Polite Snake',
+    name: 'AMAZON — Carl the Snake',
     art: art_amazon,
-    text: () => { addCoins(1); return `The snake's name is Carl. He gives you a tiny map. +1 Fish Coin.`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(1); return statFlavor({
+      soc: `Carl is very talkative for a snake. He gives you his tiny map AND introduces you to his cousin who knows the best waterfall. +1 Fish Coin, plus a lot of inside information.`,
+      def: `The snake's name is Carl. He gives you a tiny map. Izzy finds this whole situation deeply normal. +1 Fish Coin.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
+  },
+  amazon_r2: {
+    name: 'AMAZON — DEEP IN THE JUNGLE',
+    art: art_amazon,
+    text: () => `The jungle deepens. Sounds layer over each other — birds, water, the hum of green. One last adventure before you push on.`+statFlavor({
+      adv: ` Something glints from the jungle floor. You've spotted a path nobody else has taken.`,
+      cur: ` A local guide offers to show you something off the map.`,
+      soc: ` A riverside community has set out food. They're welcoming travellers.`,
+      cau: ` A research station offers a cool, safe rest and some excellent local knowledge.`,
+      def: ` The jungle waits.`,
+    }),
+    choices: () => [
+      { text: '🗺 Explore the hidden jungle path', next: 'amazon_path', effect: () => addStat('adventurous') },
+      { text: '🧭 Join a local guide off the map', next: 'amazon_guide', effect: () => addStat('curious') },
+      { text: '🍚 Share a meal with the riverside community', next: 'amazon_meal', effect: () => addStat('social') },
+      { text: '🔬 Rest at the research station', next: 'amazon_station', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: '🌊 Swim in the black-water lagoon', next: 'amazon_swim', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+    ],
+  },
+  amazon_path: {
+    name: 'AMAZON — The Hidden Path',
+    art: art_amazon,
+    text: () => { addCoins(5); return statFlavor({
+      adv: `The path leads to a clearing with three giant kapok trees and a parrot who speaks three languages. You speak back. It's a whole thing. +5 Fish Coins.`,
+      def: `Dense, green, magical. You find the ruins of a tiny structure no map mentions. Izzy photographs everything. +5 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  amazon_guide: {
+    name: 'AMAZON — The Guide',
+    art: art_amazon,
+    text: () => { addCoins(4); return statFlavor({
+      cur: `The guide knows every plant by name and story. He shows you a tree that heals, a vine that sings in the wind. You take meticulous notes. He gives you a seed to plant at home. +4 Fish Coins.`,
+      def: `He takes you somewhere no tourist sees. It's old, green, and humming. You leave feeling oddly peaceful. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  amazon_meal: {
+    name: 'AMAZON — Riverside Meal',
+    art: art_amazon,
+    text: () => { addCoins(5); return statFlavor({
+      soc: `You help cook. Your contribution is minor but enthusiastic. The community adopts you both as honorary members. An elder gives you a woven bracelet for the journey. +5 Fish Coins.`,
+      def: `Food shared at a long table by the river. Laughing through language barriers. A toddler falls asleep on Izzy's lap. +5 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  amazon_station: {
+    name: 'AMAZON — Research Station',
+    art: art_amazon,
+    text: () => { addCoins(3); return statFlavor({
+      cau: `The researchers are thrilled to brief you. You ask excellent questions. They give you a detailed report on the ecosystem. Izzy is asleep in a hammock within five minutes. +3 Fish Coins.`,
+      def: `Air conditioning. A map of everything. Cold water. A scientist shows you a slideshow of local species. Izzy names them all immediately. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  amazon_swim: {
+    name: 'AMAZON — Black Water Lagoon',
+    art: art_amazon,
+    text: () => { addCoins(8); return `The water is warm and dark as tea. Totally clear from below. You float on your back and look up through a cathedral of trees at the sky. Izzy declares it the most beautiful thing she has ever seen. +8 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
   // === ICELAND ===
   iceland: {
-    name: 'ICELAND — AURORA',
+    name: 'ICELAND — ARRIVAL',
     art: art_iceland,
     text: () => `The sky is a swirl of green and pink — Izzy's two favourite colours. She's quiet. This is rare. A wandering star-counter offers a challenge: "Match the constellation, win a prize."`,
     choices: () => [
-      { text: '🧩 Take the star challenge (PUZZLE)', next: 'iceland_puzzle', cls: 'puzzle' },
-      { text: '♥ Just hold flipper and watch the lights', next: 'iceland_quiet', cls: 'special' },
+      { text: '🧩 Take the star challenge (PUZZLE)', next: 'iceland_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
+      { text: '♥ Hold flipper and watch the lights', next: 'iceland_quiet', cls: 'special', effect: () => addStat('cautious') },
+      { text: '🌋 Visit the black sand volcanic beach', next: 'iceland_beach', effect: () => addStat('adventurous') },
+      { text: '♨ Soak in the geothermal hot spring', next: 'iceland_hotspring', effect: () => addStat('social') },
+      ...( statUnlocked('curious') ? [{ text: '🧊 Explore inside a glacier cave', next: 'iceland_glacier', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
     ],
+  },
+  iceland_beach: {
+    name: 'ICELAND — Black Sand Beach',
+    art: art_iceland,
+    text: () => { addCoins(4); return statFlavor({
+      adv: `You walk to the very tip of the basalt columns above the crashing surf. Izzy photographs this and immediately sends it to everyone she knows. +4 Fish Coins.`,
+      def: `Black sand, white waves, dark basalt columns. Penguin on a black beach — nobody can tell where you end and the landscape begins. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
+  },
+  iceland_hotspring: {
+    name: 'ICELAND — Hot Spring',
+    art: art_iceland,
+    text: () => { addCoins(3); State.flags.romantic = true; return statFlavor({
+      soc: `You make friends with every person in the hot spring within fifteen minutes. An elderly couple tells you about their fifty years of travel. You listen for an hour. +3 Fish Coins.`,
+      def: `Warm water under the cold sky. The aurora begins above. It is, objectively, ridiculous how beautiful this is. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
+  },
+  iceland_glacier: {
+    name: 'ICELAND — Glacier Cave',
+    art: art_iceland,
+    text: () => { addCoins(9); return `The ice is blue. Not just blue — every shade of blue that exists and several that don't. You stand inside ten thousand years of compressed time. Izzy whispers: "I feel so small." You hold her flipper. "Me too." +9 Fish Coins.`; },
+    choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_puzzle: {
     name: 'ICELAND — CONSTELLATION',
@@ -1943,31 +2792,109 @@ const Scenes = {
     name: 'ICELAND — Stargazer',
     art: art_iceland,
     text: () => { addCoins(8); State.flags.starWin = true; return `"FIVE!" The star-counter hands you a glowing aurora-fish. +8 Fish Coins! Izzy is impressed. Mr Porky is smug.`; },
-    choices: () => [{ text: '➡ One last stop...', next: midNext, effect: countStop }],
+    choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_finish_lose: {
     name: 'ICELAND — Maths is hard',
     art: art_iceland,
     text: () => `The star-counter pats you on the head. Izzy laughs and squeezes your flipper anyway.`,
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_quiet: {
     name: 'ICELAND — Quiet Moment',
     art: art_iceland,
     text: () => { addCoins(5); State.flags.romantic = true; return `You don't say a word for an hour. You just hold flipper and watch the universe paint the sky. +5 Fish Coins (life is wealth, baby).`; },
-    choices: () => [{ text: '➡ One last stop...', next: midNext, effect: countStop }],
+    choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
+  },
+
+  iceland_r2: {
+    name: 'ICELAND — MIDNIGHT UNDER THE AURORA',
+    art: art_iceland,
+    text: () => `Midnight in Iceland in summer — the sky refuses to go dark. The aurora shimmers. One more moment before you move on.`+statFlavor({
+      adv: ` You can see a small boat at the harbour. Someone said they take night trips.`,
+      cur: ` The little museum of Icelandic sagas is still open. The lights look warm inside.`,
+      soc: ` A local family has lit a bonfire on the hillside and waved you over.`,
+      cau: ` The guesthouse has a perfect view from the window, hot tea ready.`,
+      def: ` Iceland glows ahead of you.`,
+    }),
+    choices: () => [
+      { text: '⛵ Night boat trip on the fjord', next: 'iceland_boat', effect: () => addStat('adventurous') },
+      { text: '📜 Icelandic Saga museum', next: 'iceland_saga', effect: () => addStat('curious') },
+      { text: '🔥 Hillside bonfire with locals', next: 'iceland_bonfire2', effect: () => addStat('social') },
+      { text: '☕ Watch the aurora from the guesthouse window', next: 'iceland_window', effect: () => addStat('cautious') },
+      ...( statUnlocked('social') ? [{ text: '🎶 Join the spontaneous Icelandic folk session', next: 'iceland_folk', cls: 'special', effect: () => addStat('social') }] : [] ),
+    ],
+  },
+  iceland_boat: {
+    name: 'ICELAND — Night Fjord Boat',
+    art: art_iceland,
+    text: () => { addCoins(6); return statFlavor({
+      adv: `The skipper lets you take the wheel. You steer by aurora-light. Izzy stands at the prow with her wings out. She is basically the figurehead of a penguin galleon. +6 Fish Coins.`,
+      def: `Still black water. The aurora above, reflected below. The boat barely makes a sound. +6 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  iceland_saga: {
+    name: 'ICELAND — Saga Museum',
+    art: art_iceland,
+    text: () => { addCoins(3); return statFlavor({
+      cur: `The sagas are full of travellers, monsters, and improbable love stories. You find this extremely relatable. Izzy catches you reading one twice. +3 Fish Coins.`,
+      def: `Old stories by firelight. Penguins don't appear in Norse myth, but you feel somehow that they should. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  iceland_bonfire2: {
+    name: 'ICELAND — Hillside Bonfire',
+    art: art_iceland,
+    text: () => { addCoins(4); return statFlavor({
+      soc: `Within the hour you know everyone's name, life story, and favourite aurora colour. Izzy collects three email addresses and actually uses all of them. +4 Fish Coins.`,
+      def: `Warm fire, cold air, good people. An Icelander plays guitar. Nobody is a stranger by the end of it. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  iceland_window: {
+    name: 'ICELAND — Guesthouse Window',
+    art: art_iceland,
+    text: () => { addCoins(2); State.flags.romantic = true; return statFlavor({
+      cau: `You'd specifically booked the north-facing room for exactly this. Smart. Hot tea, perfect view, the aurora shifting for hours. +2 Fish Coins.`,
+      def: `The aurora shifts from green to violet to something with no name. Izzy falls asleep watching it. You don't wake her. +2 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  iceland_folk: {
+    name: 'ICELAND — Folk Music Session',
+    art: art_iceland,
+    text: () => { addCoins(7); return `Someone passes you a stringed instrument you've never seen before. You play it anyway. Three songs later, the room is clapping along. Izzy is crying and laughing simultaneously. "You can't even play guitar," she says. "I know," you say. +7 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
   // === VENICE ===
   venice: {
-    name: 'VENICE, ITALY',
+    name: 'VENICE, ITALY — ARRIVAL',
     art: art_venice,
     text: () => `A gondolier penguin (yes, really) offers a moonlit ride. The canals smell like garlic and old stone. Izzy is wearing a tiny pixelated beret.`,
     choices: () => [
-      { text: '🚣 Take the gondola ride (-2 coins)', next: 'venice_gondola', cls: 'special' },
-      { text: '🍕 Get pizza on a bridge', next: 'venice_pizza' },
-      { text: '🎭 Crash a masquerade ball', next: 'venice_masque' },
+      { text: '🚣 Take the gondola ride (-2 coins)', next: 'venice_gondola', cls: 'special', effect: () => addStat('social') },
+      { text: '🍕 Get pizza on a bridge', next: 'venice_pizza', effect: () => addStat('cautious') },
+      { text: '🎭 Crash a masquerade ball', next: 'venice_masque', effect: () => addStat('adventurous') },
+      { text: '🎨 Visit a glassblowing workshop', next: 'venice_glass', effect: () => addStat('curious') },
+      ...( statUnlocked('social') ? [{ text: '🎵 Serenade Izzy from a bridge', next: 'venice_serenade', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
+  },
+  venice_glass: {
+    name: 'VENICE — Glassblowing',
+    art: art_venice,
+    text: () => { addCoins(4); return statFlavor({
+      cur: `You watch every step intently. The maestro lets you try. You produce a lopsided blob that might be a penguin. He says it has "character." Izzy buys it immediately. +4 Fish Coins.`,
+      def: `Fire and colour. The maestro shapes glass into a tiny flower in thirty seconds. You buy it for Izzy. She names it Giorgio. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
+  },
+  venice_serenade: {
+    name: 'VENICE — The Serenade',
+    art: art_venice,
+    text: () => { addCoins(8); State.flags.romantic = true; return `You stand on the bridge above the canal and sing. You sing badly. A gondolier joins in. Then a passing tourist with an accordion. Izzy looks up at you from the water below and covers her face with her flippers. She is laughing. She is also crying. +8 Fish Coins.`; },
+    choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
   },
   venice_gondola: {
     name: 'VENICE — Gondola',
@@ -1976,51 +2903,242 @@ const Scenes = {
       if (State.coins >= 2) State.coins -= 2;
       State.flags.romantic = true;
       addCoins(4);
-      return `The gondolier sings off-key. Izzy rests her head on your wing. The moon reflects in the water. +4 Fish Coins (singing tips for the gondolier from passing tourists who you accidentally caught).`;
+      return `The gondolier sings off-key. Izzy rests her head on your wing. The moon reflects in the water. `+statFlavor({
+        soc: `You and the gondolier get into a lengthy debate about the best canals. He respects your opinions. +4 Fish Coins.`,
+        def: `+4 Fish Coins (singing tips for the gondolier from passing tourists who you accidentally caught).`,
+      });
     },
-    choices: () => [{ text: '➡ One last stop...', next: midNext, effect: countStop }],
+    choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
   },
   venice_pizza: {
     name: 'VENICE — Pizza Bridge',
     art: art_venice,
-    text: () => { addCoins(3); return `Best pizza of your lives. A pigeon tries to steal a slice. Mr Porky honks at it. +3 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(3); return `Best pizza of your lives. A pigeon tries to steal a slice. Mr Porky honks at it. `+statFlavor({
+      cau: `You had read the exact right place to get pizza in Venice. Three reviews mentioned the pigeon. You were ready. +3 Fish Coins.`,
+      def: `+3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
   },
   venice_masque: {
     name: 'VENICE — Masquerade',
     art: art_venice,
-    text: () => { addCoins(5); return `Nobody recognises the penguins. You dance until 4am. +5 Fish Coins (someone tips you for the entertainment value).`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(5); return statFlavor({
+      adv: `You don't just crash it — you become the most talked-about guests. Nobody knows who you are. Everybody wants to. You dance until 4am. +5 Fish Coins.`,
+      def: `Nobody recognises the penguins. You dance until 4am. +5 Fish Coins (someone tips you for the entertainment value).`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
+  },
+  venice_r2: {
+    name: 'VENICE — TWILIGHT ON THE CANALS',
+    art: art_venice,
+    text: () => `The sun melts into the lagoon. Venice glows amber and gold. One more moment before you leave.`+statFlavor({
+      adv: ` You spot a tiny unlisted island across the water. Nobody seems to go there.`,
+      cur: ` The old library of San Marco is open late. Something pulls you toward it.`,
+      soc: ` A Venetian couple at the next table raises their glasses to you both.`,
+      cau: ` The perfect quiet bridge is right there, empty, warm stone under your flippers.`,
+      def: ` Venice glitters ahead.`,
+    }),
+    choices: () => [
+      { text: '🏝 Boat to the hidden island', next: 'venice_island', effect: () => addStat('adventurous') },
+      { text: '📚 The Library of San Marco', next: 'venice_library', effect: () => addStat('curious') },
+      { text: '🥂 Join the Venetians for aperitivo', next: 'venice_aperitivo', effect: () => addStat('social') },
+      { text: '🌉 Sit quietly on the perfect bridge', next: 'venice_bridge', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: '🌙 Midnight gondola through the back canals', next: 'venice_midnight', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+    ],
+  },
+  venice_island: {
+    name: 'VENICE — The Hidden Island',
+    art: art_venice,
+    text: () => { addCoins(6); return statFlavor({
+      adv: `Nobody goes there. A small monastery, a garden, a monk who offers you pears from his tree. He says the island has been here since the 9th century. You believe him completely. +6 Fish Coins.`,
+      def: `Still. Green. Ancient. You find an old well with coins in it and add yours to the pile. Izzy photographs the whole thing. +6 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  venice_library: {
+    name: 'VENICE — San Marco Library',
+    art: art_venice,
+    text: () => { addCoins(3); return statFlavor({
+      cur: `You find a manuscript from 1487 with an illustration that might — possibly — be a penguin on a gondola. The librarian says this is impossible. You say nothing and smile. +3 Fish Coins.`,
+      def: `High ceilings. Gold-leaf manuscripts. The weight of centuries. Izzy falls asleep in a reading chair and looks completely at home. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  venice_aperitivo: {
+    name: 'VENICE — Aperitivo',
+    art: art_venice,
+    text: () => { addCoins(5); State.flags.romantic = true; return statFlavor({
+      soc: `Within twenty minutes you have their whole story — married forty years, met right here in Venice, still come back every summer. "Come back in forty years," the woman tells you both. You fully intend to. +5 Fish Coins.`,
+      def: `Spritz and small bites. The canal glitters. Good people, good evening. +5 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  venice_bridge: {
+    name: 'VENICE — The Perfect Bridge',
+    art: art_venice,
+    text: () => { addCoins(2); State.flags.romantic = true; return statFlavor({
+      cau: `You had identified this exact bridge — no tourists, south-facing, catches the last light. Every detail correct. Izzy leans on the stone beside you. Worth the research. +2 Fish Coins.`,
+      def: `Warm stone. Still water. A cat appears from somewhere and sits beside you both. Venice approves. +2 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  venice_midnight: {
+    name: 'VENICE — Midnight Canals',
+    art: art_venice,
+    text: () => { addCoins(9); State.flags.romantic = true; return `The back canals are empty. No tourists, no sound but water. The gondolier stops talking and just steers, letting the city breathe. Izzy leans back against your wing and looks up at the strip of sky between buildings. "I want to come back here," she says quietly. "We will," you say. And you mean it. +9 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
   // === HAWAII ===
   hawaii: {
-    name: 'HAWAII',
+    name: 'HAWAII — ARRIVAL',
     art: art_hawaii,
     text: () => `Sun. Sand. Pineapple drinks bigger than Izzy's head. Mr Porky considers the meaning of life from inside a hammock.`,
     choices: () => [
-      { text: '🏄 Surf lesson (chaos)', next: 'hawaii_surf' },
-      { text: '🌺 Lei her with a flower (romance)', next: 'hawaii_lei', cls: 'special' },
-      { text: '🍍 Just nap together', next: 'hawaii_nap' },
+      { text: '🏄 Surf lesson — hit the waves', next: 'hawaii_surf_hub', effect: () => addStat('adventurous') },
+      { text: '🌺 Weave a flower lei for Izzy', next: 'hawaii_lei', cls: 'special', effect: () => addStat('social') },
+      { text: '🍍 Hammock nap together', next: 'hawaii_nap', effect: () => addStat('cautious') },
+      { text: '🤿 Snorkel the reef', next: 'hawaii_snorkel', effect: () => addStat('curious') },
+      ...( statUnlocked('adventurous') ? [{ text: '🌋 Hike the active volcano trail', next: 'hawaii_volcano', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
     ],
   },
-  hawaii_surf: {
-    name: 'HAWAII — Surf School',
+  hawaii_surf_hub: {
+    name: 'HAWAII — SURF SCHOOL',
     art: art_hawaii,
-    text: () => { addCoins(3); return `Mr Porky face-plants seven times. Izzy stands up first try. She always was better at the sea bit. +3 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => `You're on the board. The wave is coming. Time to decide your approach.`,
+    choices: () => [
+      { text: '🤙 Try a daring trick — hang ten!', next: 'hawaii_surf_trick', effect: () => addStat('adventurous') },
+      { text: '🏄 Ride it safe and steady', next: 'hawaii_surf_safe', effect: () => addStat('cautious') },
+      { text: "📸 Pose for Izzy's photo mid-wave", next: 'hawaii_surf_pose', effect: () => addStat('social') },
+      { text: '👀 Watch the pros first, then go', next: 'hawaii_surf_study', effect: () => addStat('curious') },
+    ],
+  },
+  hawaii_surf_trick: {
+    name: 'HAWAII — Hang Ten!',
+    art: art_hawaii,
+    text: () => { const success = statUnlocked('adventurous', 4); addCoins(success ? 7 : 3); return success
+      ? `Somehow the flippers WORK. You hang ten on a perfect barrel wave. The beach goes absolutely insane. Izzy screams your name. You have never felt more alive. +7 Fish Coins!`
+      : `You attempt the trick. The wave wins. You surface with seaweed on your beak. Izzy applauds anyway. "That was amazing," she lies lovingly. +3 Fish Coins.`; },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
+  },
+  hawaii_surf_safe: {
+    name: 'HAWAII — Playing It Safe',
+    art: art_hawaii,
+    text: () => { addCoins(4); return statFlavor({
+      cau: `Perfect form. You read the wave exactly right, picked your moment, and had a long, clean ride all the way to shore. The instructor nods approvingly. +4 Fish Coins.`,
+      def: `You ride it carefully to shore, mostly upright. Izzy stands up first try. She always was better at the sea bit. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
+  },
+  hawaii_surf_pose: {
+    name: 'HAWAII — The Photo',
+    art: art_hawaii,
+    text: () => { addCoins(5); return statFlavor({
+      soc: `You turn toward Izzy, wings out, grinning — and the wave carries you perfectly. The photo is unbelievable. It goes everywhere. A surf magazine calls. +5 Fish Coins.`,
+      def: `The pose goes slightly wrong. The photo is even better for it. Izzy cries laughing. The print will go above the fireplace. +5 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
+  },
+  hawaii_surf_study: {
+    name: 'HAWAII — Study Then Surf',
+    art: art_hawaii,
+    text: () => { addCoins(4); return statFlavor({
+      cur: `You watch seven waves before choosing your moment. When you go, you go perfectly. The instructor calls you a natural reader of water. +4 Fish Coins.`,
+      def: `You watch carefully, pick your moment, and ride it clean. Izzy is impressed by the patience. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
+  },
+  hawaii_snorkel: {
+    name: 'HAWAII — Snorkelling',
+    art: art_hawaii,
+    text: () => { addCoins(5); return statFlavor({
+      cur: `You identify seventeen species. A sea turtle follows you for ten minutes. You name her Patricia. +5 Fish Coins.`,
+      def: `Coral gardens. Neon fish. A turtle who finds the penguins confusing but not threatening. Izzy waves at it. +5 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
+  },
+  hawaii_volcano: {
+    name: 'HAWAII — Volcano Hike',
+    art: art_hawaii,
+    text: () => { addCoins(8); return `The ground glows faint orange at the edges. You stand at the rim and look down into the earth. Izzy takes your flipper. "We're standing on fire," she whispers. You both feel very small and very alive. +8 Fish Coins.`; },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
   hawaii_lei: {
     name: 'HAWAII — Aloha',
     art: art_hawaii,
-    text: () => { addCoins(6); State.flags.romantic = true; return `You weave a flower lei from hibiscus. Izzy cries the GOOD kind of tears. +6 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(6); State.flags.romantic = true; return statFlavor({
+      soc: `You get a local to teach you the traditional weaving technique. The lei is perfect. Izzy cries the GOOD kind of tears and immediately teaches you how to say "I love you" in Hawaiian. +6 Fish Coins.`,
+      def: `You weave a flower lei from hibiscus. Izzy cries the GOOD kind of tears. +6 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
   hawaii_nap: {
     name: 'HAWAII — Hammock Nap',
     art: art_hawaii,
-    text: () => { addCoins(2); return `Three hours of synchronized snoring. Bliss. +2 Fish Coins (somebody put coins in the hammock as a joke).`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(2); return statFlavor({
+      cau: `You'd correctly identified this as the optimal hammock time — post-lunch, pre-sunset. Three hours of synchronised snoring. Somebody put coins in the hammock as a joke. +2 Fish Coins.`,
+      def: `Three hours of synchronized snoring. Bliss. +2 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
+  },
+  hawaii_r2: {
+    name: 'HAWAII — GOLDEN HOUR',
+    art: art_hawaii,
+    text: () => `The sun is dropping toward the ocean, turning everything honey-gold. One more Hawaiian moment left.`+statFlavor({
+      adv: ` A local says the cliff jump spot is just ten minutes down the beach.`,
+      cur: ` You spot a sign for a traditional luau with fire dancing tonight.`,
+      soc: ` A beach bonfire is forming. You've already been waved over.`,
+      cau: ` The perfect sunset spot is right here. A cocktail materialises in your flipper.`,
+      def: ` The evening is yours.`,
+    }),
+    choices: () => [
+      { text: '🪨 Cliff jump into the clear water', next: 'hawaii_cliff', effect: () => addStat('adventurous') },
+      { text: '🔥 Watch traditional fire dancing at the luau', next: 'hawaii_luau', effect: () => addStat('curious') },
+      { text: '🏖 Join the beach bonfire', next: 'hawaii_bonfire', effect: () => addStat('social') },
+      { text: '🌅 Watch the sunset with a cocktail', next: 'hawaii_sunset', effect: () => addStat('cautious') },
+      ...( statUnlocked('social') ? [{ text: '🎸 Lead the sing-along at the bonfire', next: 'hawaii_singalong', cls: 'special', effect: () => addStat('social') }] : [] ),
+    ],
+  },
+  hawaii_cliff: {
+    name: 'HAWAII — Cliff Jump',
+    art: art_hawaii,
+    text: () => { addCoins(5); const bold = statUnlocked('adventurous', 4); return bold
+      ? `You jump without hesitation. The fall is perfect. The water is perfect. Izzy screams and then immediately climbs up to do it too. +5 Fish Coins.`
+      : `You stand at the edge for four minutes. You jump. It's terrifying and perfect. Izzy applauds from the beach. +5 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  hawaii_luau: {
+    name: 'HAWAII — Luau Fire Dancing',
+    art: art_hawaii,
+    text: () => { addCoins(4); return statFlavor({
+      cur: `You learn the history behind every dance — the stories they tell, the gods they honour. The dancers invite you to try the hula. You are not graceful. The story is still told. +4 Fish Coins.`,
+      def: `Fire arcs through the darkness. Drums. Stories older than memory. Izzy watches without blinking. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  hawaii_bonfire: {
+    name: 'HAWAII — Beach Bonfire',
+    art: art_hawaii,
+    text: () => { addCoins(4); return statFlavor({
+      soc: `You become the social nucleus of the bonfire. Someone has a ukulele. Somehow you know the words to three songs. New friends, warm fire, salt air. +4 Fish Coins.`,
+      def: `Strangers and travellers sharing the warmth. Izzy makes three new friends. You eat marshmallows. Somebody has a ukulele. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  hawaii_sunset: {
+    name: 'HAWAII — Perfect Sunset',
+    art: art_hawaii,
+    text: () => { addCoins(3); State.flags.romantic = true; return statFlavor({
+      cau: `You had chosen this exact spot from a shortlist of five. The cocktail is exactly right. The sunset arrives exactly on time. Perfect planning. +3 Fish Coins.`,
+      def: `The ocean catches fire as the sun goes down. You hold flippers. Neither of you speaks. Sometimes that's the whole thing. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  hawaii_singalong: {
+    name: 'HAWAII — Bonfire Sing-Along',
+    art: art_hawaii,
+    text: () => { addCoins(7); return `You lead a sing-along that somehow starts with "Take Me Home, Country Roads" and ends with everyone learning the Hawaiian fishing chant. The ukulele player calls it the best night of the year. +7 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
   // ===== CHOOSE 2B (second mid-stop from same pool) =====
@@ -2045,42 +3163,124 @@ const Scenes = {
 
   // === INDIA ===
   india: {
-    name: 'INDIA — TAJ MAHAL',
+    name: 'INDIA — TAJ MAHAL — ARRIVAL',
     art: art_india,
     text: () => P(
       `The Taj Mahal gleams white in the sunrise. Mr Porky is too short to see over the crowd. Izzy hoists him onto her shoulders and immediately regrets this.`,
       `Squid has nineteen things she wants to do TODAY. Mr Porky has one: stand still and take it in. They compromise: seventeen things, at speed.`
     ),
     choices: () => [
-      { text: '🌸 Visit the Taj Mahal at dawn', next: 'india_taj', cls: 'special' },
-      { text: '🌶 Accept the spicy curry challenge', next: 'india_curry' },
-      { text: '🛺 Rickshaw race through the city', next: 'india_rickshaw' },
-      { text: '🎨 Get henna painted on your flippers', next: 'india_henna' },
+      { text: '🌸 Visit the Taj Mahal at dawn', next: 'india_taj', cls: 'special', effect: () => addStat('cautious') },
+      { text: '🌶 Accept the spicy curry challenge', next: 'india_curry', effect: () => addStat('adventurous') },
+      { text: '🛺 Rickshaw race through the city', next: 'india_rickshaw', effect: () => addStat('social') },
+      { text: '🎨 Get henna painted on your flippers', next: 'india_henna', effect: () => addStat('curious') },
+      ...( statUnlocked('social') ? [{ text: '🎶 Join the evening classical music performance', next: 'india_music', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
+  },
+  india_music: {
+    name: 'INDIA — Classical Music',
+    art: art_india,
+    text: () => { addCoins(6); return statFlavor({
+      soc: `The sitar player invites you onto the stage at the end. You don't play sitar. You clap in rhythm. The audience adores you. +6 Fish Coins.`,
+      def: `Ragas at dusk on a rooftop. The city hums far below. Izzy sits very still and doesn't say a single word for forty minutes. That's how you know she loves it. +6 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
   },
   india_taj: {
     name: 'INDIA — Dawn at the Taj',
     art: art_india,
-    text: () => { addCoins(7); State.flags.romantic = true; return `The reflection pool mirrors the Taj perfectly. Nobody speaks for several minutes. ${P('Mr Porky', 'Squid')} squeezes ${P("Izzy's", "Mr Porky's")} flipper. ${P('Izzy', 'Mr Porky')} squeezes back. +7 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards', next: midNext, effect: countStop }],
+    text: () => { addCoins(7); State.flags.romantic = true; return `The reflection pool mirrors the Taj perfectly. Nobody speaks for several minutes. ${P('Mr Porky', 'Squid')} squeezes ${P("Izzy's", "Mr Porky's")} flipper. ${P('Izzy', 'Mr Porky')} squeezes back. `+statFlavor({
+      cau: `You'd timed arrival for exactly the right light. Correct. +7 Fish Coins.`,
+      def: `+7 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
   },
   india_curry: {
     name: 'INDIA — Curry Challenge',
     art: art_india,
-    text: () => { addCoins(4); return `Level 1: fine. Level 2: fine. Level 3: ${P('Mr Porky', 'Squid')} begins sweating in ways not normal for a penguin. Level 4: ${P('Izzy', 'Mr Porky')} wins. Obviously. +4 Fish Coins (prize money).`; },
-    choices: () => [{ text: '➡ Continue (with milk)', next: midNext, effect: countStop }],
+    text: () => { addCoins(4); return `Level 1: fine. Level 2: fine. Level 3: ${P('Mr Porky', 'Squid')} begins sweating in ways not normal for a penguin. Level 4: ${P('Izzy', 'Mr Porky')} wins. Obviously. `+statFlavor({
+      adv: `You made it to level 5. Nobody makes it to level 5. The chef shakes your flipper. +4 Fish Coins (prize money).`,
+      def: `+4 Fish Coins (prize money).`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
   },
   india_rickshaw: {
     name: 'INDIA — Rickshaw Chaos',
     art: art_india,
-    text: () => { addCoins(3); return `The driver takes twelve wrong turns on purpose because the penguins are causing traffic jams. Somehow you still win the race. +3 Fish Coins.`; },
-    choices: () => [{ text: '➡ Onwards!', next: midNext, effect: countStop }],
+    text: () => { addCoins(3); return `The driver takes twelve wrong turns on purpose because the penguins are causing traffic jams. Somehow you still win the race. `+statFlavor({
+      soc: `Your driver's name is Raj. He is now your friend. He gives you his number for next time. +3 Fish Coins.`,
+      def: `+3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
   },
   india_henna: {
     name: 'INDIA — Henna Flippers',
     art: art_india,
-    text: () => { addCoins(2); State.flags.romantic = true; return `The artist paints tiny penguins on both their flippers. ${P('Izzy', 'Mr Porky')} cries a little. It's completely cute. +2 Fish Coins.`; },
-    choices: () => [{ text: '➡ Next stop!', next: midNext, effect: countStop }],
+    text: () => { addCoins(2); State.flags.romantic = true; return `The artist paints tiny penguins on both their flippers. ${P('Izzy', 'Mr Porky')} cries a little. `+statFlavor({
+      cur: `You ask about every symbol and what it means. The artist is delighted. She adds a secret symbol for good luck that she only puts on special customers. +2 Fish Coins.`,
+      def: `It's completely cute. +2 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
+  },
+  india_r2: {
+    name: 'INDIA — GOLDEN AFTERNOON',
+    art: art_india,
+    text: () => `The afternoon heat softens as the sun angles lower. India has one more gift before you go.`+statFlavor({
+      adv: ` You can see the old city walls from here. The chaos inside sounds irresistible.`,
+      cur: ` A local historian has been watching you both with an intrigued expression.`,
+      soc: ` A wedding procession is passing through the street — and they're waving you in.`,
+      cau: ` The rooftop café has a perfect view and shade. And mango lassi.`,
+      def: ` The afternoon awaits.`,
+    }),
+    choices: () => [
+      { text: '🏙 Explore the old city bazaar', next: 'india_bazaar', effect: () => addStat('adventurous') },
+      { text: '🏛 Take a private history tour', next: 'india_history', effect: () => addStat('curious') },
+      { text: '💒 Join the wedding procession', next: 'india_wedding', effect: () => addStat('social') },
+      { text: '🥭 Rooftop café with mango lassi', next: 'india_rooftop', effect: () => addStat('cautious') },
+      ...( statUnlocked('curious') ? [{ text: '🕌 Visit the hidden stepwell at dusk', next: 'india_stepwell', cls: 'special', effect: () => addStat('curious') }] : [] ),
+    ],
+  },
+  india_bazaar: {
+    name: 'INDIA — Old City Bazaar',
+    art: art_india,
+    text: () => { addCoins(5); return statFlavor({
+      adv: `You navigate by instinct. You get beautifully lost. You find your way back via a silk merchant who gives you a scarf and directions, in that order. +5 Fish Coins.`,
+      def: `Every colour. Every sound. A man tries to sell Izzy a camel. She seriously considers it. You buy spices and a tiny brass elephant instead. +5 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  india_history: {
+    name: 'INDIA — History Tour',
+    art: art_india,
+    text: () => { addCoins(4); return statFlavor({
+      cur: `The historian talks for three hours and you keep asking for more. He calls you the best audience he's ever had. Izzy takes seven pages of notes she will never read again. +4 Fish Coins.`,
+      def: `Mughal architecture. Hidden gardens. A well that's been in use since 1526. You walk away feeling like you've been given something. +4 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  india_wedding: {
+    name: 'INDIA — The Wedding',
+    art: art_india,
+    text: () => { addCoins(7); State.flags.romantic = true; return statFlavor({
+      soc: `You are immediately given a role. You carry a decorated lamp. You do this with great dignity. The family photographs you with the bride and groom. You are in their wedding album. +7 Fish Coins.`,
+      def: `You are swept into the procession. There is music, colour, joy. The family feeds you sweets and takes your photo. You are, somehow, in the wedding album. +7 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  india_rooftop: {
+    name: 'INDIA — Rooftop Café',
+    art: art_india,
+    text: () => { addCoins(3); return statFlavor({
+      cau: `The reviews were correct on every count. Perfect shade, perfect lassi, perfect view of the Taj from here at this exact time of day. You are very good at choosing. +3 Fish Coins.`,
+      def: `Mango lassi. The Taj in the distance. A ceiling fan. Izzy stretches out and sighs happily. "Best decision," she says. +3 Fish Coins.`,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  india_stepwell: {
+    name: 'INDIA — Hidden Stepwell',
+    art: art_india,
+    text: () => { addCoins(8); return `Nobody is there. Geometric steps descend into cool blue shadow. The proportions are impossible — a mathematical poem cut from stone. You sit at the bottom for a long time. Above you, the city roars. Down here: perfect stillness. +8 Fish Coins.`; },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
   // === PERU ===
@@ -2471,6 +3671,7 @@ const Scenes = {
       State.inventory = [];
       State.selectedItem = null;
       State.vibes = { romantic: 0, silly: 0, sentimental: 0, adventure: 0 };
+      State.stats = { adventurous: 0, curious: 0, social: 0, cautious: 0 };
       goTo('title');
     },
   },
@@ -2502,6 +3703,29 @@ function countStop() {
 }
 function filterChoices(arr) {
   return arr.filter(c => !c.requires || c.requires());
+}
+
+// ── Stat helpers ──────────────────────────────────────────────────────
+function addStat(name, n) {
+  n = n || 1;
+  if (!State.stats) State.stats = { adventurous: 0, curious: 0, social: 0, cautious: 0 };
+  if (name in State.stats) State.stats[name] += n;
+}
+// Returns flavor text based on the player's dominant stat.
+function statFlavor(opts) {
+  var s = State.stats || {};
+  var best = Math.max(s.adventurous||0, s.curious||0, s.social||0, s.cautious||0);
+  if (best === 0) return opts.def || opts.adv || opts.cur || opts.soc || opts.cau || '';
+  if ((s.adventurous||0) >= best && opts.adv) return opts.adv;
+  if ((s.curious    ||0) >= best && opts.cur) return opts.cur;
+  if ((s.social     ||0) >= best && opts.soc) return opts.soc;
+  if ((s.cautious   ||0) >= best && opts.cau) return opts.cau;
+  return opts.def || opts.adv || opts.cur || opts.soc || opts.cau || '';
+}
+// True when a stat meets the threshold — used to unlock special options.
+function statUnlocked(name, threshold) {
+  threshold = threshold || 3;
+  return (State.stats && State.stats[name] || 0) >= threshold;
 }
 
 // ============= VIBE / ENDING ROUTING =============

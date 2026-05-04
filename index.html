@@ -1044,6 +1044,7 @@ const State = {
   player: 'porky', // 'porky' | 'squid'
   inventory: [],
   selectedItem: null,
+  vibes: { romantic: 0, silly: 0, sentimental: 0, adventure: 0 },
 };
 
 // =============== SCENE ART RENDERERS ==================
@@ -1968,7 +1969,21 @@ const Scenes = {
   },
 
   // === FINALE ===
+  // === FINALE ROUTER === picks the right reveal based on the vibe of choices made
   finale: {
+    name: 'FINALE',
+    onEnter: () => {
+      const vibe = dominantVibe();
+      const target = vibe === 'silly'      ? 'finale_oath'
+                   : vibe === 'sentimental' ? 'finale_cert'
+                   : vibe === 'adventure'   ? 'finale_passport'
+                   :                          'finale_pebble';
+      goTo(target);
+    },
+  },
+
+  // === FINALE A — PEBBLE (romantic / default) ===
+  finale_pebble: {
     name: '🪨 THE PEBBLE 🪨',
     art: art_credits,
     text: () => {
@@ -1979,40 +1994,141 @@ const Scenes = {
       return `Mr Porky produces a small, perfectly smooth pebble from under his wing. In penguin culture, a pebble is everything — it means <em>you</em>. It means <em>always</em>.${r}<br><br>"Squid. I picked this up on the first day. I was going to give it to you at home. Then I thought — no. She deserves the whole world first."<br><br>Izzy stares at the pebble. Then at Mr Porky. Then at the pebble again.`;
     },
     choices: () => State.player === 'squid' ? [
-      { text: '🪨 Take the pebble immediately', next: 'ending', cls: 'special' },
-      { text: '...stare at him for a really long time first... then take it 💗', next: 'ending', cls: 'special' },
+      { text: '🪨 Take the pebble immediately', next: 'ending_pebble', cls: 'special' },
+      { text: '...stare at him for a really long time first... then take it 💗', next: 'ending_pebble', cls: 'special' },
     ] : [
-      { text: '...she takes the pebble 🪨💗', next: 'ending', cls: 'special' },
+      { text: '...she takes the pebble 🪨💗', next: 'ending_pebble', cls: 'special' },
     ],
   },
 
-  ending: {
-    name: 'THE END',
+  // === FINALE B — FISH OATH (silly) ===
+  finale_oath: {
+    name: '🐟 THE FISH OATH 🐟',
+    art: art_credits,
+    text: () => P(
+      `Mr Porky reaches under his wing and pulls out a single, perfectly preserved frozen herring. He clears his throat with the gravitas of someone about to invoke a five-thousand-year-old tradition.<br><br>"Squid. There is an Ancient Antarctic Ritual. I am told it is very old. Two penguins split a single fish and swear three vows: <em>to share their snacks, to share their adventures, and to share their terrible life decisions.</em> Forever."<br><br>He breaks the herring in half. He hands her the bigger half.<br><br><span style="font-size:9px;color:var(--teal);">(He is, he should clarify, definitely making this up. There is no such ritual. He read it on the back of a sushi placemat. Possibly he just invented it five seconds ago. He will swear under oath that it is real.)</span>`,
+      `Mr Porky reaches under his wing and pulls out a single, perfectly preserved frozen herring. He clears his throat with the gravitas of someone about to invoke a five-thousand-year-old tradition.<br><br>"Squid. There is an Ancient Antarctic Ritual. Two penguins split a single fish and swear three vows: <em>to share their snacks, to share their adventures, and to share their terrible life decisions.</em> Forever."<br><br>He breaks the herring in half. Hands Squid the bigger half. Squid already knows — based on his face alone — that this is something he is one hundred percent making up. She accepts it with full ceremony anyway.`
+    ),
+    choices: () => [
+      { text: '🐟 Take the half-herring 💗', next: 'ending_oath', cls: 'special' },
+    ],
+  },
+
+  // === FINALE C — CERTIFICATE (sentimental) ===
+  finale_cert: {
+    name: '📜 THE PROCLAMATION 📜',
+    art: art_credits,
+    text: () => P(
+      `Mr Porky reaches under his wing and produces a slightly soggy, very crumpled scroll, tied with a tiny pink ribbon. He clears his throat. Holds it up. Reads aloud:<br><br>
+      <span style="display:block;color:var(--gold);letter-spacing:2px;font-size:10px;line-height:1.7;border:3px dashed var(--gold);padding:10px;text-align:center;">
+      — OFFICIAL PROCLAMATION —<br>
+      OF THE PENGUIN ADMINISTRATION<br><br>
+      Izzy (a.k.a. Squid)<br>
+      is hereby certified as<br>
+      <span style="color:var(--pink);">THE GREATEST GIRLFRIEND<br>IN ALL THE OCEANS.</span><br><br>
+      Signed: Mr Porky<br>
+      Witnesses: a sheep named Gerald<br>&amp; a snake named Carl
+      </span><br>
+      He made it before they left. He has been carrying it the whole trip. The bottom edge is slightly chewed.`,
+      `Mr Porky reaches under his wing and produces a slightly soggy, very crumpled scroll, tied with a tiny pink ribbon. Squid eyes it suspiciously. He clears his throat and unfurls it like he's announcing a royal decree:<br><br>
+      <span style="display:block;color:var(--gold);letter-spacing:2px;font-size:10px;line-height:1.7;border:3px dashed var(--gold);padding:10px;text-align:center;">
+      — OFFICIAL PROCLAMATION —<br>
+      OF THE PENGUIN ADMINISTRATION<br><br>
+      Izzy (a.k.a. Squid)<br>
+      is hereby certified as<br>
+      <span style="color:var(--pink);">THE GREATEST GIRLFRIEND<br>IN ALL THE OCEANS.</span><br><br>
+      Signed: Mr Porky<br>
+      Witnesses: a sheep named Gerald<br>&amp; a snake named Carl
+      </span><br>
+      He made it before they left. Squid recognises his terrible handwriting from across the canal.`
+    ),
+    choices: () => [
+      { text: '📜 Reach for the scroll 💗', next: 'ending_cert', cls: 'special' },
+    ],
+  },
+
+  // === FINALE D — PASSPORT (adventure) ===
+  finale_passport: {
+    name: '🌍 THE TRAVEL PASSPORT 🌍',
     art: art_credits,
     text: () => {
-      if (State.player === 'squid') {
-        const grade = State.coins >= 25 ? 'CHAOTIC GOOD GIRLFRIEND' :
-                      State.coins >= 15 ? 'CERTIFIED ADVENTURE QUEEN' :
-                      State.coins >= 8 ? 'SOLID SQUID' : 'TRIED HER BEST';
-        return `<div class="endingTitle">SHE KEPT THE PEBBLE 🪨💗</div>
-          Squid holds the pebble to her chest. Says nothing for a very long time. Then she honks directly into Mr Porky's face with joy. He takes it as a yes to everything, forever.<br><br>
-          The penguins waddle off into the sunset. Together. Always.<br><br>
-          <span style="color:var(--gold);">Final Fish Coins: ${State.coins}</span><br>
-          <span style="color:var(--teal);">Stops visited: ${State.stops}</span><br>
-          <span style="color:var(--pink);">Squid rating: ${grade}</span><br><br>
-          <span style="font-size:9px;color:var(--paper);">Made with ♥ — Santo Loves Izzy. Forever and always.</span>`;
-      }
-      const grade = State.coins >= 25 ? 'LEGENDARY ROMANTIC' :
-                    State.coins >= 15 ? 'CERTIFIED CHARMER' :
-                    State.coins >= 8 ? 'SOLID BOYFRIEND' : 'TRIED HIS BEST';
-      return `<div class="endingTitle">SHE KEPT THE PEBBLE 🪨💗</div>
-        Izzy holds it to her chest, says nothing for a long time, then honks directly into Mr Porky's face with joy. He takes that as a yes to everything, forever.<br><br>
-        The penguins waddle off into the sunset. Together. Always.<br><br>
-        <span style="color:var(--gold);">Final Fish Coins: ${State.coins}</span><br>
-        <span style="color:var(--teal);">Stops visited: ${State.stops}</span><br>
-        <span style="color:var(--pink);">Mr Porky rating: ${grade}</span><br><br>
-        <span style="font-size:9px;color:var(--paper);">Made with ♥ — Santo Loves Izzy. Forever and always.</span>`;
+      const stamps = [...State.visited]
+        .filter(v => TRAVEL_SCENES.has(v))
+        .map(v => `<span style="display:inline-block;border:2px solid var(--gold);color:var(--gold);padding:2px 6px;margin:2px;font-size:8px;letter-spacing:1px;transform:rotate(-2deg);">${v.toUpperCase()}</span>`)
+        .join(' ');
+      return P(
+        `Mr Porky reaches under his wing and produces a tiny, hand-bound booklet. The cover, in his own crooked penguin handwriting, reads: <em>PENGUIN TRAVEL PASSPORT — Mr Porky &amp; Squid.</em><br><br>
+        Inside, a stamp for every place they visited:<br>
+        <span style="display:block;text-align:center;margin:8px 0;">${stamps}</span>
+        He flips to the last page. It reads, simply:<br><br>
+        <span style="color:var(--pink);font-size:14px;letter-spacing:3px;text-align:center;display:block;text-shadow:3px 3px 0 #000;">"NEXT DESTINATION:<br>EVERYWHERE."</span><br>
+        He hands the passport to her. He looks absolutely terrified.`,
+        `Mr Porky reaches under his wing and produces a tiny, hand-bound booklet. Squid grabs it before he can finish his speech. The cover, in his own crooked penguin handwriting, reads: <em>PENGUIN TRAVEL PASSPORT — Mr Porky &amp; Squid.</em><br><br>
+        Inside, a stamp for every place they visited:<br>
+        <span style="display:block;text-align:center;margin:8px 0;">${stamps}</span>
+        She flips to the last page. It reads:<br><br>
+        <span style="color:var(--pink);font-size:14px;letter-spacing:3px;text-align:center;display:block;text-shadow:3px 3px 0 #000;">"NEXT DESTINATION:<br>EVERYWHERE."</span><br>
+        She closes it. Looks at Mr Porky. He has, somehow, become even more nervous in the past three seconds.`
+      );
     },
+    choices: () => [
+      { text: '🌍 Take the passport 💗', next: 'ending_passport', cls: 'special' },
+    ],
+  },
+
+  // === ENDING A — PEBBLE ===
+  ending_pebble: {
+    name: 'THE END',
+    art: art_credits,
+    text: () => endingScreen({
+      title: 'SHE KEPT THE PEBBLE 🪨💗',
+      bodyPorky: `Izzy holds it to her chest, says nothing for a long time, then honks directly into Mr Porky's face with joy. He takes that as a yes to everything, forever.<br><br>The penguins waddle off into the sunset. Together. Always.`,
+      bodySquid: `Squid holds the pebble to her chest. Says nothing for a very long time. Then she honks directly into Mr Porky's face with joy. He takes it as a yes to everything, forever.<br><br>The penguins waddle off into the sunset. Together. Always.`,
+      gradesPorky: ['LEGENDARY ROMANTIC', 'CERTIFIED CHARMER', 'SOLID BOYFRIEND', 'TRIED HIS BEST'],
+      gradesSquid: ['CHAOTIC GOOD GIRLFRIEND', 'CERTIFIED ADVENTURE QUEEN', 'SOLID SQUID', 'TRIED HER BEST'],
+    }),
+    choices: () => [{ text: '↻ Play again (different paths!)', next: 'restart' }],
+  },
+
+  // === ENDING B — FISH OATH ===
+  ending_oath: {
+    name: 'THE END',
+    art: art_credits,
+    text: () => endingScreen({
+      title: 'SHE TOOK THE HERRING 🐟💗',
+      bodyPorky: `Izzy takes the half-herring. Looks at it. Looks at Mr Porky. Then she breaks into the wheezing, snort-honking laugh he loves more than anything. "You absolute lunatic," she gasps. "Yes. To all three. Forever." They eat the fish in two bites. The Oath is sealed. Most of their subsequent terrible life decisions turn out OK.`,
+      bodySquid: `Squid takes the half-herring. Eats it in one bite. Without breaking eye contact. "Porky. That was extremely silly. I accept all three vows." She honks directly into his beak. He takes that as enthusiastic agreement. They are, somehow, both crying and laughing.`,
+      gradesPorky: ['GRAND HIGH HERRING-MASTER', 'CERTIFIED FISH SHAREHOLDER', 'SOLID SNACK PARTNER', 'TRIED HIS BEST'],
+      gradesSquid: ['HERRING-DEVOURER SUPREME', 'CERTIFIED CHAOTIC EATER', 'SOLID SNACK PARTNER', 'TRIED HER BEST'],
+    }),
+    choices: () => [{ text: '↻ Play again (different paths!)', next: 'restart' }],
+  },
+
+  // === ENDING C — CERTIFICATE ===
+  ending_cert: {
+    name: 'THE END',
+    art: art_credits,
+    text: () => endingScreen({
+      title: 'SHE KEPT THE SCROLL 📜💗',
+      bodyPorky: `Izzy bursts into tears immediately. The good kind. She reads the proclamation three times in a row. She insists on framing it before they even leave the country. The frame is too big. She does not care. Gerald the sheep, somewhere, gets a tingling feeling and cannot explain why.`,
+      bodySquid: `Squid bursts into tears immediately. The good kind. She reads it three times. Then — with the energy of a magician revealing a final trick — she pulls out her own tiny crumpled doodle from under HER wing. It says, simply: "Mr Porky: best beak." They exchange documents. Both burst into more tears.`,
+      gradesPorky: ['PROCLAMATION ARCHITECT', 'CERTIFIED ARTISAN', 'SOLID CRAFTER', 'TRIED HIS BEST'],
+      gradesSquid: ['COMMISSIONED MUSE', 'CERTIFIED SOFT-HEART', 'SOLID SCROLL-KEEPER', 'TRIED HER BEST'],
+    }),
+    choices: () => [{ text: '↻ Play again (different paths!)', next: 'restart' }],
+  },
+
+  // === ENDING D — PASSPORT ===
+  ending_passport: {
+    name: 'THE END',
+    art: art_credits,
+    text: () => endingScreen({
+      title: 'SHE KEPT THE PASSPORT 🌍💗',
+      bodyPorky: `Izzy flips through every stamped page. She gasps at Egypt. She giggles at Hawaii. The last page — "Next destination: everywhere." — she closes slowly. "Porky," she says. "Pack your flippers. I'll book the flights." He has, somehow, never been more in love.`,
+      bodySquid: `Squid flips through every page. The stamps are crooked. The handwriting is endearingly bad. The last page — "Next destination: everywhere." — she closes the passport and immediately, OUT LOUD on the spot, begins planning their next trip. By the third sentence Mr Porky is taking notes.`,
+      gradesPorky: ['WORLD-CLASS WANDERER', 'CERTIFIED EXPLORER', 'SOLID TRAVELLER', 'TRIED HIS BEST'],
+      gradesSquid: ['CHIEF EXPEDITION OFFICER', 'CERTIFIED ROUTE-PLANNER', 'SOLID NAVIGATOR', 'TRIED HER BEST'],
+    }),
     choices: () => [{ text: '↻ Play again (different paths!)', next: 'restart' }],
   },
 
@@ -2028,6 +2144,7 @@ const Scenes = {
       State.player = 'porky';
       State.inventory = [];
       State.selectedItem = null;
+      State.vibes = { romantic: 0, silly: 0, sentimental: 0, adventure: 0 };
       goTo('title');
     },
   },
@@ -2058,6 +2175,95 @@ function countStop() {
 }
 function filterChoices(arr) {
   return arr.filter(c => !c.requires || c.requires());
+}
+
+// ============= VIBE / ENDING ROUTING =============
+const SCENE_VIBES = {
+  // Tokyo
+  tokyo_finish_win:    ['adventure',   3],
+  tokyo_finish_lose:   ['silly',       1],
+  tokyo_finish:        ['silly',       2],
+  tokyo_karaoke:       ['silly',       2],
+  // Paris
+  paris_bread:         ['romantic',    2],
+  paris_sketch:        ['sentimental', 3],
+  paris_cafe:          ['romantic',    2],
+  // Morocco
+  morocco_souk:        ['sentimental', 3],
+  morocco_tea:         ['silly',       1],
+  morocco_stars:       ['romantic',    3],
+  // Scotland
+  scotland_castle:     ['adventure',   2],
+  scotland_loch:       ['silly',       1],
+  scotland_whisky:     ['silly',       2],
+  scotland_gerald:     ['sentimental', 2],
+  // Egypt
+  egypt_finish_win:    ['adventure',   3],
+  egypt_finish_lose:   ['silly',       1],
+  egypt_bribe:         ['silly',       1],
+  // Amazon
+  amazon_butterfly:    ['adventure',   3],
+  amazon_river:        ['romantic',    1],
+  amazon_snake:        ['silly',       2],
+  // Iceland
+  iceland_finish_win:  ['adventure',   3],
+  iceland_finish_lose: ['silly',       1],
+  iceland_quiet:       ['romantic',    3],
+  // Venice
+  venice_gondola:      ['romantic',    3],
+  venice_pizza:        ['silly',       1],
+  venice_masque:       ['silly',       2],
+  // Hawaii
+  hawaii_surf:         ['silly',       2],
+  hawaii_lei:          ['sentimental', 3],
+  hawaii_nap:          ['silly',       2],
+  // India
+  india_taj:           ['romantic',    3],
+  india_curry:         ['silly',       2],
+  india_rickshaw:      ['silly',       2],
+  india_henna:         ['sentimental', 3],
+  // Peru
+  peru_llama:          ['silly',       2],
+  peru_hike:           ['adventure',   2],
+  peru_temple:         ['adventure',   2],
+  peru_market:         ['silly',       1],
+  // Pre-finale activities (final-destination nudge)
+  everest_activity:    ['sentimental', 3],
+  nyc_activity:        ['romantic',    3],
+  gbr_activity:        ['adventure',   3],
+};
+
+function addVibe(kind, n) {
+  if (!State.vibes) State.vibes = { romantic: 0, silly: 0, sentimental: 0, adventure: 0 };
+  if (kind in State.vibes) State.vibes[kind] += (n || 1);
+}
+
+// Default to 'romantic' (Pebble) on ties — keeps the canonical ending as the gentle fallback.
+function dominantVibe() {
+  const v = State.vibes;
+  let best = 'romantic';
+  let bestScore = v.romantic;
+  if (v.silly       > bestScore) { best = 'silly';       bestScore = v.silly; }
+  if (v.sentimental > bestScore) { best = 'sentimental'; bestScore = v.sentimental; }
+  if (v.adventure   > bestScore) { best = 'adventure';   bestScore = v.adventure; }
+  return best;
+}
+
+function endingScreen({ title, bodyPorky, bodySquid, gradesPorky, gradesSquid }) {
+  const isSquid = State.player === 'squid';
+  const body = isSquid ? bodySquid : bodyPorky;
+  const grades = isSquid ? gradesSquid : gradesPorky;
+  const grade = State.coins >= 25 ? grades[0]
+              : State.coins >= 15 ? grades[1]
+              : State.coins >= 8  ? grades[2]
+              :                     grades[3];
+  const ratingLabel = isSquid ? 'Squid rating' : 'Mr Porky rating';
+  return `<div class="endingTitle">${title}</div>
+    ${body}<br><br>
+    <span style="color:var(--gold);">Final Fish Coins: ${State.coins}</span><br>
+    <span style="color:var(--teal);">Stops visited: ${State.stops}</span><br>
+    <span style="color:var(--pink);">${ratingLabel}: ${grade}</span><br><br>
+    <span style="font-size:9px;color:var(--paper);">Made with ♥ — Santo Loves Izzy. Forever and always.</span>`;
 }
 
 // ============= RENDERING =============
@@ -2112,8 +2318,10 @@ function renderScene(key) {
   if (!sc) { console.error('Missing scene:', key); return; }
   if (sc.onEnter) { sc.onEnter(); return; }
 
+  const isFirstVisit = !State.visited.has(key);
   State.current = key;
   State.visited.add(key);
+  if (isFirstVisit && SCENE_VIBES[key]) addVibe(SCENE_VIBES[key][0], SCENE_VIBES[key][1]);
 
   const game = document.getElementById('game');
   const interactivePuzzle = sc.puzzle && (sc.puzzle.kind === 'discover-sequence' || sc.puzzle.kind === 'star-order' || sc.puzzle.kind === 'escape-room' || sc.puzzle.kind === 'memory-walk');

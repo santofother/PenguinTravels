@@ -923,8 +923,9 @@
   /* The "paper" map */
   .travelMap {
     position: relative;
-    width: min(92vw, 520px);
-    height: min(60vh, 320px);
+    width: min(92vw, 640px);
+    height: min(50vh, 320px);
+    aspect-ratio: 2 / 1;
     background:
       repeating-linear-gradient(0deg, rgba(120,80,30,0.06) 0 1px, transparent 1px 22px),
       repeating-linear-gradient(90deg, rgba(120,80,30,0.06) 0 1px, transparent 1px 22px),
@@ -946,17 +947,21 @@
     to   { transform: scale(1) rotate(0deg); opacity: 1; }
   }
 
-  /* Decorative continent blobs (just suggesting shapes) */
-  .travelMap .continent {
+  /* Geographically accurate world map */
+  .travelMap .travelWorld {
     position: absolute;
-    background: rgba(120,90,40,0.18);
-    border: 2px solid rgba(80,50,20,0.35);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
   }
-  .travelMap .continent.c1 { top: 18%; left: 8%;  width: 28%; height: 30%; border-radius: 40% 50% 30% 50%; transform: rotate(-6deg); }
-  .travelMap .continent.c2 { top: 55%; left: 20%; width: 22%; height: 28%; border-radius: 50% 40% 50% 30%; transform: rotate(8deg); }
-  .travelMap .continent.c3 { top: 12%; right: 10%; width: 32%; height: 36%; border-radius: 35% 45% 50% 40%; transform: rotate(4deg); }
-  .travelMap .continent.c4 { bottom: 12%; right: 14%; width: 24%; height: 22%; border-radius: 50% 35% 45% 50%; transform: rotate(-4deg); }
+  .travelMap .travelWorld path {
+    fill: rgba(120,90,40,0.22);
+    stroke: rgba(80,50,20,0.55);
+    stroke-width: 0.6;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
 
   /* Compass rose — top-right */
   .travelCompass {
@@ -1544,6 +1549,10 @@ const State = {
   visited: new Set(),
   stops: 0,
   current: 'title',
+  // Last real travel destination the player physically arrived at.
+  // Used as the origin pin for the next travel transition so the route
+  // chains current → next instead of always restarting from Antarctica.
+  lastLocation: 'antarctica',
   flags: {},
   player: 'porky', // 'porky' | 'squid'
   inventory: [],
@@ -4528,6 +4537,7 @@ const Scenes = {
       State.selectedItem = null;
       State.vibes = { romantic: 0, silly: 0, sentimental: 0, adventure: 0 };
       State.stats = { adventurous: 0, curious: 0, social: 0, cautious: 0 };
+      State.lastLocation = 'antarctica';
       goTo('title');
     },
   },
@@ -5479,6 +5489,72 @@ const TRAVEL_LABELS = {
 };
 let _transitionLock = false;
 
+// Real-world lat/lon for each travel scene. Used to place pins at geographically
+// accurate positions on the world map.
+const LOCATION_COORDS = {
+  antarctica: [-75.0,    0.0],     // central Antarctica (home iceberg)
+  tokyo:      [ 35.68, 139.69],
+  paris:      [ 48.86,   2.35],
+  egypt:      [ 30.04,  31.24],    // Cairo
+  morocco:    [ 31.63,  -7.99],    // Marrakech
+  scotland:   [ 56.49,  -4.20],
+  amazon:     [ -3.47, -62.21],    // central Amazon basin
+  iceland:    [ 64.13, -21.94],    // Reykjavik
+  venice:     [ 45.44,  12.32],
+  hawaii:     [ 20.80, -156.32],
+  india:      [ 27.18,  78.04],    // Agra (Taj Mahal)
+  peru:       [-13.16, -72.55],    // Machu Picchu
+  everest:    [ 27.99,  86.93],
+  nyc:        [ 40.71, -74.01],
+  gbr:        [-18.29, 147.70],    // Great Barrier Reef
+  title:      [-75.0,    0.0],     // Antarctica home
+};
+
+// Convert lat/lon to a percentage within the world-map div (equirectangular).
+function locToMapPct(key) {
+  const c = LOCATION_COORDS[key] || LOCATION_COORDS.antarctica;
+  const lat = c[0], lon = c[1];
+  return {
+    x: (lon + 180) / 360 * 100,
+    y: (90 - lat) / 180 * 100,
+  };
+}
+
+// Simplified but recognizable continent outlines.
+// Coords are SVG-space: x = longitude (-180..180), y = -latitude (so north is up).
+const WORLD_MAP_SVG = `
+  <svg class="travelWorld" viewBox="-180 -90 360 180" preserveAspectRatio="none">
+    <!-- North America -->
+    <path d="M -168,-66 L -158,-72 L -125,-72 L -95,-76 L -75,-76 L -55,-71 L -52,-60 L -60,-50 L -68,-47 L -55,-49 L -55,-46 L -65,-45 L -73,-44 L -75,-38 L -77,-32 L -80,-30 L -80,-26 L -82,-25 L -82,-29 L -85,-30 L -90,-29 L -94,-29 L -97,-26 L -97,-21 L -91,-18 L -88,-17 L -88,-21 L -90,-21 L -88,-15 L -83,-10 L -78,-8 L -83,-12 L -91,-16 L -97,-15 L -106,-22 L -110,-23 L -114,-30 L -118,-32 L -122,-37 L -123,-40 L -124,-48 L -130,-55 L -140,-58 L -160,-58 L -168,-66 Z"/>
+    <!-- Greenland -->
+    <path d="M -45,-83 L -20,-82 L -15,-78 L -22,-72 L -32,-70 L -45,-60 L -53,-66 L -55,-78 L -45,-83 Z"/>
+    <!-- South America -->
+    <path d="M -78,-12 L -72,-12 L -65,-10 L -58,-8 L -52,-5 L -47,-1 L -42,5 L -38,8 L -35,7 L -36,12 L -39,17 L -42,22 L -47,25 L -53,33 L -58,38 L -64,42 L -68,46 L -71,50 L -73,53 L -71,55 L -68,53 L -68,42 L -71,30 L -74,18 L -77,8 L -80,3 L -82,7 L -78,-12 Z"/>
+    <!-- Africa -->
+    <path d="M -17,-21 L -10,-32 L 0,-36 L 10,-36 L 20,-32 L 30,-31 L 33,-31 L 36,-29 L 43,-12 L 51,-12 L 49,-3 L 42,5 L 40,15 L 35,25 L 30,30 L 22,34 L 18,33 L 15,28 L 13,12 L 12,5 L 9,0 L 8,-5 L 0,-5 L -10,-5 L -16,-13 L -17,-21 Z"/>
+    <!-- Eurasia (Europe + Asia) -->
+    <path d="M -9,-37 L -9,-43 L -2,-49 L 4,-50 L 8,-54 L 12,-55 L 8,-58 L 5,-60 L 7,-65 L 14,-69 L 22,-70 L 30,-72 L 50,-72 L 70,-72 L 90,-75 L 110,-75 L 130,-74 L 145,-72 L 160,-69 L 170,-69 L 180,-66 L 180,-62 L 165,-60 L 162,-55 L 155,-55 L 155,-50 L 142,-46 L 142,-50 L 137,-50 L 135,-42 L 130,-36 L 125,-32 L 122,-30 L 121,-22 L 110,-22 L 108,-18 L 105,-12 L 105,-8 L 102,-12 L 100,-15 L 98,-12 L 96,-16 L 92,-22 L 88,-22 L 80,-13 L 78,-8 L 73,-15 L 72,-22 L 67,-25 L 58,-25 L 56,-26 L 56,-23 L 51,-25 L 50,-30 L 48,-30 L 50,-22 L 55,-15 L 53,-12 L 45,-12 L 43,-15 L 39,-22 L 36,-30 L 35,-36 L 32,-37 L 28,-37 L 26,-39 L 23,-37 L 20,-40 L 19,-41 L 13,-46 L 14,-41 L 18,-40 L 14,-38 L 12,-40 L 10,-44 L 4,-44 L 0,-37 L -5,-37 L -9,-37 Z"/>
+    <!-- British Isles -->
+    <path d="M -5,-50 L 1,-51 L 1,-58 L -3,-58 L -5,-55 L -5,-50 Z"/>
+    <path d="M -10,-52 L -6,-52 L -6,-55 L -10,-55 L -10,-52 Z"/>
+    <!-- Iceland -->
+    <path d="M -24,-63 L -14,-63 L -13,-66 L -22,-67 L -24,-63 Z"/>
+    <!-- Japan -->
+    <path d="M 130,-31 L 138,-34 L 142,-40 L 145,-44 L 142,-43 L 140,-37 L 134,-34 L 130,-31 Z"/>
+    <!-- Madagascar -->
+    <path d="M 43,15 L 50,15 L 50,25 L 45,26 L 43,15 Z"/>
+    <!-- Australia -->
+    <path d="M 113,12 L 122,12 L 130,11 L 137,12 L 142,10 L 145,15 L 152,25 L 153,32 L 145,38 L 138,38 L 125,32 L 115,33 L 113,30 L 113,12 Z"/>
+    <!-- Tasmania -->
+    <path d="M 145,40 L 148,40 L 148,43 L 145,43 L 145,40 Z"/>
+    <!-- New Zealand -->
+    <path d="M 172,34 L 175,34 L 178,42 L 174,42 L 172,34 Z"/>
+    <path d="M 167,42 L 172,42 L 174,46 L 168,47 L 167,42 Z"/>
+    <!-- Antarctica -->
+    <path d="M -180,67 L -160,72 L -120,73 L -100,75 L -80,75 L -65,73 L -55,75 L -45,77 L -25,72 L -10,72 L 10,69 L 30,69 L 60,67 L 90,67 L 120,67 L 150,67 L 180,67 L 180,82 L -180,82 L -180,67 Z"/>
+  </svg>
+`;
+
 function travelLabel(key) {
   if (TRAVEL_LABELS[key]) return TRAVEL_LABELS[key];
   const sc = Scenes[key];
@@ -5486,20 +5562,46 @@ function travelLabel(key) {
   return key.toUpperCase();
 }
 
+// Map any scene key (including sub-scenes like "paris_tower" or "amazon_r2")
+// back to its travel root so the transition starts from where the player
+// actually is, not always from Antarctica.
+function resolveTravelRoot(sceneKey) {
+  if (!sceneKey) return 'antarctica';
+  if (TRAVEL_SCENES.has(sceneKey)) return sceneKey;
+  for (const k of TRAVEL_SCENES) {
+    if (sceneKey === k || sceneKey.startsWith(k + '_')) return k;
+  }
+  return 'antarctica';
+}
+
 function playTravelTransition(destKey, done) {
   playSFX('travel');   // ✈ travel sound
-  const fromKey = TRAVEL_SCENES.has(State.current) ? State.current : 'antarctica';
+  // Origin = wherever the player physically is right now.
+  // Prefer the explicit lastLocation tracker (handles hub/choice scenes like
+  // 'choose2' that aren't tied to any geography). Fall back to deriving from
+  // State.current for safety.
+  const fromKey = LOCATION_COORDS[State.lastLocation]
+    ? State.lastLocation
+    : resolveTravelRoot(State.current);
   const fromLabel = travelLabel(fromKey);
   const destLabel = travelLabel(destKey);
+  // Remember the new arrival so the *next* trip departs from here, not Antarctica.
+  State.lastLocation = destKey;
 
-  // Random pin positions in % within the map (origin left-half, dest right-half).
-  const x1 = 12 + Math.random() * 18;   // 12%-30%
-  const y1 = 30 + Math.random() * 35;   // 30%-65%
-  const x2 = 70 + Math.random() * 16;   // 70%-86%
-  const y2 = 30 + Math.random() * 35;
-  // Curve control point — bow upward like Indy's arc
-  const cx = (x1 + x2) / 2;
-  const cy = Math.min(y1, y2) - 16 - Math.random() * 10;
+  // Pin positions from real lat/lon (% within the equirectangular world map).
+  const fromPos = locToMapPct(fromKey);
+  const toPos   = locToMapPct(destKey);
+  const x1 = fromPos.x, y1 = fromPos.y;
+  const x2 = toPos.x,   y2 = toPos.y;
+  // Gentle bow perpendicular to the direct line (consistent travel-map arc).
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy) || 1;
+  const bow = Math.min(14, Math.max(4, len * 0.18));
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  // Bow always to the "upper" side of travel direction (toward smaller y when possible).
+  const sign = (dx >= 0) ? -1 : 1;
+  const cx = mx + sign * (-dy / len) * bow;
+  const cy = my + sign * ( dx / len) * bow;
   const pathD = `M ${x1} ${y1} Q ${cx} ${cy}, ${x2} ${y2}`;
   const approxLen = (Math.hypot(x2 - x1, y2 - y1) * 1.3).toFixed(1);
 
@@ -5508,10 +5610,7 @@ function playTravelTransition(destKey, done) {
   overlay.innerHTML = `
     <div class="travelMap">
       <div class="travelHeader">— ✈ DEPARTING ✈ —</div>
-      <div class="continent c1"></div>
-      <div class="continent c2"></div>
-      <div class="continent c3"></div>
-      <div class="continent c4"></div>
+      ${WORLD_MAP_SVG}
       <div class="travelCompass">
         <div class="rose">✦</div>
         <div class="n">N</div>

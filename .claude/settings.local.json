@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(start *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(unzip -p perspective_changes.docx word/document.xml)",
+      "Bash(py --version)",
+      "Bash(py -c ' *)"
     ]
   }
 }

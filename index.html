@@ -2492,15 +2492,79 @@ const Scenes = {
   egypt: {
     name: 'EGYPT — GIZA',
     art: art_egypt,
-    text: () => `The sun is BLAZING. Mr Porky regrets not packing sunscreen. A Sphinx blocks the path to the Great Pyramid. "ANSWER MY RIDDLE, FLIGHTLESS BIRDS, OR SUFFER A MILDLY INCONVENIENT DAY."`,
+    text: () => P(
+      `The sun is BLAZING. Mr Porky regrets not packing sunscreen. Izzy is already photographing everything, spinning in a full circle to take it all in. The Great Pyramid looms overhead, and a rather theatrical Sphinx blocks the path, dramatically clearing its enormous stone throat at both of them.`,
+      `Squid has her sunhat on and a camera around her neck before they've even left the airport. Mr Porky is squinting heroically into the sun. The Sphinx blocks the path ahead — it takes one look at both penguins and clears its throat with tremendous self-importance.`
+    ),
     choices: () => [
-      { text: '🧩 Accept the riddle (PUZZLE)', next: 'egypt_puzzle', cls: 'puzzle' },
-      { text: '🐪 Try to bribe the Sphinx with fish (-3 coins)', next: 'egypt_bribe' },
+      { text: P('🧩 Accept the Sphinx\'s puzzle challenge (PUZZLE)', '🧩 Accept the Sphinx\'s puzzle challenge (PUZZLE)'), next: 'egypt_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
+      { text: P('🛕 Explore the Khan el-Khalili bazaar together', '🛕 Drag Mr Porky through the Khan el-Khalili bazaar'), next: 'egypt_market', effect: () => addStat('social') },
+      { text: P('🚣 Felucca ride on the Nile at sunset', '🚣 Felucca on the Nile — Squid wants the river view'), next: 'egypt_nile', cls: 'special', effect: () => addStat('cautious') },
+      { text: P('🏛 Visit the Cairo Museum with a local guide', '🏛 Cairo Museum — Mr Porky wants the deep history'), next: 'egypt_museum', effect: () => addStat('curious') },
+      { text: P('🐪 Try to bribe the Sphinx with fish (-3 coins)', '🐪 Squid already has the fish out — bribe the Sphinx (-3 coins)'), next: 'egypt_bribe' },
+      ...( statUnlocked('social') ? [{ text: P('⛏ Help a local archaeologist at an active dig', '⛏ Join Dr. Layla\'s dig — Squid already said yes for both of you'), next: 'egypt_dig', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
     ],
+  },
+  egypt_market: {
+    name: 'EGYPT — Khan el-Khalili Bazaar',
+    art: art_egypt,
+    text: () => { addCoins(4); return statFlavor({
+      soc: P(
+        `A carpet seller adopts you both as honorary Egyptians within six minutes — he demonstrates haggling on Mr Porky, then watches Izzy negotiate so brilliantly he calls his cousin over to meet her. Both of them leave with new friends and better prices. +4 Fish Coins.`,
+        `A carpet seller spots Squid's enthusiasm from three stalls away and immediately invites both penguins behind the counter for proper tea. He teaches Squid to haggle; she immediately exceeds him. Mr Porky takes detailed notes. The seller's whole family materialises. +4 Fish Coins.`
+      ),
+      def: P(
+        `Spices, lanterns, perfume, noise. A friendly vendor named Khalil presses mint tea on both of you and refuses to let either of you leave until you've each tried three different sweets. Mr Porky's beak is coated in honey. Izzy is radiant. +4 Fish Coins.`,
+        `Spices, lanterns, perfume, and the best kind of chaos. Khalil the vendor presses mint tea on both of them — Squid accepts instantly, Mr Porky holds his cup with the careful dignity of someone having the time of his life. Khalil refills both cups twice. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
+  },
+  egypt_nile: {
+    name: 'EGYPT — Felucca on the Nile',
+    art: art_egypt,
+    text: () => { addCoins(4); State.flags.romantic = true; return P(
+      `The felucca glides into golden light. The captain offers both of you a cup of karkadeh — hibiscus tea — and then tactfully faces forward for the duration. Mr Porky and Izzy sit at the prow watching Cairo drift by in amber and shadow. `+statFlavor({
+        cau: `You'd read that sunset is the only right time for a felucca. Correct. +4 Fish Coins.`,
+        def: `The river is older than almost everything. You can feel it. +4 Fish Coins.`,
+      }),
+      `The felucca glides into golden light. The captain offers them both karkadeh and faces forward with the tact of a man who has done this before. Squid hasn't stopped talking for four days. On the Nile, she goes quiet. Mr Porky watches her watch the city. `+statFlavor({
+        cau: `She'd researched the exact right time for this. Correct, as always. +4 Fish Coins.`,
+        def: `The river is older than almost everything. She can feel it. He can feel her feeling it. +4 Fish Coins.`,
+      })
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
+  },
+  egypt_museum: {
+    name: 'EGYPT — Cairo Museum',
+    art: art_egypt,
+    text: () => { addCoins(3); return statFlavor({
+      cur: P(
+        `Your guide Dr. Farouk is about seventy years old and absolutely riveting. He talks to both of you for two hours about the Amarna period without losing either of you. Mr Porky asks twenty questions. Izzy takes nine pages of notes. Dr. Farouk invites them both back for a private look at the storage rooms. +3 Fish Coins.`,
+        `Their guide Dr. Farouk is about seventy, completely riveting, and talks to both of them with equal energy. Squid asks twenty questions. Mr Porky fills nine pages. Dr. Farouk declares them the best visitors in years and invites them both to see the storage rooms. +3 Fish Coins.`
+      ),
+      def: P(
+        `Mummies, gold, the weight of four thousand years. Their guide Rania explains everything with tremendous enthusiasm to both of them equally — she clearly doesn't play favourites. Izzy is immediately her biggest fan. Mr Porky secretly also is. +3 Fish Coins.`,
+        `Mummies, gold, the weight of four thousand years. Rania the guide explains everything with equal fervour to both penguins. Squid declares her brilliant. Mr Porky agrees, quietly, in his heart. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
+  },
+  egypt_dig: {
+    name: 'EGYPT — The Archaeological Dig',
+    art: art_egypt,
+    text: () => { addCoins(8); return P(
+      `Dr. Layla — characteristically underfunded, magnificently enthusiastic — hands both of you trowels within seconds of meeting you. She talks to Mr Porky about stratigraphy, talks to Izzy about context finds, and treats them like experienced colleagues. Mr Porky finds a pottery shard. Izzy finds a tiny faience amulet. Dr. Layla has a controlled breakdown of joy. They are briefly in an academic footnote. +8 Fish Coins.`,
+      `Dr. Layla gives both of them trowels before either of them has finished saying hello. She briefs them together — stratigraphy for Mr Porky, context finds for Squid — like they're experienced colleagues. Squid finds a faience amulet in eleven minutes. Mr Porky finds a pottery shard with a reed impression. Dr. Layla cries a little. They are co-credited in an academic note. +8 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
   },
   egypt_puzzle: {
     name: 'EGYPT — SPHINX TRIAL',
-    text: () => `A sealed door stands before the Great Pyramid, marked with four empty slots. The Sphinx watches silently. "Earn each sigil, flightless one. Some secrets need tools to uncover."<br><br>🔍 <span style="color:var(--gold);">Click objects to inspect. Pick up tools, then click a tool to <em>select</em> it before using it on something.</span>`,
+    text: () => P(
+      `"EARN THE SIGILS, FLIGHTLESS BIRDS." A sealed door stands before the Great Pyramid, marked with four empty slots. Mr Porky rolls up his metaphorical sleeves. Izzy is already poking things.<br><br>🔍 <span style="color:var(--gold);">Click objects to inspect. Collect tools, select them, then use them on something.</span>`,
+      `"EARN THE SIGILS, FLIGHTLESS BIRDS." A sealed door — four empty slots. Squid immediately starts touching things. Mr Porky is already reading the carvings. Between them, they will figure this out.<br><br>🔍 <span style="color:var(--gold);">Click objects to inspect. Collect tools, select them, then use them on something.</span>`
+    ),
     puzzle: {
       kind: 'escape-room',
       sceneClass: 'bg-egypt',
@@ -2572,23 +2636,143 @@ const Scenes = {
   egypt_finish_win: {
     name: 'EGYPT — Sphinx is impressed',
     art: art_egypt,
-    text: () => { addCoins(6); return `"...That's actually pretty good." The Sphinx steps aside. You explore tombs full of gold. +6 Fish Coins!`; },
-    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+    text: () => { addCoins(6); return P(
+      `"...That's actually quite clever." The Sphinx steps aside, looking slightly betrayed by its own rules. Mr Porky and Izzy explore tombs full of gold dust and ancient quiet. Izzy photographs everything. Mr Porky almost touches one artefact, then very wisely doesn't. +6 Fish Coins!`,
+      `"...That's actually quite impressive." The Sphinx steps aside with the energy of someone who didn't see that coming. Both penguins explore tombs full of gold and ten-thousand-year silence. Squid photographs everything. Mr Porky catalogues it. Together they are one excellent archaeologist. +6 Fish Coins!`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
   },
   egypt_finish_lose: {
     name: 'EGYPT — Sphinx is unimpressed',
     art: art_egypt,
-    text: () => `The Sphinx sighs. "It was 'penguin'." You both walk away politely. No coins, but Izzy laughs about it for three weeks.`,
-    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+    text: () => P(
+      `The Sphinx sighs at both of them. "It was 'penguin'." You both walk away with your dignity technically intact. No coins, but Izzy laughs about it for three weeks — and Mr Porky secretly loves that she does.`,
+      `The Sphinx sighs. "It was 'penguin'." Squid looks at Mr Porky. Mr Porky looks at Squid. They walk away with their flippers interlinked and their dignity at roughly 60%. Squid will bring this up forever. Mr Porky is already accepting this.`
+    ),
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
   },
   egypt_bribe: {
     name: 'EGYPT — Bribery',
     art: art_egypt,
     text: () => {
-      if (State.coins >= 3) { State.coins -= 3; renderTopBar(); return `The Sphinx accepts three frozen herring and waves you through. "I really shouldn't, but Tuesdays are slow."`; }
-      return `You can't afford it. The Sphinx looks disappointed in you AND your wallet.`;
+      if (State.coins >= 3) {
+        State.coins -= 3; renderTopBar();
+        return P(
+          `The Sphinx inspects three frozen herring — sniffs them once — and waves both penguins through. "I really shouldn't, but Tuesdays are slow." Mr Porky doesn't make eye contact with anyone. Izzy is extremely pleased with herself.`,
+          `Squid produced the frozen herring before Mr Porky had finished processing the plan. The Sphinx sniffs them, sighs, and waves them both through. "Tuesdays are slow." Squid fistpumps. Mr Porky is mortified for all parties.`
+        );
+      }
+      return P(
+        `You can't afford it. The Sphinx looks disappointed in you AND your wallet. Izzy covers her beak with her flipper.`,
+        `They cannot afford it. The Sphinx gazes at both of them with profound disappointment. Squid looks at Mr Porky. Mr Porky looks at Squid. This is a low point.`
+      );
     },
-    choices: () => [{ text: '➡ Onwards', next: 'choose2', effect: countStop }],
+    choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
+  },
+  egypt_r2: {
+    name: 'EGYPT — EVENING AT GIZA',
+    art: art_egypt,
+    text: () => P(
+      `The sun is dropping, painting the pyramids orange-pink. The crowds thin. The air cools to something almost reasonable. One more Egyptian memory to make.`,
+      `The sun is dropping. The pyramids turn colours that don't have proper names. Squid has Mr Porky by the flipper and is already pulling him slightly faster than his legs prefer. One more Egyptian memory to make before they go.`
+    )+statFlavor({
+      adv: P(
+        ` A local mentions a desert bonfire beyond the ridge tonight. You're already walking that way.`,
+        ` Someone at the edge of the site mentions a desert bonfire beyond the ridge. Mr Porky is already half-walking. Squid logs this as a win.`
+      ),
+      cur: P(
+        ` A street scholar has spread ancient star maps in the dust and is waving both of you over.`,
+        ` A street scholar has spread ancient star maps in the dust. He gestures to both of them at once. Mr Porky is already interested. Squid is already interested in watching Mr Porky be interested.`
+      ),
+      soc: P(
+        ` A local family near the Sphinx has set out a meal and waved both of you over before you could decide.`,
+        ` A local family has spotted them and is waving both penguins over for dinner near the Sphinx. Squid accepts before the wave is even finished.`
+      ),
+      cau: P(
+        ` The perfect spot to watch the pyramids at dusk is right there. A tea vendor appears as if summoned.`,
+        ` A tea vendor materialises beside the perfect viewing spot, as if Squid had somehow pre-ordered him. She accepts two cups.`
+      ),
+      def: P(
+        ` The Egyptian evening stretches ahead.`,
+        ` The evening is yours. Squid already has a plan.`
+      ),
+    }),
+    choices: () => [
+      { text: P('🌅 Watch the sunset from the Sphinx\'s shadow', '🌅 Find the perfect spot in the Sphinx\'s shadow'), next: 'egypt_sunset', effect: () => addStat('cautious') },
+      { text: P('🫕 Eat koshary with the locals at a street stall', '🫕 Koshary — Squid wants the street stall experience'), next: 'egypt_food', effect: () => addStat('social') },
+      { text: P('💃 Watch the whirling dervishes ceremony', '💃 Whirling dervishes — Mr Porky wants to understand it properly'), next: 'egypt_dance', effect: () => addStat('curious') },
+      { text: P('🔭 Sleep out under the Western Desert stars', '🔭 Desert stars — Squid booked the guide before they landed'), next: 'egypt_stars', effect: () => addStat('adventurous') },
+      ...( statUnlocked('curious') ? [{ text: P('🌙 Join the secret moonlit tour beneath the Sphinx', '🌙 The after-dark Sphinx chamber — Dr. Nour is waiting'), next: 'egypt_secret', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
+    ],
+  },
+  egypt_sunset: {
+    name: 'EGYPT — Sunset at the Sphinx',
+    art: art_egypt,
+    text: () => { addCoins(3); State.flags.romantic = true; return P(
+      `The Sphinx's shadow stretches east as the sun descends. Mr Porky and Izzy sit exactly inside it — the only people who found this spot tonight. The colour of the sky becomes something no photograph can quite hold. `+statFlavor({
+        cau: `You'd checked the shadow angle on a map app three times. Worth every tap. +3 Fish Coins.`,
+        def: `Mr Porky leans his beak up toward the pyramid. Izzy watches him instead of the sunset. +3 Fish Coins.`,
+      }),
+      `The Sphinx's shadow stretches east as the sun goes down. Squid found the exact spot — nobody else is here. The sky turns colours that don't have names. Mr Porky tilts his beak toward the pyramid. Squid watches him. `+statFlavor({
+        cau: `She'd checked the shadow angle on three different apps. Worth every tab. +3 Fish Coins.`,
+        def: `Neither of them tries to photograph it. Some things are just for the two of them. +3 Fish Coins.`,
+      })
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  egypt_food: {
+    name: 'EGYPT — Koshary Stand',
+    art: art_egypt,
+    text: () => { addCoins(4); return P(
+      `Ahmed the koshary man has been at this corner for thirty years. He talks to both of you simultaneously — ladling soup, gesturing at the pyramids, demanding your opinions on lentils. Mr Porky gives his opinions on lentils in considerable depth. Izzy eats three bowls and gets Ahmed's number. +4 Fish Coins.`,
+      `Ahmed the koshary man has been at this corner for thirty years and talks to both of them at once — spoon in one hand, opinions in the other. Squid eats three bowls. Mr Porky and Ahmed have a serious conversation about lentil ratios. Squid gets a photo with both of them for the scrapbook. +4 Fish Coins.`
+    )+statFlavor({
+      soc: P(
+        ` Ahmed puts you both in a photo behind his stall. You are now, briefly, famous in this corner of Giza.`,
+        ` Ahmed puts the photo up behind his stall immediately. They are, briefly, famous in this corner of Giza. Squid considers this the highlight of Egypt.`
+      ),
+      def: ``,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  egypt_dance: {
+    name: 'EGYPT — Whirling Dervishes',
+    art: art_egypt,
+    text: () => { addCoins(4); return statFlavor({
+      cur: P(
+        `The ceremony is ancient and exact. Izzy leans over and whispers the history to Mr Porky, which she memorised on the plane. He looks at her instead of the dancers for most of it. She notices, and does not mention it. +4 Fish Coins.`,
+        `The ceremony is ancient and exact. Mr Porky leans over and whispers everything he knows about Sufi practice to Squid. She listens with her eyes on the dancers and her hand in his. +4 Fish Coins.`
+      ),
+      def: P(
+        `The dancers spin and spin. White robes form perfect circles. Something about it is very still and very large at the same time. Mr Porky and Izzy barely move for the entire performance. +4 Fish Coins.`,
+        `The dancers spin and spin. Squid hasn't said a word for twenty minutes — Mr Porky clocks this, and quietly treasures it. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  egypt_stars: {
+    name: 'EGYPT — Desert Night',
+    art: art_egypt,
+    text: () => { addCoins(5); return P(
+      `Their guide Hassan leads both of them out past the last city lights until the Milky Way appears all at once like something personal. "In ancient times," Hassan says, addressing both of them, "every star had a name, and every name was part of a story." He points. Mr Porky and Izzy listen without speaking. +5 Fish Coins.`,
+      `Hassan leads them both into proper desert dark. The Milky Way appears all at once. He addresses both of them: "Every star had a name, and every name told part of a story." Squid listens. Mr Porky traces the patterns with his flipper. Hassan traces the same ones on Mr Porky's map as a gift. +5 Fish Coins.`
+    )+statFlavor({
+      adv: P(
+        ` A meteor. Izzy makes a wish so fast it barely counts. She won't tell Mr Porky what it was. He suspects it might be him.`,
+        ` A meteor. Squid wishes before it finishes falling. She won't tell Mr Porky what she wished. He suspects. He is correct.`
+      ),
+      def: ``,
+    }); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+  egypt_secret: {
+    name: 'EGYPT — The Sphinx Chamber',
+    art: art_egypt,
+    text: () => { addCoins(10); return P(
+      `Dr. Nour — conservationist, clearly accustomed to after-hours — leads both penguins through a gate below the Sphinx that most tourists never see. A passage lit by string lights. "We study the acoustics," she explains to both of them. She plays a tuning fork. The chamber hums back. Mr Porky and Izzy stand very close together in the dark. +10 Fish Coins.`,
+      `Dr. Nour leads them both through the gate below the Sphinx — a passage lit by string lights. She explains the acoustics to both of them equally. She plays a single tuning fork. The stone hums back. Squid takes Mr Porky's flipper in the dark without saying a single word. +10 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
   },
 
   // ===== CHOOSE 2 (mid-journey — pick first of two stops) =====
@@ -2615,44 +2799,68 @@ const Scenes = {
   amazon: {
     name: 'AMAZON RAINFOREST — ARRIVAL',
     art: art_amazon,
-    text: () => `Hot. Wet. A toucan judges Mr Porky's outfit. Izzy spots a path leading deeper into the green.`,
+    text: () => P(
+      `Hot. Wet. A toucan judges Mr Porky's outfit at length. Izzy spots a path leading deeper into the green and is already six steps down it before anything has been decided.`,
+      `Hot. Wet. Extraordinary. A toucan judges Mr Porky's outfit; Squid tells the toucan he looks great; the toucan ignores her. She has already spotted three paths deeper into the green and has opinions about all of them.`
+    ),
     choices: () => [
-      { text: '🦋 Follow a glowing butterfly deeper in', next: 'amazon_butterfly', cls: 'special', effect: () => addStat('adventurous') },
-      { text: '🛶 Canoe down the river', next: 'amazon_river', effect: () => addStat('cautious') },
-      { text: '🐍 Make friends with Carl the snake', next: 'amazon_snake', effect: () => addStat('social') },
-      { text: '🔭 Document the wildlife with your camera', next: 'amazon_document', effect: () => addStat('curious') },
-      ...( statUnlocked('curious') ? [{ text: '🌿 Search for a legendary plant the locals whisper about', next: 'amazon_plant', cls: 'special', effect: () => addStat('curious') }] : [] ),
+      { text: P('🦋 Follow a glowing butterfly deeper in', '🦋 Chase the glowing butterfly — Mr Porky two paces behind'), next: 'amazon_butterfly', cls: 'special', effect: () => addStat('adventurous') },
+      { text: P('🛶 Canoe down the river', '🛶 Take the canoe — Squid wants the dolphins'), next: 'amazon_river', effect: () => addStat('cautious') },
+      { text: P('🐍 Make friends with Carl the snake', '🐍 Squid has already named the snake — go meet him'), next: 'amazon_snake', effect: () => addStat('social') },
+      { text: P('🔭 Document the wildlife with your camera', '🔭 Document everything — Squid names, Mr Porky writes'), next: 'amazon_document', effect: () => addStat('curious') },
+      ...( statUnlocked('curious') ? [{ text: P('🌿 Search for a legendary plant the locals whisper about', '🌿 Find the legendary plant — Squid is sure she will'), next: 'amazon_plant', cls: 'special', effect: () => addStat('curious') }] : [] ),
     ],
   },
   amazon_document: {
     name: 'AMAZON — Wildlife Record',
     art: art_amazon,
     text: () => { addCoins(4); return statFlavor({
-      cur: `You photograph and catalogue forty-three species in two hours. A passing biologist offers you a research position. Izzy files this information away for later. +4 Fish Coins.`,
-      def: `Toucans, sloths, a brief appearance by a very shy jaguar. Izzy names them all. +4 Fish Coins.`,
+      cur: P(
+        `You photograph and catalogue forty-three species in two hours. A passing biologist asks you both questions for twenty minutes, then offers you a joint research position. Izzy says yes before he's finished the sentence. Mr Porky is technically still thinking. +4 Fish Coins.`,
+        `Squid photographs; Mr Porky catalogues. A passing biologist peppers them both with questions, then offers them both a research position. Squid accepts on behalf of both. Mr Porky looks like a man whose life is accelerating pleasantly. +4 Fish Coins.`
+      ),
+      def: P(
+        `Toucans, sloths, a brief appearance by a very shy jaguar. Izzy names them all. Mr Porky documents. They are an excellent team. +4 Fish Coins.`,
+        `Toucans, sloths, a very shy jaguar. Squid names them all. Mr Porky documents every single one. They are, genuinely, an excellent team. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_plant: {
     name: 'AMAZON — The Legendary Plant',
     art: art_amazon,
-    text: () => { addCoins(8); return `It's real. A tiny flower that blooms once every seven years, glowing pale gold in the understory. The locals say it brings luck to those who find it. You both stand very still. +8 Fish Coins.`; },
+    text: () => { addCoins(8); return P(
+      `It's real. A tiny flower that blooms once every seven years, glowing pale gold in the understory. The locals say it brings luck to those who find it. You both stand very still. +8 Fish Coins.`,
+      `It's real. Squid finds it first and grabs Mr Porky's flipper without a word. They both stand very still. The flower glows pale gold. The locals say it only appears for the deserving. Squid decides this counts. +8 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_butterfly: {
     name: 'AMAZON — Hidden Waterfall',
     art: art_amazon,
     text: () => { addCoins(7); return statFlavor({
-      adv: `The butterfly leads you deep, past three rivers and a confused sloth. The waterfall is enormous, hidden, and perfect. Izzy kisses you on the beak. +7 Fish Coins!`,
-      def: `The butterfly leads you to a SECRET waterfall full of gold-flecked fish. Izzy kisses you on the beak. +7 Fish Coins!`,
+      adv: P(
+        `The butterfly leads them both deep — past three rivers and a confused sloth. The waterfall is enormous, hidden, and perfect. Izzy kisses Mr Porky on the beak. He stands very still, as if the slightest movement might end it. +7 Fish Coins!`,
+        `The butterfly leads them both through three rivers, past a very confused sloth, to an enormous hidden waterfall. Squid kisses Mr Porky on the beak. He stands perfectly still. +7 Fish Coins!`
+      ),
+      def: P(
+        `The butterfly leads them to a secret waterfall full of gold-flecked fish. Izzy kisses Mr Porky on the beak. +7 Fish Coins!`,
+        `A secret waterfall, gold-flecked fish, two penguins. Squid kisses Mr Porky on the beak. He decides this is the best day of his life. +7 Fish Coins!`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_river: {
     name: 'AMAZON — River Canoe',
     art: art_amazon,
-    text: () => { addCoins(2); return `You see river dolphins. Izzy waves. They wave back. `+statFlavor({
-      cau: `You'd checked the current charts. Calm water, best route, no incidents. Perfect canoe day. +2 Fish Coins.`,
+    text: () => { addCoins(2); return P(
+      `You see river dolphins. Izzy waves. They wave back. `,
+      `River dolphins appear. Squid leans over the side of the canoe to wave at them. Mr Porky grabs her tail feathers to stop her going in. The dolphins wave back anyway. `
+    )+statFlavor({
+      cau: P(
+        `You'd checked the current charts. Calm water, best route, no incidents. Perfect canoe day. +2 Fish Coins.`,
+        `Squid had checked the current charts (twice — once to be sure Mr Porky wouldn't tip). Calm water, best route, no incidents. +2 Fish Coins.`
+      ),
       def: `+2 Fish Coins.`,
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
@@ -2661,35 +2869,65 @@ const Scenes = {
     name: 'AMAZON — Carl the Snake',
     art: art_amazon,
     text: () => { addCoins(1); return statFlavor({
-      soc: `Carl is very talkative for a snake. He gives you his tiny map AND introduces you to his cousin who knows the best waterfall. +1 Fish Coin, plus a lot of inside information.`,
-      def: `The snake's name is Carl. He gives you a tiny map. Izzy finds this whole situation deeply normal. +1 Fish Coin.`,
+      soc: P(
+        `Carl is very talkative for a snake. He chats to both of you — gives Mr Porky the tiny map, tells Izzy about his cousin near the best waterfall. He is a fair snake. You leave better informed than you arrived. +1 Fish Coin.`,
+        `Carl is extremely talkative for a snake. He talks to both of them at once — Squid gets the waterfall intel, Mr Porky gets the tiny map. He's very fair about it. Squid finds this deeply normal. Mr Porky is still processing. +1 Fish Coin.`
+      ),
+      def: P(
+        `The snake's name is Carl. He gives you both a tiny map — he had two, apparently. Izzy finds this whole situation deeply normal. Mr Porky is processing. +1 Fish Coin.`,
+        `The snake's name is Carl. He gives them both a tiny map. Two maps, two penguins — he planned for this. Squid finds it normal. Mr Porky is still thinking about it ten minutes later. +1 Fish Coin.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'amazon_r2' }],
   },
   amazon_r2: {
     name: 'AMAZON — DEEP IN THE JUNGLE',
     art: art_amazon,
-    text: () => `The jungle deepens. Sounds layer over each other — birds, water, the hum of green. One last adventure before you push on.`+statFlavor({
-      adv: ` Something glints from the jungle floor. You've spotted a path nobody else has taken.`,
-      cur: ` A local guide offers to show you something off the map.`,
-      soc: ` A riverside community has set out food. They're welcoming travellers.`,
-      cau: ` A research station offers a cool, safe rest and some excellent local knowledge.`,
-      def: ` The jungle waits.`,
+    text: () => P(
+      `The jungle deepens. Sounds layer over each other — birds, water, the hum of green. One last adventure before you push on.`,
+      `Squid has been pointing at things in the jungle for forty minutes. Mr Porky has identified most of them. One was a leaf. They're both having the best time.`
+    )+statFlavor({
+      adv: P(
+        ` Something glints from the jungle floor. You've spotted a path nobody else has taken.`,
+        ` Squid spots a path nobody else has taken. Already moving toward it.`
+      ),
+      cur: P(
+        ` A local guide offers to show you something off the map.`,
+        ` A local guide offers to show them something off the map. Squid is in.`
+      ),
+      soc: P(
+        ` A riverside community has set out food. They're welcoming travellers.`,
+        ` A riverside community has set out food. Squid is already waving.`
+      ),
+      cau: P(
+        ` A research station offers a cool, safe rest and some excellent local knowledge.`,
+        ` A research station offers a cool, safe rest. Squid eyes the hammock.`
+      ),
+      def: P(
+        ` The jungle waits.`,
+        ` The jungle waits. Squid does not.`
+      ),
     }),
     choices: () => [
-      { text: '🗺 Explore the hidden jungle path', next: 'amazon_path', effect: () => addStat('adventurous') },
-      { text: '🧭 Join a local guide off the map', next: 'amazon_guide', effect: () => addStat('curious') },
-      { text: '🍚 Share a meal with the riverside community', next: 'amazon_meal', effect: () => addStat('social') },
-      { text: '🔬 Rest at the research station', next: 'amazon_station', effect: () => addStat('cautious') },
-      ...( statUnlocked('adventurous') ? [{ text: '🌊 Swim in the black-water lagoon', next: 'amazon_swim', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+      { text: P('🗺 Explore the hidden jungle path', '🗺 Follow Squid down the hidden path'), next: 'amazon_path', effect: () => addStat('adventurous') },
+      { text: P('🧭 Join a local guide off the map', '🧭 Squid wants the guide — go off the map'), next: 'amazon_guide', effect: () => addStat('curious') },
+      { text: P('🍚 Share a meal with the riverside community', '🍚 Help cook (chaotically) at the riverside meal'), next: 'amazon_meal', effect: () => addStat('social') },
+      { text: P('🔬 Rest at the research station', '🔬 Research station — Squid claims a hammock'), next: 'amazon_station', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🌊 Swim in the black-water lagoon', '🌊 Squid is already in the lagoon — get in'), next: 'amazon_swim', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
     ],
   },
   amazon_path: {
     name: 'AMAZON — The Hidden Path',
     art: art_amazon,
     text: () => { addCoins(5); return statFlavor({
-      adv: `The path leads to a clearing with three giant kapok trees and a parrot who speaks three languages. You speak back. It's a whole thing. +5 Fish Coins.`,
-      def: `Dense, green, magical. You find the ruins of a tiny structure no map mentions. Izzy photographs everything. +5 Fish Coins.`,
+      adv: P(
+        `The path leads to a clearing with three giant kapok trees and a parrot who speaks three languages. You speak back. It's a whole thing. +5 Fish Coins.`,
+        `Squid finds the clearing first and is already arguing with a trilingual parrot by the time Mr Porky arrives. Her theories are wrong but extremely compelling. He photographs while she talks. +5 Fish Coins.`
+      ),
+      def: P(
+        `Dense, green, magical. You find the ruins of a tiny structure no map mentions. Izzy photographs everything. +5 Fish Coins.`,
+        `Squid finds ruins no map mentions and immediately starts theorising. Mr Porky photographs while she talks. Her theories are wrong but extremely compelling. +5 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2697,8 +2935,14 @@ const Scenes = {
     name: 'AMAZON — The Guide',
     art: art_amazon,
     text: () => { addCoins(4); return statFlavor({
-      cur: `The guide knows every plant by name and story. He shows you a tree that heals, a vine that sings in the wind. You take meticulous notes. He gives you a seed to plant at home. +4 Fish Coins.`,
-      def: `He takes you somewhere no tourist sees. It's old, green, and humming. You leave feeling oddly peaceful. +4 Fish Coins.`,
+      cur: P(
+        `The guide knows every plant by name and story. He shows you a tree that heals, a vine that sings in the wind. You take meticulous notes. He gives you a seed to plant at home. +4 Fish Coins.`,
+        `Squid asks every question she has, in three languages. The guide is delighted. Mr Porky takes meticulous notes in the background and ends up with the better record. The guide asks for a copy. +4 Fish Coins.`
+      ),
+      def: P(
+        `He takes you somewhere no tourist sees. It's old, green, and humming. You leave feeling oddly peaceful. +4 Fish Coins.`,
+        `The guide takes them off the map. Squid asks every question she has. Mr Porky takes notes quietly. The guide asks to keep his notebook. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2706,8 +2950,14 @@ const Scenes = {
     name: 'AMAZON — Riverside Meal',
     art: art_amazon,
     text: () => { addCoins(5); return statFlavor({
-      soc: `You help cook. Your contribution is minor but enthusiastic. The community adopts you both as honorary members. An elder gives you a woven bracelet for the journey. +5 Fish Coins.`,
-      def: `Food shared at a long table by the river. Laughing through language barriers. A toddler falls asleep on Izzy's lap. +5 Fish Coins.`,
+      soc: P(
+        `You help cook. Your contribution is minor but enthusiastic. The community adopts you both as honorary members. An elder gives you a woven bracelet for the journey. +5 Fish Coins.`,
+        `Squid helps cook (chaotic). The community adopts them both as honorary members. A toddler attaches itself to Mr Porky and refuses to leave. He is quietly thrilled. +5 Fish Coins.`
+      ),
+      def: P(
+        `Food shared at a long table by the river. Laughing through language barriers. A toddler falls asleep on Izzy's lap. +5 Fish Coins.`,
+        `Food shared at a long table by the river. Squid helps cook, chaotically. A toddler attaches to Mr Porky. He is quietly thrilled. +5 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2715,15 +2965,24 @@ const Scenes = {
     name: 'AMAZON — Research Station',
     art: art_amazon,
     text: () => { addCoins(3); return statFlavor({
-      cau: `The researchers are thrilled to brief you. You ask excellent questions. They give you a detailed report on the ecosystem. Izzy is asleep in a hammock within five minutes. +3 Fish Coins.`,
-      def: `Air conditioning. A map of everything. Cold water. A scientist shows you a slideshow of local species. Izzy names them all immediately. +3 Fish Coins.`,
+      cau: P(
+        `The researchers are thrilled to brief you. You ask excellent questions. They give you a detailed report on the ecosystem. Izzy is asleep in a hammock within five minutes. +3 Fish Coins.`,
+        `Mr Porky talks to the researchers for an hour. Squid is asleep in a hammock within five minutes. She wakes up and asks three excellent follow-up questions. +3 Fish Coins.`
+      ),
+      def: P(
+        `Air conditioning. A map of everything. Cold water. A scientist shows you a slideshow of local species. Izzy names them all immediately. +3 Fish Coins.`,
+        `Air conditioning. A map of everything. Cold water. Squid falls asleep in a hammock and wakes up to ask three excellent questions. Mr Porky has been quietly absorbing the slideshow. +3 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
   amazon_swim: {
     name: 'AMAZON — Black Water Lagoon',
     art: art_amazon,
-    text: () => { addCoins(8); return `The water is warm and dark as tea. Totally clear from below. You float on your back and look up through a cathedral of trees at the sky. Izzy declares it the most beautiful thing she has ever seen. +8 Fish Coins.`; },
+    text: () => { addCoins(8); return P(
+      `The water is warm and dark as tea. Totally clear from below. They float on their backs and look up through a cathedral of trees at the sky. Izzy declares it the most beautiful thing she has ever seen. Mr Porky agrees. He says it about the sky. He means it about her. +8 Fish Coins.`,
+      `Squid is in the water before Mr Porky has finished reading the sign. She floats on her back looking up through the trees. "Porky. Get in. NOW." He gets in. It is the most beautiful thing either of them has seen. +8 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
@@ -2731,21 +2990,30 @@ const Scenes = {
   iceland: {
     name: 'ICELAND — ARRIVAL',
     art: art_iceland,
-    text: () => `The sky is a swirl of green and pink — Izzy's two favourite colours. She's quiet. This is rare. A wandering star-counter offers a challenge: "Match the constellation, win a prize."`,
+    text: () => P(
+      `The sky is a swirl of green and pink — Izzy's two favourite colours. She goes quiet, which is very rare. Mr Porky watches her face. A wandering star-counter spots both of them and offers a challenge: "Match the constellation, win a prize."`,
+      `The sky is a swirl of green and pink. Squid goes completely silent, which Mr Porky clocks immediately as the highest possible compliment she can pay a place. A wandering star-counter spots them both and offers a challenge: "Match the constellation, win a prize."`
+    ),
     choices: () => [
-      { text: '🧩 Take the star challenge (PUZZLE)', next: 'iceland_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
-      { text: '♥ Hold flipper and watch the lights', next: 'iceland_quiet', cls: 'special', effect: () => addStat('cautious') },
-      { text: '🌋 Visit the black sand volcanic beach', next: 'iceland_beach', effect: () => addStat('adventurous') },
-      { text: '♨ Soak in the geothermal hot spring', next: 'iceland_hotspring', effect: () => addStat('social') },
-      ...( statUnlocked('curious') ? [{ text: '🧊 Explore inside a glacier cave', next: 'iceland_glacier', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
+      { text: P('🧩 Take the star challenge (PUZZLE)', '🧩 Squid takes the star challenge — Mr Porky watches'), next: 'iceland_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
+      { text: P('♥ Hold flipper and watch the lights', '♥ Just hold his flipper and watch the lights'), next: 'iceland_quiet', cls: 'special', effect: () => addStat('cautious') },
+      { text: P('🌋 Visit the black sand volcanic beach', '🌋 Black sand beach — Squid wants to vanish into it'), next: 'iceland_beach', effect: () => addStat('adventurous') },
+      { text: P('♨ Soak in the geothermal hot spring', '♨ Hot spring — Squid will befriend the room'), next: 'iceland_hotspring', effect: () => addStat('social') },
+      ...( statUnlocked('curious') ? [{ text: P('🧊 Explore inside a glacier cave', '🧊 Glacier cave — Squid is going quiet again'), next: 'iceland_glacier', cls: 'special', effect: () => { addStat('curious'); addStat('adventurous'); } }] : [] ),
     ],
   },
   iceland_beach: {
     name: 'ICELAND — Black Sand Beach',
     art: art_iceland,
     text: () => { addCoins(4); return statFlavor({
-      adv: `You walk to the very tip of the basalt columns above the crashing surf. Izzy photographs this and immediately sends it to everyone she knows. +4 Fish Coins.`,
-      def: `Black sand, white waves, dark basalt columns. Penguin on a black beach — nobody can tell where you end and the landscape begins. +4 Fish Coins.`,
+      adv: P(
+        `You walk to the very tip of the basalt columns above the crashing surf. Izzy photographs this and immediately sends it to everyone she knows. +4 Fish Coins.`,
+        `Squid walks to the very tip of the basalt columns above the crashing surf without checking with Mr Porky first. He follows. She photographs him there. The photo goes everywhere. +4 Fish Coins.`
+      ),
+      def: P(
+        `Black sand, white waves, dark basalt columns. Penguin on a black beach — nobody can tell where you end and the landscape begins. +4 Fish Coins.`,
+        `Black sand, white waves. Squid lies on the black sand and disappears. Mr Porky panics briefly. She sits up laughing. "I'm camouflage," she announces. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
@@ -2753,20 +3021,32 @@ const Scenes = {
     name: 'ICELAND — Hot Spring',
     art: art_iceland,
     text: () => { addCoins(3); State.flags.romantic = true; return statFlavor({
-      soc: `You make friends with every person in the hot spring within fifteen minutes. An elderly couple tells you about their fifty years of travel. You listen for an hour. +3 Fish Coins.`,
-      def: `Warm water under the cold sky. The aurora begins above. It is, objectively, ridiculous how beautiful this is. +3 Fish Coins.`,
+      soc: P(
+        `You make friends with every person in the hot spring within fifteen minutes. An elderly couple tells you about their fifty years of travel. You listen for an hour. +3 Fish Coins.`,
+        `Squid has befriended everyone in the hot spring in twelve minutes. Mr Porky is warm and content and listening to her warmly embellish the Amazon story to an elderly couple who don't seem to notice. +3 Fish Coins.`
+      ),
+      def: P(
+        `Warm water under the cold sky. The aurora begins above. It is, objectively, ridiculous how beautiful this is. +3 Fish Coins.`,
+        `Warm water, cold sky, aurora above. Squid has befriended four strangers already. Mr Porky listens to her embellish the Amazon story. +3 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_glacier: {
     name: 'ICELAND — Glacier Cave',
     art: art_iceland,
-    text: () => { addCoins(9); return `The ice is blue. Not just blue — every shade of blue that exists and several that don't. You stand inside ten thousand years of compressed time. Izzy whispers: "I feel so small." You hold her flipper. "Me too." +9 Fish Coins.`; },
+    text: () => { addCoins(9); return P(
+      `The ice is blue. Not just blue — every shade of blue that exists and several that don't. They're standing inside ten thousand years of compressed time. Izzy whispers: "I feel so small." Mr Porky holds her flipper. "Me too," he says. +9 Fish Coins.`,
+      `The ice is every blue at once. Squid goes quiet — third time this trip, Mr Porky is keeping count. He holds her flipper. That's enough. +9 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_puzzle: {
     name: 'ICELAND — CONSTELLATION',
-    text: () => `The star-counter unfurls a glowing rune tablet. "Click the stars in the order shown. One wrong star and it all resets, my chilly friend."`,
+    text: () => P(
+      `The star-counter unfurls a glowing rune tablet. "Click the stars in the order shown. One wrong star and it all resets, my chilly friend."`,
+      `The star-counter unfurls a glowing rune tablet. Squid is already cracking her flippers. "Click the stars in the order shown. One wrong star and it all resets, my chilly friend." Squid winks at Mr Porky. He has full faith.`
+    ),
     puzzle: {
       kind: 'star-order',
       sceneClass: 'bg-iceland',
@@ -2791,46 +3071,79 @@ const Scenes = {
   iceland_finish_win: {
     name: 'ICELAND — Stargazer',
     art: art_iceland,
-    text: () => { addCoins(8); State.flags.starWin = true; return `"FIVE!" The star-counter hands you a glowing aurora-fish. +8 Fish Coins! Izzy is impressed. Mr Porky is smug.`; },
+    text: () => { addCoins(8); State.flags.starWin = true; return P(
+      `"FIVE!" The star-counter hands you a glowing aurora-fish. +8 Fish Coins! Izzy is impressed. Mr Porky is smug.`,
+      `"FIVE!" The star-counter hands Squid a glowing aurora-fish. +8 Fish Coins! She is, naturally, smug. Mr Porky was never not impressed.`
+    ); },
     choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_finish_lose: {
     name: 'ICELAND — Maths is hard',
     art: art_iceland,
-    text: () => `The star-counter pats you on the head. Izzy laughs and squeezes your flipper anyway.`,
+    text: () => P(
+      `The star-counter pats you on the head. Izzy laughs and squeezes your flipper anyway.`,
+      `The star-counter pats Squid on the head. She accepts this with grace. Mr Porky squeezes her flipper anyway.`
+    ),
     choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
   iceland_quiet: {
     name: 'ICELAND — Quiet Moment',
     art: art_iceland,
-    text: () => { addCoins(5); State.flags.romantic = true; return `You don't say a word for an hour. You just hold flipper and watch the universe paint the sky. +5 Fish Coins (life is wealth, baby).`; },
+    text: () => { addCoins(5); State.flags.romantic = true; return P(
+      `Mr Porky and Izzy don't say a word for an hour. They just hold flipper and watch the universe paint the sky. +5 Fish Coins (life is wealth, baby).`,
+      `An hour. Not a word. Squid holds Mr Porky's flipper and watches the aurora move. He watches it too, mostly. Also he watches her watch it. +5 Fish Coins (life is wealth, baby).`
+    ); },
     choices: () => [{ text: '➡ Round 2!', next: 'iceland_r2' }],
   },
 
   iceland_r2: {
     name: 'ICELAND — MIDNIGHT UNDER THE AURORA',
     art: art_iceland,
-    text: () => `Midnight in Iceland in summer — the sky refuses to go dark. The aurora shimmers. One more moment before you move on.`+statFlavor({
-      adv: ` You can see a small boat at the harbour. Someone said they take night trips.`,
-      cur: ` The little museum of Icelandic sagas is still open. The lights look warm inside.`,
-      soc: ` A local family has lit a bonfire on the hillside and waved you over.`,
-      cau: ` The guesthouse has a perfect view from the window, hot tea ready.`,
-      def: ` Iceland glows ahead of you.`,
+    text: () => P(
+      `Midnight in Iceland in summer — the sky refuses to go dark. The aurora shimmers. One more moment before you move on.`,
+      `It's midnight and the sky won't go dark and Squid finds this personally hilarious. "The sun gave up, Porky," she informs him. He agrees the sun seems confused.`
+    )+statFlavor({
+      adv: P(
+        ` You can see a small boat at the harbour. Someone said they take night trips.`,
+        ` Squid spots the boat at the harbour. She's already negotiating before Mr Porky has caught up.`
+      ),
+      cur: P(
+        ` The little museum of Icelandic sagas is still open. The lights look warm inside.`,
+        ` The saga museum lights look warm inside. Squid points. She has a theory.`
+      ),
+      soc: P(
+        ` A local family has lit a bonfire on the hillside and waved you over.`,
+        ` A local family has lit a bonfire on the hillside. Squid waves back. They wave again, more enthusiastically.`
+      ),
+      cau: P(
+        ` The guesthouse has a perfect view from the window, hot tea ready.`,
+        ` The guesthouse has a perfect view from the window, hot tea ready. Squid has eyed the bed already.`
+      ),
+      def: P(
+        ` Iceland glows ahead of you.`,
+        ` Iceland glows ahead of them. Squid is already deciding what's next.`
+      ),
     }),
     choices: () => [
-      { text: '⛵ Night boat trip on the fjord', next: 'iceland_boat', effect: () => addStat('adventurous') },
-      { text: '📜 Icelandic Saga museum', next: 'iceland_saga', effect: () => addStat('curious') },
-      { text: '🔥 Hillside bonfire with locals', next: 'iceland_bonfire2', effect: () => addStat('social') },
-      { text: '☕ Watch the aurora from the guesthouse window', next: 'iceland_window', effect: () => addStat('cautious') },
-      ...( statUnlocked('social') ? [{ text: '🎶 Join the spontaneous Icelandic folk session', next: 'iceland_folk', cls: 'special', effect: () => addStat('social') }] : [] ),
+      { text: P('⛵ Night boat trip on the fjord', '⛵ Night boat — Squid will commandeer the wheel'), next: 'iceland_boat', effect: () => addStat('adventurous') },
+      { text: P('📜 Icelandic Saga museum', '📜 Saga museum — Squid is already a saga hero'), next: 'iceland_saga', effect: () => addStat('curious') },
+      { text: P('🔥 Hillside bonfire with locals', '🔥 Hillside bonfire — Squid wants every story'), next: 'iceland_bonfire2', effect: () => addStat('social') },
+      { text: P('☕ Watch the aurora from the guesthouse window', '☕ Tuck Mr Porky in and watch the aurora'), next: 'iceland_window', effect: () => addStat('cautious') },
+      ...( statUnlocked('social') ? [{ text: P('🎶 Join the spontaneous Icelandic folk session', '🎶 Squid grabs an instrument she has never seen'), next: 'iceland_folk', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
   },
   iceland_boat: {
     name: 'ICELAND — Night Fjord Boat',
     art: art_iceland,
     text: () => { addCoins(6); return statFlavor({
-      adv: `The skipper lets you take the wheel. You steer by aurora-light. Izzy stands at the prow with her wings out. She is basically the figurehead of a penguin galleon. +6 Fish Coins.`,
-      def: `Still black water. The aurora above, reflected below. The boat barely makes a sound. +6 Fish Coins.`,
+      adv: P(
+        `The skipper lets you take the wheel. You steer by aurora-light. Izzy stands at the prow with her wings out. She is basically the figurehead of a penguin galleon. +6 Fish Coins.`,
+        `The skipper offers Squid the wheel immediately — she has that energy. She steers by aurora-light with Mr Porky beside her, terrified and deeply happy. +6 Fish Coins.`
+      ),
+      def: P(
+        `Still black water. The aurora above, reflected below. The boat barely makes a sound. +6 Fish Coins.`,
+        `Still black water. Aurora above, reflected below. The skipper offers Squid the wheel within minutes. Mr Porky is beside her, deeply happy. +6 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2838,8 +3151,14 @@ const Scenes = {
     name: 'ICELAND — Saga Museum',
     art: art_iceland,
     text: () => { addCoins(3); return statFlavor({
-      cur: `The sagas are full of travellers, monsters, and improbable love stories. You find this extremely relatable. Izzy catches you reading one twice. +3 Fish Coins.`,
-      def: `Old stories by firelight. Penguins don't appear in Norse myth, but you feel somehow that they should. +3 Fish Coins.`,
+      cur: P(
+        `The sagas are full of travellers, monsters, and improbable love stories. You find this extremely relatable. Izzy catches you reading one twice. +3 Fish Coins.`,
+        `Squid reads one saga and immediately decides she and Mr Porky are basically the saga heroes. Mr Porky reads it. He kind of agrees. +3 Fish Coins.`
+      ),
+      def: P(
+        `Old stories by firelight. Penguins don't appear in Norse myth, but you feel somehow that they should. +3 Fish Coins.`,
+        `Old stories by firelight. Squid decides she and Mr Porky are basically the saga heroes. He reads it. He kind of agrees. +3 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2847,8 +3166,14 @@ const Scenes = {
     name: 'ICELAND — Hillside Bonfire',
     art: art_iceland,
     text: () => { addCoins(4); return statFlavor({
-      soc: `Within the hour you know everyone's name, life story, and favourite aurora colour. Izzy collects three email addresses and actually uses all of them. +4 Fish Coins.`,
-      def: `Warm fire, cold air, good people. An Icelander plays guitar. Nobody is a stranger by the end of it. +4 Fish Coins.`,
+      soc: P(
+        `Within the hour you know everyone's name, life story, and favourite aurora colour. Izzy collects three email addresses and actually uses all of them. +4 Fish Coins.`,
+        `Squid has everyone's story within the hour. Mr Porky carefully collects three email addresses in his notebook. Squid watches him do this with enormous fondness. +4 Fish Coins.`
+      ),
+      def: P(
+        `Warm fire, cold air, good people. An Icelander plays guitar. Nobody is a stranger by the end of it. +4 Fish Coins.`,
+        `Warm fire, cold air. Squid has everyone's story by the end. Mr Porky writes three email addresses carefully in his notebook. She watches him with enormous fondness. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2856,15 +3181,24 @@ const Scenes = {
     name: 'ICELAND — Guesthouse Window',
     art: art_iceland,
     text: () => { addCoins(2); State.flags.romantic = true; return statFlavor({
-      cau: `You'd specifically booked the north-facing room for exactly this. Smart. Hot tea, perfect view, the aurora shifting for hours. +2 Fish Coins.`,
-      def: `The aurora shifts from green to violet to something with no name. Izzy falls asleep watching it. You don't wake her. +2 Fish Coins.`,
+      cau: P(
+        `You'd specifically booked the north-facing room for exactly this. Smart. Hot tea, perfect view, the aurora shifting for hours. +2 Fish Coins.`,
+        `Squid had specifically booked the north-facing room for this view, mostly because she knew Mr Porky would love it. She falls asleep watching the aurora. He watches both the sky and her. Doesn't wake her. +2 Fish Coins.`
+      ),
+      def: P(
+        `The aurora shifts from green to violet to something with no name. Izzy falls asleep watching it. You don't wake her. +2 Fish Coins.`,
+        `The aurora shifts from green to violet to something with no name. Squid falls asleep watching it. Mr Porky watches both the sky and her. Doesn't wake her. +2 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
   iceland_folk: {
     name: 'ICELAND — Folk Music Session',
     art: art_iceland,
-    text: () => { addCoins(7); return `Someone passes you a stringed instrument you've never seen before. You play it anyway. Three songs later, the room is clapping along. Izzy is crying and laughing simultaneously. "You can't even play guitar," she says. "I know," you say. +7 Fish Coins.`; },
+    text: () => { addCoins(7); return P(
+      `Someone passes Mr Porky a stringed instrument he's never seen before. Izzy — who could have stopped this — instead gives him the most encouraging look he's ever received. He plays three songs. The room claps along. She is crying and laughing simultaneously. "You can't even play guitar," she says. "I know," he says. +7 Fish Coins.`,
+      `Squid is handed an instrument she has never seen before and plays it with complete confidence. Mr Porky learns the rhythm by watching her. Three songs in, they're leading the whole room together. "How," he says. "No idea," she says. +7 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
@@ -2872,28 +3206,40 @@ const Scenes = {
   venice: {
     name: 'VENICE, ITALY — ARRIVAL',
     art: art_venice,
-    text: () => `A gondolier penguin (yes, really) offers a moonlit ride. The canals smell like garlic and old stone. Izzy is wearing a tiny pixelated beret.`,
+    text: () => P(
+      `A gondolier penguin (yes, really) offers a moonlit ride to both of them immediately. The canals smell like garlic and old stone. Izzy is wearing a tiny pixelated beret and has already photographed four bridges.`,
+      `A gondolier penguin (yes, really) offers both of them a moonlit ride before they've set down their bags. The canals smell like garlic and old stone. Mr Porky is trying to understand how the city stays up. Squid has a beret on. She brought it specifically.`
+    ),
     choices: () => [
-      { text: '🚣 Take the gondola ride (-2 coins)', next: 'venice_gondola', cls: 'special', effect: () => addStat('social') },
-      { text: '🍕 Get pizza on a bridge', next: 'venice_pizza', effect: () => addStat('cautious') },
-      { text: '🎭 Crash a masquerade ball', next: 'venice_masque', effect: () => addStat('adventurous') },
-      { text: '🎨 Visit a glassblowing workshop', next: 'venice_glass', effect: () => addStat('curious') },
-      ...( statUnlocked('social') ? [{ text: '🎵 Serenade Izzy from a bridge', next: 'venice_serenade', cls: 'special', effect: () => addStat('social') }] : [] ),
+      { text: P('🚣 Take the gondola ride (-2 coins)', '🚣 Take the gondola — Squid already negotiated it down'), next: 'venice_gondola', cls: 'special', effect: () => addStat('social') },
+      { text: P('🍕 Get pizza on a bridge', '🍕 Pizza on a bridge — Squid will out-stare any pigeon'), next: 'venice_pizza', effect: () => addStat('cautious') },
+      { text: P('🎭 Crash a masquerade ball', '🎭 Squid is dragging Mr Porky into the masquerade'), next: 'venice_masque', effect: () => addStat('adventurous') },
+      { text: P('🎨 Visit a glassblowing workshop', '🎨 Glassblowing — Squid wants to "make something expressive"'), next: 'venice_glass', effect: () => addStat('curious') },
+      ...( statUnlocked('social') ? [{ text: P('🎵 Serenade Izzy from a bridge', '🎵 Squid makes Mr Porky serenade her from the bridge'), next: 'venice_serenade', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
   },
   venice_glass: {
     name: 'VENICE — Glassblowing',
     art: art_venice,
     text: () => { addCoins(4); return statFlavor({
-      cur: `You watch every step intently. The maestro lets you try. You produce a lopsided blob that might be a penguin. He says it has "character." Izzy buys it immediately. +4 Fish Coins.`,
-      def: `Fire and colour. The maestro shapes glass into a tiny flower in thirty seconds. You buy it for Izzy. She names it Giorgio. +4 Fish Coins.`,
+      cur: P(
+        `You watch every step intently. The maestro lets you try. You produce a lopsided blob that might be a penguin. He says it has "character." Izzy buys it immediately. +4 Fish Coins.`,
+        `Squid tries the glass first. Her piece is "expressive," per the maestro. Mr Porky's is a reasonable small bowl. He gives it to her. She names it Porky Jr. +4 Fish Coins.`
+      ),
+      def: P(
+        `Fire and colour. The maestro shapes glass into a tiny flower in thirty seconds. You buy it for Izzy. She names it Giorgio. +4 Fish Coins.`,
+        `Fire and colour. Squid's piece is "expressive." Mr Porky's is a reasonable small bowl. He gives it to her. She names it Porky Jr. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
   },
   venice_serenade: {
     name: 'VENICE — The Serenade',
     art: art_venice,
-    text: () => { addCoins(8); State.flags.romantic = true; return `You stand on the bridge above the canal and sing. You sing badly. A gondolier joins in. Then a passing tourist with an accordion. Izzy looks up at you from the water below and covers her face with her flippers. She is laughing. She is also crying. +8 Fish Coins.`; },
+    text: () => { addCoins(8); State.flags.romantic = true; return P(
+      `Mr Porky stands on the bridge above the canal and sings. He sings badly. A gondolier immediately joins him. A passing tourist with an accordion commits instantly — makes eye contact with the penguin, nods, and starts playing. Izzy looks up from the gondola below, covers her face with both flippers, and is both laughing and crying at the same time. +8 Fish Coins.`,
+      `Squid makes Mr Porky stand on the bridge and serenade her from above. He sings badly. A gondolier joins. An accordion tourist commits on eye contact alone. Squid covers her face with her flippers and cannot decide if she is mortified or the happiest she's ever been. Both. +8 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
   },
   venice_gondola: {
@@ -2903,9 +3249,18 @@ const Scenes = {
       if (State.coins >= 2) State.coins -= 2;
       State.flags.romantic = true;
       addCoins(4);
-      return `The gondolier sings off-key. Izzy rests her head on your wing. The moon reflects in the water. `+statFlavor({
-        soc: `You and the gondolier get into a lengthy debate about the best canals. He respects your opinions. +4 Fish Coins.`,
-        def: `+4 Fish Coins (singing tips for the gondolier from passing tourists who you accidentally caught).`,
+      return P(
+        `The gondolier sings off-key. Izzy rests her head on your wing. The moon reflects in the water. `,
+        `The gondolier sings off-key. Squid sings along, also off-key. Mr Porky sits between them mortified and unable to stop smiling. `
+      )+statFlavor({
+        soc: P(
+          `You and the gondolier get into a lengthy debate about the best canals. He respects your opinions. +4 Fish Coins.`,
+          `Squid is friends with the gondolier within minutes and they argue about the best canals all the way home. He respects her opinions and adopts two. +4 Fish Coins.`
+        ),
+        def: P(
+          `+4 Fish Coins (singing tips for the gondolier from passing tourists who you accidentally caught).`,
+          `+4 Fish Coins (Squid started a tip jar for the gondolier; passing tourists obliged).`
+        ),
       });
     },
     choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
@@ -2913,8 +3268,14 @@ const Scenes = {
   venice_pizza: {
     name: 'VENICE — Pizza Bridge',
     art: art_venice,
-    text: () => { addCoins(3); return `Best pizza of your lives. A pigeon tries to steal a slice. Mr Porky honks at it. `+statFlavor({
-      cau: `You had read the exact right place to get pizza in Venice. Three reviews mentioned the pigeon. You were ready. +3 Fish Coins.`,
+    text: () => { addCoins(3); return P(
+      `Best pizza of your lives. A pigeon tries to steal a slice. Mr Porky honks at it. `,
+      `Best pizza of their lives. A pigeon eyes Squid's slice. She stares it down for forty-five seconds without blinking. The pigeon leaves. Mr Porky is impressed. `
+    )+statFlavor({
+      cau: P(
+        `You had read the exact right place to get pizza in Venice. Three reviews mentioned the pigeon. You were ready. +3 Fish Coins.`,
+        `Squid had pre-screened the place. Three reviews mentioned the pigeon. She had a strategy ready. The strategy was: stare. +3 Fish Coins.`
+      ),
       def: `+3 Fish Coins.`,
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
@@ -2923,35 +3284,65 @@ const Scenes = {
     name: 'VENICE — Masquerade',
     art: art_venice,
     text: () => { addCoins(5); return statFlavor({
-      adv: `You don't just crash it — you become the most talked-about guests. Nobody knows who you are. Everybody wants to. You dance until 4am. +5 Fish Coins.`,
-      def: `Nobody recognises the penguins. You dance until 4am. +5 Fish Coins (someone tips you for the entertainment value).`,
+      adv: P(
+        `You don't just crash it — you become the most talked-about guests. Nobody knows who you are. Everybody wants to. You dance until 4am. +5 Fish Coins.`,
+        `Squid finds a mask immediately and pulls Mr Porky in. He dances until 1am, then watches her dance until 4am. They are the most talked-about guests of the night. +5 Fish Coins.`
+      ),
+      def: P(
+        `Nobody recognises the penguins. You dance until 4am. +5 Fish Coins (someone tips you for the entertainment value).`,
+        `Squid finds a mask immediately and pulls Mr Porky in. He dances until 1am, then watches her dance until 4am. +5 Fish Coins (somebody tips them for the entertainment value).`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'venice_r2' }],
   },
   venice_r2: {
     name: 'VENICE — TWILIGHT ON THE CANALS',
     art: art_venice,
-    text: () => `The sun melts into the lagoon. Venice glows amber and gold. One more moment before you leave.`+statFlavor({
-      adv: ` You spot a tiny unlisted island across the water. Nobody seems to go there.`,
-      cur: ` The old library of San Marco is open late. Something pulls you toward it.`,
-      soc: ` A Venetian couple at the next table raises their glasses to you both.`,
-      cau: ` The perfect quiet bridge is right there, empty, warm stone under your flippers.`,
-      def: ` Venice glitters ahead.`,
+    text: () => P(
+      `The sun melts into the lagoon. Venice glows amber and gold. One more moment before you leave.`,
+      `The sun is going golden and Squid is already pointing at the water. "Porky. One more thing. Just one more." This is the fourth time today. He always says yes.`
+    )+statFlavor({
+      adv: P(
+        ` You spot a tiny unlisted island across the water. Nobody seems to go there.`,
+        ` Squid spots a tiny unlisted island across the water. Of course she has.`
+      ),
+      cur: P(
+        ` The old library of San Marco is open late. Something pulls you toward it.`,
+        ` San Marco library is open late. Squid has a hunch about a manuscript.`
+      ),
+      soc: P(
+        ` A Venetian couple at the next table raises their glasses to you both.`,
+        ` A Venetian couple raises their glasses. Squid is already raising hers back.`
+      ),
+      cau: P(
+        ` The perfect quiet bridge is right there, empty, warm stone under your flippers.`,
+        ` The perfect quiet bridge is right there. Squid claims it for them both.`
+      ),
+      def: P(
+        ` Venice glitters ahead.`,
+        ` Venice glitters. Squid hasn't run out of ideas.`
+      ),
     }),
     choices: () => [
-      { text: '🏝 Boat to the hidden island', next: 'venice_island', effect: () => addStat('adventurous') },
-      { text: '📚 The Library of San Marco', next: 'venice_library', effect: () => addStat('curious') },
-      { text: '🥂 Join the Venetians for aperitivo', next: 'venice_aperitivo', effect: () => addStat('social') },
-      { text: '🌉 Sit quietly on the perfect bridge', next: 'venice_bridge', effect: () => addStat('cautious') },
-      ...( statUnlocked('adventurous') ? [{ text: '🌙 Midnight gondola through the back canals', next: 'venice_midnight', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+      { text: P('🏝 Boat to the hidden island', '🏝 Squid rows them to the hidden island'), next: 'venice_island', effect: () => addStat('adventurous') },
+      { text: P('📚 The Library of San Marco', '📚 San Marco library — Squid is hunting a penguin manuscript'), next: 'venice_library', effect: () => addStat('curious') },
+      { text: P('🥂 Join the Venetians for aperitivo', '🥂 Squid is already friends with the Venetian couple'), next: 'venice_aperitivo', effect: () => addStat('social') },
+      { text: P('🌉 Sit quietly on the perfect bridge', '🌉 Sit on the perfect bridge — wait for cats'), next: 'venice_bridge', effect: () => addStat('cautious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🌙 Midnight gondola through the back canals', '🌙 Midnight gondola — Squid leans into Mr Porky'), next: 'venice_midnight', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
     ],
   },
   venice_island: {
     name: 'VENICE — The Hidden Island',
     art: art_venice,
     text: () => { addCoins(6); return statFlavor({
-      adv: `Nobody goes there. A small monastery, a garden, a monk who offers you pears from his tree. He says the island has been here since the 9th century. You believe him completely. +6 Fish Coins.`,
-      def: `Still. Green. Ancient. You find an old well with coins in it and add yours to the pile. Izzy photographs the whole thing. +6 Fish Coins.`,
+      adv: P(
+        `Nobody goes there. A small monastery, a garden, a monk who offers you pears from his tree. He says the island has been here since the 9th century. You believe him completely. +6 Fish Coins.`,
+        `Squid rows them over herself. The monk meets them at the shore and seems unsurprised. She asks him seventeen questions over pears. Mr Porky eats his pear and listens. +6 Fish Coins.`
+      ),
+      def: P(
+        `Still. Green. Ancient. You find an old well with coins in it and add yours to the pile. Izzy photographs the whole thing. +6 Fish Coins.`,
+        `Still. Green. Ancient. Squid asks the monk seventeen questions over pears from his tree. Mr Porky eats his pear and listens. +6 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2959,8 +3350,14 @@ const Scenes = {
     name: 'VENICE — San Marco Library',
     art: art_venice,
     text: () => { addCoins(3); return statFlavor({
-      cur: `You find a manuscript from 1487 with an illustration that might — possibly — be a penguin on a gondola. The librarian says this is impossible. You say nothing and smile. +3 Fish Coins.`,
-      def: `High ceilings. Gold-leaf manuscripts. The weight of centuries. Izzy falls asleep in a reading chair and looks completely at home. +3 Fish Coins.`,
+      cur: P(
+        `You find a manuscript from 1487 with an illustration that might — possibly — be a penguin on a gondola. The librarian says this is impossible. You say nothing and smile. +3 Fish Coins.`,
+        `Squid finds the 1487 maybe-penguin manuscript and shows Mr Porky. He spends twenty minutes confirming it. She photographs it and sends it to everyone she knows. +3 Fish Coins.`
+      ),
+      def: P(
+        `High ceilings. Gold-leaf manuscripts. The weight of centuries. Izzy falls asleep in a reading chair and looks completely at home. +3 Fish Coins.`,
+        `High ceilings. Gold leaf. Squid finds a 1487 manuscript with maybe-a-penguin in the margins, sends it to everyone. Mr Porky spends twenty minutes confirming it. +3 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2968,8 +3365,14 @@ const Scenes = {
     name: 'VENICE — Aperitivo',
     art: art_venice,
     text: () => { addCoins(5); State.flags.romantic = true; return statFlavor({
-      soc: `Within twenty minutes you have their whole story — married forty years, met right here in Venice, still come back every summer. "Come back in forty years," the woman tells you both. You fully intend to. +5 Fish Coins.`,
-      def: `Spritz and small bites. The canal glitters. Good people, good evening. +5 Fish Coins.`,
+      soc: P(
+        `Within twenty minutes you have their whole story — married forty years, met right here in Venice, still come back every summer. "Come back in forty years," the woman tells you both. You fully intend to. +5 Fish Coins.`,
+        `Squid is best friends with the Venetian couple within minutes. Mr Porky learns their whole story by listening quietly while she talks. He is better at this than she realises. +5 Fish Coins.`
+      ),
+      def: P(
+        `Spritz and small bites. The canal glitters. Good people, good evening. +5 Fish Coins.`,
+        `Spritz and small bites. Squid befriends the Venetian couple in minutes. Mr Porky learns their whole story by listening quietly. +5 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -2977,15 +3380,24 @@ const Scenes = {
     name: 'VENICE — The Perfect Bridge',
     art: art_venice,
     text: () => { addCoins(2); State.flags.romantic = true; return statFlavor({
-      cau: `You had identified this exact bridge — no tourists, south-facing, catches the last light. Every detail correct. Izzy leans on the stone beside you. Worth the research. +2 Fish Coins.`,
-      def: `Warm stone. Still water. A cat appears from somewhere and sits beside you both. Venice approves. +2 Fish Coins.`,
+      cau: P(
+        `You had identified this exact bridge — no tourists, south-facing, catches the last light. Every detail correct. Izzy leans on the stone beside you. Worth the research. +2 Fish Coins.`,
+        `Squid had identified this exact bridge — no tourists, south-facing, last light. A cat appears. She looks at Mr Porky like this proves something. A second cat arrives. "I'm a cat person," she announces. +2 Fish Coins.`
+      ),
+      def: P(
+        `Warm stone. Still water. A cat appears from somewhere and sits beside you both. Venice approves. +2 Fish Coins.`,
+        `Warm stone. Still water. A cat appears. Squid looks at Mr Porky like this proves something. A second cat arrives. "I'm a cat person," she announces. +2 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
   venice_midnight: {
     name: 'VENICE — Midnight Canals',
     art: art_venice,
-    text: () => { addCoins(9); State.flags.romantic = true; return `The back canals are empty. No tourists, no sound but water. The gondolier stops talking and just steers, letting the city breathe. Izzy leans back against your wing and looks up at the strip of sky between buildings. "I want to come back here," she says quietly. "We will," you say. And you mean it. +9 Fish Coins.`; },
+    text: () => { addCoins(9); State.flags.romantic = true; return P(
+      `The back canals are empty. No tourists, no sound but water. The gondolier stops talking and just steers, letting the city breathe. Izzy leans back against your wing and looks up at the strip of sky between buildings. "I want to come back here," she says quietly. "We will," you say. And you mean it. +9 Fish Coins.`,
+      `The back canals are empty and perfect. The gondolier stops talking and just steers. Squid leans back into Mr Porky and watches the strip of sky between buildings. "We're coming back," she says. Not a question. He says "obviously." +9 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
@@ -2993,40 +3405,58 @@ const Scenes = {
   hawaii: {
     name: 'HAWAII — ARRIVAL',
     art: art_hawaii,
-    text: () => `Sun. Sand. Pineapple drinks bigger than Izzy's head. Mr Porky considers the meaning of life from inside a hammock.`,
+    text: () => P(
+      `Sun. Sand. Pineapple drinks bigger than Izzy's head. Mr Porky considers the meaning of life from inside a hammock.`,
+      `Sun. Sand. Squid has already claimed a hammock, ordered two pineapple drinks, and is pointing at the waves before Mr Porky has finished registering the scenery. "Porky. Porky. PORKY. Look at those waves."`
+    ),
     choices: () => [
-      { text: '🏄 Surf lesson — hit the waves', next: 'hawaii_surf_hub', effect: () => addStat('adventurous') },
-      { text: '🌺 Weave a flower lei for Izzy', next: 'hawaii_lei', cls: 'special', effect: () => addStat('social') },
-      { text: '🍍 Hammock nap together', next: 'hawaii_nap', effect: () => addStat('cautious') },
-      { text: '🤿 Snorkel the reef', next: 'hawaii_snorkel', effect: () => addStat('curious') },
-      ...( statUnlocked('adventurous') ? [{ text: '🌋 Hike the active volcano trail', next: 'hawaii_volcano', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+      { text: P('🏄 Surf lesson — hit the waves', '🏄 Drag Mr Porky into a surf lesson'), next: 'hawaii_surf_hub', effect: () => addStat('adventurous') },
+      { text: P('🌺 Weave a flower lei for Izzy', '🌺 Make Mr Porky weave a flower lei'), next: 'hawaii_lei', cls: 'special', effect: () => addStat('social') },
+      { text: P('🍍 Hammock nap together', '🍍 Pull Mr Porky into a hammock nap'), next: 'hawaii_nap', effect: () => addStat('cautious') },
+      { text: P('🤿 Snorkel the reef', '🤿 Race Mr Porky out to the reef'), next: 'hawaii_snorkel', effect: () => addStat('curious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🌋 Hike the active volcano trail', '🌋 Lead Mr Porky up the volcano trail'), next: 'hawaii_volcano', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
     ],
   },
   hawaii_surf_hub: {
     name: 'HAWAII — SURF SCHOOL',
     art: art_hawaii,
-    text: () => `You're on the board. The wave is coming. Time to decide your approach.`,
+    text: () => P(
+      `You're on the board. The wave is coming. Time to decide your approach.`,
+      `Mr Porky is on the board. The wave is coming. Squid is already standing on hers watching him. "You've got this," she shouts. She is not fully confident of this.`
+    ),
     choices: () => [
-      { text: '🤙 Try a daring trick — hang ten!', next: 'hawaii_surf_trick', effect: () => addStat('adventurous') },
-      { text: '🏄 Ride it safe and steady', next: 'hawaii_surf_safe', effect: () => addStat('cautious') },
-      { text: "📸 Pose for Izzy's photo mid-wave", next: 'hawaii_surf_pose', effect: () => addStat('social') },
-      { text: '👀 Watch the pros first, then go', next: 'hawaii_surf_study', effect: () => addStat('curious') },
+      { text: P('🤙 Try a daring trick — hang ten!', '🤙 Do the cool trick Mr Porky — I believe in you!'), next: 'hawaii_surf_trick', effect: () => addStat('adventurous') },
+      { text: P('🏄 Ride it safe and steady', '🏄 Tell Mr Porky to ride it safe and steady'), next: 'hawaii_surf_safe', effect: () => addStat('cautious') },
+      { text: P("📸 Pose for Izzy's photo mid-wave", '📸 Photograph Mr Porky heroically mid-wave'), next: 'hawaii_surf_pose', effect: () => addStat('social') },
+      { text: P('👀 Watch the pros first, then go', "👀 Make Mr Porky watch the pros so he doesn't drown"), next: 'hawaii_surf_study', effect: () => addStat('curious') },
     ],
   },
   hawaii_surf_trick: {
     name: 'HAWAII — Hang Ten!',
     art: art_hawaii,
     text: () => { const success = statUnlocked('adventurous', 4); addCoins(success ? 7 : 3); return success
-      ? `Somehow the flippers WORK. You hang ten on a perfect barrel wave. The beach goes absolutely insane. Izzy screams your name. You have never felt more alive. +7 Fish Coins!`
-      : `You attempt the trick. The wave wins. You surface with seaweed on your beak. Izzy applauds anyway. "That was amazing," she lies lovingly. +3 Fish Coins.`; },
+      ? P(
+        `Somehow the flippers WORK. You hang ten on a perfect barrel wave. The beach goes absolutely insane. Izzy screams your name. You have never felt more alive. +7 Fish Coins!`,
+        `He does it. He actually does it. Mr Porky hangs ten on a perfect barrel and Squid screams so loud the instructor flinches. She is already planning how to tell this story. +7 Fish Coins!`
+      )
+      : P(
+        `You attempt the trick. The wave wins. You surface with seaweed on your beak. Izzy applauds anyway. "That was amazing," she lies lovingly. +3 Fish Coins.`,
+        `The wave disagrees with Mr Porky's plan. He surfaces immediately, dignity intact if slightly wet. "I filmed it," Squid says helpfully. She did film it. +3 Fish Coins.`
+      ); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
   hawaii_surf_safe: {
     name: 'HAWAII — Playing It Safe',
     art: art_hawaii,
     text: () => { addCoins(4); return statFlavor({
-      cau: `Perfect form. You read the wave exactly right, picked your moment, and had a long, clean ride all the way to shore. The instructor nods approvingly. +4 Fish Coins.`,
-      def: `You ride it carefully to shore, mostly upright. Izzy stands up first try. She always was better at the sea bit. +4 Fish Coins.`,
+      cau: P(
+        `Perfect form. You read the wave exactly right, picked your moment, and had a long, clean ride all the way to shore. The instructor nods approvingly. +4 Fish Coins.`,
+        `Mr Porky rides it clean all the way in. Textbook. Squid had been holding her breath the entire time and pretends she wasn't. "Obviously you were going to do it," she says. +4 Fish Coins.`
+      ),
+      def: P(
+        `You ride it carefully to shore, mostly upright. Izzy stands up first try. She always was better at the sea bit. +4 Fish Coins.`,
+        `Mr Porky rides it carefully to shore, mostly upright. Squid stood up first try. She is gracious about it for almost a whole minute. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
@@ -3034,8 +3464,14 @@ const Scenes = {
     name: 'HAWAII — The Photo',
     art: art_hawaii,
     text: () => { addCoins(5); return statFlavor({
-      soc: `You turn toward Izzy, wings out, grinning — and the wave carries you perfectly. The photo is unbelievable. It goes everywhere. A surf magazine calls. +5 Fish Coins.`,
-      def: `The pose goes slightly wrong. The photo is even better for it. Izzy cries laughing. The print will go above the fireplace. +5 Fish Coins.`,
+      soc: P(
+        `You turn toward Izzy, wings out, grinning — and the wave carries you perfectly. The photo is unbelievable. It goes everywhere. A surf magazine calls. +5 Fish Coins.`,
+        `The photo is perfect. Mr Porky mid-wave, wings out, grinning at the camera like he owns the ocean. Squid posts it immediately. The surf magazine calls HER. She negotiates on his behalf. +5 Fish Coins.`
+      ),
+      def: P(
+        `The pose goes slightly wrong. The photo is even better for it. Izzy cries laughing. The print will go above the fireplace. +5 Fish Coins.`,
+        `The pose goes slightly wrong. The photo is even better for it. Squid cries laughing and immediately makes it her phone background. +5 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
@@ -3043,8 +3479,14 @@ const Scenes = {
     name: 'HAWAII — Study Then Surf',
     art: art_hawaii,
     text: () => { addCoins(4); return statFlavor({
-      cur: `You watch seven waves before choosing your moment. When you go, you go perfectly. The instructor calls you a natural reader of water. +4 Fish Coins.`,
-      def: `You watch carefully, pick your moment, and ride it clean. Izzy is impressed by the patience. +4 Fish Coins.`,
+      cur: P(
+        `You watch seven waves before choosing your moment. When you go, you go perfectly. The instructor calls you a natural reader of water. +4 Fish Coins.`,
+        `Squid waits (barely) while Mr Porky watches seven waves. He picks perfectly. "See?" he says afterward. "Patience." Squid decides not to mention she was about to push him on the next one. +4 Fish Coins.`
+      ),
+      def: P(
+        `You watch carefully, pick your moment, and ride it clean. Izzy is impressed by the patience. +4 Fish Coins.`,
+        `Mr Porky watches carefully, picks his moment, rides it clean. Squid was going to push him on the previous wave. She does not mention this. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
@@ -3052,23 +3494,38 @@ const Scenes = {
     name: 'HAWAII — Snorkelling',
     art: art_hawaii,
     text: () => { addCoins(5); return statFlavor({
-      cur: `You identify seventeen species. A sea turtle follows you for ten minutes. You name her Patricia. +5 Fish Coins.`,
-      def: `Coral gardens. Neon fish. A turtle who finds the penguins confusing but not threatening. Izzy waves at it. +5 Fish Coins.`,
+      cur: P(
+        `You identify seventeen species. A sea turtle follows you for ten minutes. You name her Patricia. +5 Fish Coins.`,
+        `Squid identifies seventeen species, all incorrectly but with great confidence. A sea turtle named Patricia tolerates her. Mr Porky writes 'Patricia' down. +5 Fish Coins.`
+      ),
+      def: P(
+        `Coral gardens. Neon fish. A turtle who finds the penguins confusing but not threatening. Izzy waves at it. +5 Fish Coins.`,
+        `Coral gardens. Neon fish. Squid tries to race the turtle. Twice. The turtle wins both times. Mr Porky films it. +5 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
   hawaii_volcano: {
     name: 'HAWAII — Volcano Hike',
     art: art_hawaii,
-    text: () => { addCoins(8); return `The ground glows faint orange at the edges. You stand at the rim and look down into the earth. Izzy takes your flipper. "We're standing on fire," she whispers. You both feel very small and very alive. +8 Fish Coins.`; },
+    text: () => { addCoins(8); return P(
+      `The ground glows faint orange at the edges. You stand at the rim and look down into the earth. Izzy takes your flipper. "We're standing on fire," she whispers. You both feel very small and very alive. +8 Fish Coins.`,
+      `The ground glows faint orange at the edges. Squid walks to the rim and goes very quiet — Mr Porky has learned to recognise this as genuine awe. She takes his flipper. "We're standing on fire," she says. He squeezes back. +8 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
   hawaii_lei: {
     name: 'HAWAII — Aloha',
     art: art_hawaii,
     text: () => { addCoins(6); State.flags.romantic = true; return statFlavor({
-      soc: `You get a local to teach you the traditional weaving technique. The lei is perfect. Izzy cries the GOOD kind of tears and immediately teaches you how to say "I love you" in Hawaiian. +6 Fish Coins.`,
-      def: `You weave a flower lei from hibiscus. Izzy cries the GOOD kind of tears. +6 Fish Coins.`,
+      soc: P(
+        `You get a local to teach you the traditional weaving technique. The lei is perfect. Izzy cries the GOOD kind of tears and immediately teaches you how to say "I love you" in Hawaiian. +6 Fish Coins.`,
+        `Mr Porky asks a local to teach him the proper weaving technique, tongue out in concentration. The lei is perfect. Squid cries immediately and then tells him not to make a big deal out of it. She says "I love you" in Hawaiian. +6 Fish Coins.`
+      ),
+      def: P(
+        `You weave a flower lei from hibiscus. Izzy cries the GOOD kind of tears. +6 Fish Coins.`,
+        `Mr Porky weaves the lei with his tongue out in concentration. It takes forty minutes. When he puts it on her, Squid cries immediately and then tells him not to make a big deal out of it. +6 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
@@ -3076,43 +3533,79 @@ const Scenes = {
     name: 'HAWAII — Hammock Nap',
     art: art_hawaii,
     text: () => { addCoins(2); return statFlavor({
-      cau: `You'd correctly identified this as the optimal hammock time — post-lunch, pre-sunset. Three hours of synchronised snoring. Somebody put coins in the hammock as a joke. +2 Fish Coins.`,
-      def: `Three hours of synchronized snoring. Bliss. +2 Fish Coins.`,
+      cau: P(
+        `You'd correctly identified this as the optimal hammock time — post-lunch, pre-sunset. Three hours of synchronised snoring. Somebody put coins in the hammock as a joke. +2 Fish Coins.`,
+        `Squid had correctly identified this as the optimal hammock time. She is asleep in ninety seconds. Mr Porky stays awake another ten minutes watching her sleep, feeling extremely fortunate, then also falls asleep. +2 Fish Coins.`
+      ),
+      def: P(
+        `Three hours of synchronized snoring. Bliss. +2 Fish Coins.`,
+        `Squid is asleep in ninety seconds. Mr Porky watches her for ten minutes feeling extremely fortunate. Then he's asleep too. Synchronised snoring. +2 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'hawaii_r2' }],
   },
   hawaii_r2: {
     name: 'HAWAII — GOLDEN HOUR',
     art: art_hawaii,
-    text: () => `The sun is dropping toward the ocean, turning everything honey-gold. One more Hawaiian moment left.`+statFlavor({
-      adv: ` A local says the cliff jump spot is just ten minutes down the beach.`,
-      cur: ` You spot a sign for a traditional luau with fire dancing tonight.`,
-      soc: ` A beach bonfire is forming. You've already been waved over.`,
-      cau: ` The perfect sunset spot is right here. A cocktail materialises in your flipper.`,
-      def: ` The evening is yours.`,
+    text: () => P(
+      `The sun is dropping toward the ocean, turning everything honey-gold. One more Hawaiian moment left.`,
+      `The sun is going golden and Squid has already identified four things she wants to do before dark. Mr Porky is ready for perhaps one of them.`
+    )+statFlavor({
+      adv: P(
+        ` A local says the cliff jump spot is just ten minutes down the beach.`,
+        ` A local mentions the cliff jump. Squid is already walking.`
+      ),
+      cur: P(
+        ` You spot a sign for a traditional luau with fire dancing tonight.`,
+        ` Squid spots the luau sign and gasps. Mr Porky knew this was coming.`
+      ),
+      soc: P(
+        ` A beach bonfire is forming. You've already been waved over.`,
+        ` A beach bonfire is forming. Squid waves back before anyone has waved at her.`
+      ),
+      cau: P(
+        ` The perfect sunset spot is right here. A cocktail materialises in your flipper.`,
+        ` The perfect sunset spot is right here. Squid hands Mr Porky the cocktail she ordered for him.`
+      ),
+      def: P(
+        ` The evening is yours.`,
+        ` The evening is yours. Squid intends to spend it on Mr Porky.`
+      ),
     }),
     choices: () => [
-      { text: '🪨 Cliff jump into the clear water', next: 'hawaii_cliff', effect: () => addStat('adventurous') },
-      { text: '🔥 Watch traditional fire dancing at the luau', next: 'hawaii_luau', effect: () => addStat('curious') },
-      { text: '🏖 Join the beach bonfire', next: 'hawaii_bonfire', effect: () => addStat('social') },
-      { text: '🌅 Watch the sunset with a cocktail', next: 'hawaii_sunset', effect: () => addStat('cautious') },
-      ...( statUnlocked('social') ? [{ text: '🎸 Lead the sing-along at the bonfire', next: 'hawaii_singalong', cls: 'special', effect: () => addStat('social') }] : [] ),
+      { text: P('🪨 Cliff jump into the clear water', '🪨 Cliff jump — Squid is going first'), next: 'hawaii_cliff', effect: () => addStat('adventurous') },
+      { text: P('🔥 Watch traditional fire dancing at the luau', '🔥 Drag Mr Porky to the front of the luau'), next: 'hawaii_luau', effect: () => addStat('curious') },
+      { text: P('🏖 Join the beach bonfire', '🏖 Bring Mr Porky into the bonfire crowd'), next: 'hawaii_bonfire', effect: () => addStat('social') },
+      { text: P('🌅 Watch the sunset with a cocktail', '🌅 Sit with Mr Porky for the sunset, quiet for once'), next: 'hawaii_sunset', effect: () => addStat('cautious') },
+      ...( statUnlocked('social') ? [{ text: P('🎸 Lead the sing-along at the bonfire', '🎸 Squid leads the sing-along (knows half the words)'), next: 'hawaii_singalong', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
   },
   hawaii_cliff: {
     name: 'HAWAII — Cliff Jump',
     art: art_hawaii,
     text: () => { addCoins(5); const bold = statUnlocked('adventurous', 4); return bold
-      ? `You jump without hesitation. The fall is perfect. The water is perfect. Izzy screams and then immediately climbs up to do it too. +5 Fish Coins.`
-      : `You stand at the edge for four minutes. You jump. It's terrifying and perfect. Izzy applauds from the beach. +5 Fish Coins.`; },
+      ? P(
+        `You jump without hesitation. The fall is perfect. The water is perfect. Izzy screams and then immediately climbs up to do it too. +5 Fish Coins.`,
+        `Squid jumps first to demonstrate it's fine. She shouts encouragement from the water until Mr Porky jumps after a dignified pause. He does it perfectly. She will not tell him she had a speech ready in case he didn't. +5 Fish Coins.`
+      )
+      : P(
+        `You stand at the edge for four minutes. You jump. It's terrifying and perfect. Izzy applauds from the beach. +5 Fish Coins.`,
+        `Squid jumps first to demonstrate it's fine. Mr Porky stands at the edge for a dignified amount of time and then jumps. It is perfect. "See, easy," says Squid, who found it terrifying. +5 Fish Coins.`
+      ); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
   hawaii_luau: {
     name: 'HAWAII — Luau Fire Dancing',
     art: art_hawaii,
     text: () => { addCoins(4); return statFlavor({
-      cur: `You learn the history behind every dance — the stories they tell, the gods they honour. The dancers invite you to try the hula. You are not graceful. The story is still told. +4 Fish Coins.`,
-      def: `Fire arcs through the darkness. Drums. Stories older than memory. Izzy watches without blinking. +4 Fish Coins.`,
+      cur: P(
+        `You learn the history behind every dance — the stories they tell, the gods they honour. The dancers invite you to try the hula. You are not graceful. The story is still told. +4 Fish Coins.`,
+        `Squid is up front immediately. The dancers invite her to try the hula. She tries. She is more enthusiastic than graceful. Mr Porky films the whole thing and keeps it just for them. +4 Fish Coins.`
+      ),
+      def: P(
+        `Fire arcs through the darkness. Drums. Stories older than memory. Izzy watches without blinking. +4 Fish Coins.`,
+        `Fire arcs through the darkness. Squid is up front immediately. The dancers invite her to try the hula. Mr Porky films it, keeps it just for them. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -3120,8 +3613,14 @@ const Scenes = {
     name: 'HAWAII — Beach Bonfire',
     art: art_hawaii,
     text: () => { addCoins(4); return statFlavor({
-      soc: `You become the social nucleus of the bonfire. Someone has a ukulele. Somehow you know the words to three songs. New friends, warm fire, salt air. +4 Fish Coins.`,
-      def: `Strangers and travellers sharing the warmth. Izzy makes three new friends. You eat marshmallows. Somebody has a ukulele. +4 Fish Coins.`,
+      soc: P(
+        `You become the social nucleus of the bonfire. Someone has a ukulele. Somehow you know the words to three songs. New friends, warm fire, salt air. +4 Fish Coins.`,
+        `Squid has six new friends before Mr Porky has finished sitting down. She introduces him to all of them as "the best penguin." He finds this mortifying and wonderful in equal measure. +4 Fish Coins.`
+      ),
+      def: P(
+        `Strangers and travellers sharing the warmth. Izzy makes three new friends. You eat marshmallows. Somebody has a ukulele. +4 Fish Coins.`,
+        `Strangers and travellers sharing the warmth. Squid has six new friends before Mr Porky has finished sitting down. He finds this mortifying and wonderful in equal measure. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -3129,15 +3628,24 @@ const Scenes = {
     name: 'HAWAII — Perfect Sunset',
     art: art_hawaii,
     text: () => { addCoins(3); State.flags.romantic = true; return statFlavor({
-      cau: `You had chosen this exact spot from a shortlist of five. The cocktail is exactly right. The sunset arrives exactly on time. Perfect planning. +3 Fish Coins.`,
-      def: `The ocean catches fire as the sun goes down. You hold flippers. Neither of you speaks. Sometimes that's the whole thing. +3 Fish Coins.`,
+      cau: P(
+        `You had chosen this exact spot from a shortlist of five. The cocktail is exactly right. The sunset arrives exactly on time. Perfect planning. +3 Fish Coins.`,
+        `Squid had chosen this exact spot from a shortlist of five — mostly because she knew Mr Porky would love the angle. She goes quiet. He doesn't say anything either. +3 Fish Coins.`
+      ),
+      def: P(
+        `The ocean catches fire as the sun goes down. You hold flippers. Neither of you speaks. Sometimes that's the whole thing. +3 Fish Coins.`,
+        `The ocean catches fire as the sun goes down. Squid goes quiet — rare and precious. Mr Porky doesn't say anything either. They hold flippers and watch it all go. +3 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
   hawaii_singalong: {
     name: 'HAWAII — Bonfire Sing-Along',
     art: art_hawaii,
-    text: () => { addCoins(7); return `You lead a sing-along that somehow starts with "Take Me Home, Country Roads" and ends with everyone learning the Hawaiian fishing chant. The ukulele player calls it the best night of the year. +7 Fish Coins.`; },
+    text: () => { addCoins(7); return P(
+      `You lead a sing-along that somehow starts with "Take Me Home, Country Roads" and ends with everyone learning the Hawaiian fishing chant. The ukulele player calls it the best night of the year. +7 Fish Coins.`,
+      `Squid leads the sing-along. She does not know all the words. She fills the gaps with confidence and a tune she's invented on the spot. The ukulele player follows her lead. Best night of the year, he says. +7 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
@@ -3170,27 +3678,39 @@ const Scenes = {
       `Squid has nineteen things she wants to do TODAY. Mr Porky has one: stand still and take it in. They compromise: seventeen things, at speed.`
     ),
     choices: () => [
-      { text: '🌸 Visit the Taj Mahal at dawn', next: 'india_taj', cls: 'special', effect: () => addStat('cautious') },
-      { text: '🌶 Accept the spicy curry challenge', next: 'india_curry', effect: () => addStat('adventurous') },
-      { text: '🛺 Rickshaw race through the city', next: 'india_rickshaw', effect: () => addStat('social') },
-      { text: '🎨 Get henna painted on your flippers', next: 'india_henna', effect: () => addStat('curious') },
-      ...( statUnlocked('social') ? [{ text: '🎶 Join the evening classical music performance', next: 'india_music', cls: 'special', effect: () => addStat('social') }] : [] ),
+      { text: P('🌸 Visit the Taj Mahal at dawn', '🌸 Take Mr Porky to the Taj at dawn'), next: 'india_taj', cls: 'special', effect: () => addStat('cautious') },
+      { text: P('🌶 Accept the spicy curry challenge', '🌶 Curry challenge — Squid will out-spice him'), next: 'india_curry', effect: () => addStat('adventurous') },
+      { text: P('🛺 Rickshaw race through the city', '🛺 Rickshaw race — Squid is co-piloting'), next: 'india_rickshaw', effect: () => addStat('social') },
+      { text: P('🎨 Get henna painted on your flippers', '🎨 Henna — Squid wants tiny penguins on both flippers'), next: 'india_henna', effect: () => addStat('curious') },
+      ...( statUnlocked('social') ? [{ text: P('🎶 Join the evening classical music performance', '🎶 Squid is going on stage with the sitar player'), next: 'india_music', cls: 'special', effect: () => addStat('social') }] : [] ),
     ],
   },
   india_music: {
     name: 'INDIA — Classical Music',
     art: art_india,
     text: () => { addCoins(6); return statFlavor({
-      soc: `The sitar player invites you onto the stage at the end. You don't play sitar. You clap in rhythm. The audience adores you. +6 Fish Coins.`,
-      def: `Ragas at dusk on a rooftop. The city hums far below. Izzy sits very still and doesn't say a single word for forty minutes. That's how you know she loves it. +6 Fish Coins.`,
+      soc: P(
+        `The sitar player invites you onto the stage at the end. You don't play sitar. You clap in rhythm. The audience adores you. +6 Fish Coins.`,
+        `The sitar player invites Squid on stage. She claps the rhythm incorrectly but with complete confidence. Mr Porky watches from his seat smiling the whole time. +6 Fish Coins.`
+      ),
+      def: P(
+        `Ragas at dusk on a rooftop. The city hums far below. Izzy sits very still and doesn't say a single word for forty minutes. That's how you know she loves it. +6 Fish Coins.`,
+        `Ragas at dusk on a rooftop. The sitar player invites Squid on stage. She claps the rhythm wrong with complete confidence. Mr Porky watches from his seat smiling the whole time. +6 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
   },
   india_taj: {
     name: 'INDIA — Dawn at the Taj',
     art: art_india,
-    text: () => { addCoins(7); State.flags.romantic = true; return `The reflection pool mirrors the Taj perfectly. Nobody speaks for several minutes. ${P('Mr Porky', 'Squid')} squeezes ${P("Izzy's", "Mr Porky's")} flipper. ${P('Izzy', 'Mr Porky')} squeezes back. `+statFlavor({
-      cau: `You'd timed arrival for exactly the right light. Correct. +7 Fish Coins.`,
+    text: () => { addCoins(7); State.flags.romantic = true; return P(
+      `The reflection pool mirrors the Taj perfectly. Nobody speaks for several minutes. Mr Porky squeezes Izzy's flipper. Izzy squeezes back. `,
+      `The reflection pool. Squid is quiet for the third time this trip — Mr Porky is keeping count. She takes his flipper without looking at him. He squeezes it. She squeezes back. `
+    )+statFlavor({
+      cau: P(
+        `You'd timed arrival for exactly the right light. Correct. +7 Fish Coins.`,
+        `Squid had timed their arrival for exactly the right light. Correct, of course. +7 Fish Coins.`
+      ),
       def: `+7 Fish Coins.`,
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
@@ -3198,8 +3718,14 @@ const Scenes = {
   india_curry: {
     name: 'INDIA — Curry Challenge',
     art: art_india,
-    text: () => { addCoins(4); return `Level 1: fine. Level 2: fine. Level 3: ${P('Mr Porky', 'Squid')} begins sweating in ways not normal for a penguin. Level 4: ${P('Izzy', 'Mr Porky')} wins. Obviously. `+statFlavor({
-      adv: `You made it to level 5. Nobody makes it to level 5. The chef shakes your flipper. +4 Fish Coins (prize money).`,
+    text: () => { addCoins(4); return P(
+      `Level 1: fine. Level 2: fine. Level 3: Mr Porky begins sweating in ways not normal for a penguin. Level 4: Izzy wins. Obviously. `,
+      `Squid takes level 4 with composure and looks at Mr Porky expectantly. He makes it to level 3 (sweating in ways not normal for a penguin). She declares this a team win. `
+    )+statFlavor({
+      adv: P(
+        `You made it to level 5. Nobody makes it to level 5. The chef shakes your flipper. +4 Fish Coins (prize money).`,
+        `Squid pushes for level 5 and lands it. Nobody makes it to level 5. The chef shakes her flipper. Mr Porky watches her drink a litre of milk afterward and says nothing. +4 Fish Coins (prize money).`
+      ),
       def: `+4 Fish Coins (prize money).`,
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
@@ -3207,8 +3733,14 @@ const Scenes = {
   india_rickshaw: {
     name: 'INDIA — Rickshaw Chaos',
     art: art_india,
-    text: () => { addCoins(3); return `The driver takes twelve wrong turns on purpose because the penguins are causing traffic jams. Somehow you still win the race. `+statFlavor({
-      soc: `Your driver's name is Raj. He is now your friend. He gives you his number for next time. +3 Fish Coins.`,
+    text: () => { addCoins(3); return P(
+      `The driver takes twelve wrong turns on purpose because the penguins are causing traffic jams. Somehow you still win the race. `,
+      `Squid co-pilots. She and the driver take twelve creative turns at speed. Mr Porky holds on with both flippers having the time of his life. He will not say this out loud. `
+    )+statFlavor({
+      soc: P(
+        `Your driver's name is Raj. He is now your friend. He gives you his number for next time. +3 Fish Coins.`,
+        `Driver's name is Raj. Squid has his number for next time, his cousin's number, and a standing offer for chai. Mr Porky has Raj's actual respect. +3 Fish Coins.`
+      ),
       def: `+3 Fish Coins.`,
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
@@ -3216,8 +3748,14 @@ const Scenes = {
   india_henna: {
     name: 'INDIA — Henna Flippers',
     art: art_india,
-    text: () => { addCoins(2); State.flags.romantic = true; return `The artist paints tiny penguins on both their flippers. ${P('Izzy', 'Mr Porky')} cries a little. `+statFlavor({
-      cur: `You ask about every symbol and what it means. The artist is delighted. She adds a secret symbol for good luck that she only puts on special customers. +2 Fish Coins.`,
+    text: () => { addCoins(2); State.flags.romantic = true; return P(
+      `The artist paints tiny penguins on both their flippers. Izzy cries a little. `,
+      `Squid requests tiny penguins on both flippers specifically. The artist paints them perfectly. Mr Porky looks at his flipper for a long time. "I know," says Squid. `
+    )+statFlavor({
+      cur: P(
+        `You ask about every symbol and what it means. The artist is delighted. She adds a secret symbol for good luck that she only puts on special customers. +2 Fish Coins.`,
+        `Squid asks about every symbol and what it means, in three languages. The artist is delighted. She adds a secret symbol for good luck that she only puts on special customers. +2 Fish Coins.`
+      ),
       def: `It's completely cute. +2 Fish Coins.`,
     }); },
     choices: () => [{ text: '➡ Round 2!', next: 'india_r2' }],
@@ -3225,27 +3763,51 @@ const Scenes = {
   india_r2: {
     name: 'INDIA — GOLDEN AFTERNOON',
     art: art_india,
-    text: () => `The afternoon heat softens as the sun angles lower. India has one more gift before you go.`+statFlavor({
-      adv: ` You can see the old city walls from here. The chaos inside sounds irresistible.`,
-      cur: ` A local historian has been watching you both with an intrigued expression.`,
-      soc: ` A wedding procession is passing through the street — and they're waving you in.`,
-      cau: ` The rooftop café has a perfect view and shade. And mango lassi.`,
-      def: ` The afternoon awaits.`,
+    text: () => P(
+      `The afternoon heat softens as the sun angles lower. India has one more gift before you go.`,
+      `Squid has a list. She has had a list since the plane. "Okay, four things left and we can do at least two." Mr Porky picks one. She picks the other three anyway.`
+    )+statFlavor({
+      adv: P(
+        ` You can see the old city walls from here. The chaos inside sounds irresistible.`,
+        ` Squid has spotted the old city walls. Already moving toward them.`
+      ),
+      cur: P(
+        ` A local historian has been watching you both with an intrigued expression.`,
+        ` A historian has been watching them both. Squid will have his life story in eight minutes.`
+      ),
+      soc: P(
+        ` A wedding procession is passing through the street — and they're waving you in.`,
+        ` A wedding procession is passing through. They're waving Squid in. She is, naturally, going.`
+      ),
+      cau: P(
+        ` The rooftop café has a perfect view and shade. And mango lassi.`,
+        ` The rooftop café has perfect shade and lassi. Squid has already ordered for both.`
+      ),
+      def: P(
+        ` The afternoon awaits.`,
+        ` The afternoon awaits. Squid does not.`
+      ),
     }),
     choices: () => [
-      { text: '🏙 Explore the old city bazaar', next: 'india_bazaar', effect: () => addStat('adventurous') },
-      { text: '🏛 Take a private history tour', next: 'india_history', effect: () => addStat('curious') },
-      { text: '💒 Join the wedding procession', next: 'india_wedding', effect: () => addStat('social') },
-      { text: '🥭 Rooftop café with mango lassi', next: 'india_rooftop', effect: () => addStat('cautious') },
-      ...( statUnlocked('curious') ? [{ text: '🕌 Visit the hidden stepwell at dusk', next: 'india_stepwell', cls: 'special', effect: () => addStat('curious') }] : [] ),
+      { text: P('🏙 Explore the old city bazaar', '🏙 Bazaar — Squid wants to negotiate aggressively'), next: 'india_bazaar', effect: () => addStat('adventurous') },
+      { text: P('🏛 Take a private history tour', '🏛 History tour — Squid has seventeen questions'), next: 'india_history', effect: () => addStat('curious') },
+      { text: P('💒 Join the wedding procession', '💒 Squid is getting handed a lamp — go'), next: 'india_wedding', effect: () => addStat('social') },
+      { text: P('🥭 Rooftop café with mango lassi', '🥭 Rooftop café — Squid orders for both without looking'), next: 'india_rooftop', effect: () => addStat('cautious') },
+      ...( statUnlocked('curious') ? [{ text: P('🕌 Visit the hidden stepwell at dusk', '🕌 Stepwell — Squid wants the silence at the bottom'), next: 'india_stepwell', cls: 'special', effect: () => addStat('curious') }] : [] ),
     ],
   },
   india_bazaar: {
     name: 'INDIA — Old City Bazaar',
     art: art_india,
     text: () => { addCoins(5); return statFlavor({
-      adv: `You navigate by instinct. You get beautifully lost. You find your way back via a silk merchant who gives you a scarf and directions, in that order. +5 Fish Coins.`,
-      def: `Every colour. Every sound. A man tries to sell Izzy a camel. She seriously considers it. You buy spices and a tiny brass elephant instead. +5 Fish Coins.`,
+      adv: P(
+        `You navigate by instinct. You get beautifully lost. You find your way back via a silk merchant who gives you a scarf and directions, in that order. +5 Fish Coins.`,
+        `Squid negotiates 40 minutes on a brass elephant and gets it for a very good price. Mr Porky has acquired three scarves and a friendship with the vendor's nephew. They reconvene. Both did well. +5 Fish Coins.`
+      ),
+      def: P(
+        `Every colour. Every sound. A man tries to sell Izzy a camel. She seriously considers it. You buy spices and a tiny brass elephant instead. +5 Fish Coins.`,
+        `Every colour. Every sound. Squid negotiates aggressively for a brass elephant. Mr Porky comes back with three scarves and a friendship. Both did well. +5 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -3253,8 +3815,14 @@ const Scenes = {
     name: 'INDIA — History Tour',
     art: art_india,
     text: () => { addCoins(4); return statFlavor({
-      cur: `The historian talks for three hours and you keep asking for more. He calls you the best audience he's ever had. Izzy takes seven pages of notes she will never read again. +4 Fish Coins.`,
-      def: `Mughal architecture. Hidden gardens. A well that's been in use since 1526. You walk away feeling like you've been given something. +4 Fish Coins.`,
+      cur: P(
+        `The historian talks for three hours and you keep asking for more. He calls you the best audience he's ever had. Izzy takes seven pages of notes she will never read again. +4 Fish Coins.`,
+        `The historian talks for three hours. Squid asks seventeen questions. Mr Porky takes notes for both of them. The historian asks to keep a copy. +4 Fish Coins.`
+      ),
+      def: P(
+        `Mughal architecture. Hidden gardens. A well that's been in use since 1526. You walk away feeling like you've been given something. +4 Fish Coins.`,
+        `Mughal architecture, hidden gardens, a 1526 well. Squid asks seventeen questions. Mr Porky takes notes for both. Historian asks to keep a copy. +4 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -3262,8 +3830,14 @@ const Scenes = {
     name: 'INDIA — The Wedding',
     art: art_india,
     text: () => { addCoins(7); State.flags.romantic = true; return statFlavor({
-      soc: `You are immediately given a role. You carry a decorated lamp. You do this with great dignity. The family photographs you with the bride and groom. You are in their wedding album. +7 Fish Coins.`,
-      def: `You are swept into the procession. There is music, colour, joy. The family feeds you sweets and takes your photo. You are, somehow, in the wedding album. +7 Fish Coins.`,
+      soc: P(
+        `You are immediately given a role. You carry a decorated lamp. You do this with great dignity. The family photographs you with the bride and groom. You are in their wedding album. +7 Fish Coins.`,
+        `Squid is given a lamp to carry within thirty seconds. She carries it with great solemnity. Mr Porky walks beside her, matching her energy. They are in the wedding album. They send a card. +7 Fish Coins.`
+      ),
+      def: P(
+        `You are swept into the procession. There is music, colour, joy. The family feeds you sweets and takes your photo. You are, somehow, in the wedding album. +7 Fish Coins.`,
+        `Music, colour, joy. Squid gets handed a lamp within thirty seconds. She carries it with great solemnity. Mr Porky walks beside her matching her energy. They are in the wedding album. +7 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
@@ -3271,15 +3845,24 @@ const Scenes = {
     name: 'INDIA — Rooftop Café',
     art: art_india,
     text: () => { addCoins(3); return statFlavor({
-      cau: `The reviews were correct on every count. Perfect shade, perfect lassi, perfect view of the Taj from here at this exact time of day. You are very good at choosing. +3 Fish Coins.`,
-      def: `Mango lassi. The Taj in the distance. A ceiling fan. Izzy stretches out and sighs happily. "Best decision," she says. +3 Fish Coins.`,
+      cau: P(
+        `The reviews were correct on every count. Perfect shade, perfect lassi, perfect view of the Taj from here at this exact time of day. You are very good at choosing. +3 Fish Coins.`,
+        `Squid orders for both without looking at the menu. She is right about everything. Mr Porky tells her this. She already knew. +3 Fish Coins.`
+      ),
+      def: P(
+        `Mango lassi. The Taj in the distance. A ceiling fan. Izzy stretches out and sighs happily. "Best decision," she says. +3 Fish Coins.`,
+        `Mango lassi. The Taj in the distance. Squid orders for both without looking at the menu. Right about everything. Mr Porky tells her so. She already knew. +3 Fish Coins.`
+      ),
     }); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
   india_stepwell: {
     name: 'INDIA — Hidden Stepwell',
     art: art_india,
-    text: () => { addCoins(8); return `Nobody is there. Geometric steps descend into cool blue shadow. The proportions are impossible — a mathematical poem cut from stone. You sit at the bottom for a long time. Above you, the city roars. Down here: perfect stillness. +8 Fish Coins.`; },
+    text: () => { addCoins(8); return P(
+      `Nobody is there. Geometric steps descend into cool blue shadow. The proportions are impossible — a mathematical poem cut from stone. You sit at the bottom for a long time. Above you, the city roars. Down here: perfect stillness. +8 Fish Coins.`,
+      `Nobody is there. Squid descends to the bottom and goes very still — fourth time this trip, Mr Porky is keeping count. He sits beside her. Stone, silence, each other. The city roars above; down here, nothing. +8 Fish Coins.`
+    ); },
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
@@ -3340,17 +3923,193 @@ const Scenes = {
 
   // === EVEREST ===
   everest: {
-    name: 'MT. EVEREST BASE CAMP',
+    name: 'MT. EVEREST — ARRIVAL',
     art: art_everest,
     text: () => P(
-      `Cold. Familiar cold. Penguin cold. Izzy giggles. "Reminds me of home, Porky." Three small stones rest in the snow at his feet. An old climber's tradition: stack a cairn before the moment that matters most.`,
-      `Cold. Familiar cold. Penguin cold. Squid laughs out loud. "Porky, this is basically our GARDEN." Three small stones rest in the snow at her feet. An old climber's tradition, Mr Porky whispers — stack them, one for each memory worth carrying.`
+      `Thin air. Enormous sky. Everything is white and grey and enormous. Izzy immediately begins walking upward. She hasn't consulted a map. She is going the right direction anyway.`,
+      `Squid steps off and looks up. And up. And up. Goes quiet. "Porky," she says. "It's big." Mr Porky agrees. It is very big. She's already walking toward it.`
     ),
+    choices: () => [
+      { text: P('🥾 Hike toward base camp', '🥾 Lead Mr Porky toward base camp'), next: 'everest_basecamp', effect: () => addStat('adventurous') },
+      { text: P('🕌 Visit the monastery', '🕌 Take Mr Porky to the monastery'), next: 'everest_monastery', cls: 'special', effect: () => addStat('cautious') },
+      { text: P('🐂 Make friends with the yak', '🐂 Introduce Mr Porky to the yak'), next: 'everest_yak', effect: () => addStat('social') },
+      { text: P('📷 Summit photography challenge', '📷 Photograph everything including Mr Porky'), next: 'everest_photo', effect: () => addStat('curious') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🌅 Predawn climb to watch first light', '🌅 4am alarm — Squid set it without hesitation'), next: 'everest_predawn', cls: 'special', effect: () => addStat('adventurous') }] : [] ),
+    ],
+  },
+  everest_basecamp: {
+    name: 'EVEREST — BASE CAMP',
+    art: art_everest,
+    text: () => P(
+      `Base camp. The mountain stares back. Time to choose your next step.`,
+      `Squid is already two steps ahead. Mr Porky is doing up his coat. The mountain stares back.`
+    ),
+    choices: () => [
+      { text: P('⛰ Push to the next ridge', '⛰ Push Mr Porky to the next ridge (gently)'), next: 'everest_ridge', effect: () => addStat('adventurous') },
+      { text: P('🌿 Document the altitude flora', '🌿 Make Mr Porky document the flora'), next: 'everest_flora', effect: () => addStat('curious') },
+      { text: P('🧗 Befriend the sherpa', '🧗 Let Squid befriend the sherpa'), next: 'everest_sherpa', effect: () => addStat('social') },
+      { text: P('👣 Take it slow and steady', '👣 Keep Mr Porky alive'), next: 'everest_careful', effect: () => addStat('cautious') },
+    ],
+  },
+  everest_ridge: {
+    name: 'EVEREST — The Ridge',
+    art: art_everest,
+    text: () => { addCoins(5); return P(
+      `The ridge. The world drops away on both sides. Izzy reaches the top first and turns to watch you arrive. The look on her face when you get there is one you'll keep. +5 Fish Coins.`,
+      `Squid reaches the top first and waits with her flippers on her hips. When Mr Porky crests the top she cheers. He acts embarrassed. He isn't. +5 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_flora: {
+    name: 'EVEREST — Altitude Flora',
+    art: art_everest,
+    text: () => { addCoins(3); return P(
+      `Things grow up here that shouldn't be able to. Tiny flowers in the rocks. Izzy photographs each one while you write the names. It takes two hours. Worth it. +3 Fish Coins.`,
+      `Squid names the altitude flowers after people she knows. Mr Porky photographs them. "That one's Gerald," she says. He writes "Gerald" in his notebook without question. +3 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_sherpa: {
+    name: 'EVEREST — Dawa the Sherpa',
+    art: art_everest,
+    text: () => { addCoins(5); return P(
+      `The sherpa's name is Dawa. He has summited nineteen times. You listen for an hour. Izzy asks excellent questions. Dawa says you're the most interesting travellers he's had. +5 Fish Coins.`,
+      `Squid has Dawa's life story within twenty minutes — his nineteen summits, his family in the valley, his favourite view on earth. Mr Porky writes it all down. Dawa is moved someone cared enough to record it. +5 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_careful: {
+    name: 'EVEREST — One Step at a Time',
+    art: art_everest,
+    text: () => { addCoins(3); return P(
+      `One foot at a time. Every step considered. The mountain doesn't care about speed. Izzy matches your pace without being asked. You notice this. +3 Fish Coins.`,
+      `Squid slows to Mr Porky's pace immediately, without being asked, and says nothing about it. He notices. He says nothing either. They walk. +3 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_monastery: {
+    name: 'EVEREST — Mountain Monastery',
+    art: art_everest,
+    text: () => { addCoins(5); State.flags.romantic = true; return P(
+      `Prayer flags in the wind. A monk offers tea. You sit for an hour in a courtyard where the mountains are the walls. Izzy is completely, uncharacteristically still. +5 Fish Coins.`,
+      `Tea offered. Squid accepts immediately, sits cross-legged on the courtyard stones with her mug. Mr Porky sits beside her. Mountains are the walls. Nothing needs saying. +5 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_yak: {
+    name: 'EVEREST — The Yak',
+    art: art_everest,
+    text: () => { addCoins(3); return P(
+      `The yak's name is implied rather than stated. It regards Mr Porky with deep suspicion and then headbutts him affectionately into a snowdrift. Izzy finds this hysterical. +3 Fish Coins.`,
+      `Squid approaches the yak with complete confidence. It immediately lets her scratch behind its horns. Mr Porky approaches more carefully. The yak headbutts him affectionately into a snowdrift. "It likes you," says Squid. +3 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_photo: {
+    name: 'EVEREST — Summit Photo',
+    art: art_everest,
+    text: () => { addCoins(4); return P(
+      `The peaks at altitude. Every shot feels inadequate. The mountain is bigger than cameras. Izzy photobombs three of them. This helps. +4 Fish Coins.`,
+      `Squid photographs Mr Porky with Everest behind him. Then the reverse. Then both via careful rock placement. Best photo of the trip. +4 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_predawn: {
+    name: 'EVEREST — First Light',
+    art: art_everest,
+    text: () => { addCoins(8); State.flags.romantic = true; return P(
+      `4am. The stars are still out. The summit catches first light twenty minutes before everything else. You and Izzy stand in the dark and watch dawn happen from the top of the world. +8 Fish Coins.`,
+      `Squid sets the 4am alarm with zero hesitation. Mr Porky doesn't complain once. They watch Everest catch first light before the world below knows it's morning. +8 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'everest_r2' }],
+  },
+  everest_r2: {
+    name: 'EVEREST — AFTERNOON ON THE HIMALAYAS',
+    art: art_everest,
+    text: () => P(
+      `The afternoon light on the Himalayas is something painters have tried to describe for centuries and mostly failed. You understand why now.`,
+      `Squid is still looking at the mountains. "One more thing," she says. Mr Porky was already putting his coat on.`
+    )+statFlavor({
+      adv: P(
+        ` Clouds are moving fast — perfect for watching them swallow whole valleys.`,
+        ` Squid is naming the clouds already. Mr Porky is timing them.`
+      ),
+      cur: P(
+        ` Dawa has invited you back for butter tea.`,
+        ` Dawa wants to share more stories — and butter tea.`
+      ),
+      soc: P(
+        ` Prayer flags are being added to the line. There's room for yours.`,
+        ` Squid is already eyeing the prayer flag line.`
+      ),
+      cau: P(
+        ` A distant rumble shifts the conversation. The guide assures you it's safe.`,
+        ` A rumble in the distance. Squid grabs Mr Porky's flipper without quite meaning to.`
+      ),
+      def: P(
+        ` The mountain waits.`,
+        ` The mountain waits. Squid does not.`
+      ),
+    }),
+    choices: () => [
+      { text: P('🍵 Butter tea with Dawa', '🍵 Butter tea — Squid will try not to make a face'), next: 'everest_tea', effect: () => addStat('curious') },
+      { text: P('🚩 Add a prayer flag to the line', "🚩 Prayer flags — Squid writes hers in secret"), next: 'everest_flags', cls: 'special', effect: () => addStat('cautious') },
+      { text: P('☁ Watch the clouds form below', '☁ Squid names the clouds, Mr Porky times them'), next: 'everest_clouds', effect: () => addStat('adventurous') },
+      { text: P('🌨 Brace for the distant avalanche', '🌨 Distant rumble — Squid grabs his flipper'), next: 'everest_avalanche', effect: () => addStat('cautious') },
+      ...( statUnlocked('curious') ? [{ text: P('🌲 Find the hidden valley path', "🌲 Squid asked three locals — there's a hidden valley"), next: 'everest_valley', cls: 'special', effect: () => addStat('curious') }] : [] ),
+    ],
+  },
+  everest_tea: {
+    name: 'EVEREST — Butter Tea',
+    art: art_everest,
+    text: () => { addCoins(3); return P(
+      `The sherpa's tent. Butter tea. The warmth of the cup against cold flippers. Dawa tells one more story. You both listen without moving. +3 Fish Coins.`,
+      `Dawa pours the butter tea. Squid tries it without making a face — effort required. Mr Porky genuinely likes it, which surprises everyone. Dawa laughs. +3 Fish Coins.`
+    ); },
+    choices: () => [{ text: '🪨 Build a memory-cairn together', next: 'everest_activity', cls: 'special' }],
+  },
+  everest_flags: {
+    name: 'EVEREST — Prayer Flags',
+    art: art_everest,
+    text: () => { addCoins(4); State.flags.romantic = true; return P(
+      `You add a flag to the line. Izzy writes something on hers before you tie it on. You don't read what she wrote. Some things are for the wind. +4 Fish Coins.`,
+      `Squid writes on her flag and ties it on before Mr Porky can read it. He writes on his and ties it on before she can read his. Both decide not to ask. +4 Fish Coins.`
+    ); },
+    choices: () => [{ text: '🪨 Build a memory-cairn together', next: 'everest_activity', cls: 'special' }],
+  },
+  everest_clouds: {
+    name: 'EVEREST — Cloud Watching',
+    art: art_everest,
+    text: () => { addCoins(3); return P(
+      `Cloud watching at altitude is different — they come from below. You watch one form from nothing, grow, and swallow the valley in ten minutes. Izzy calls this "the mountain breathing." Exactly right. +3 Fish Coins.`,
+      `Squid names the clouds. Mr Porky times them. One forms, grows, and swallows a valley in eight minutes. "Gerald 3," says Squid. He writes "Gerald 3" in his notebook. +3 Fish Coins.`
+    ); },
+    choices: () => [{ text: '🪨 Build a memory-cairn together', next: 'everest_activity', cls: 'special' }],
+  },
+  everest_avalanche: {
+    name: 'EVEREST — Distant Rumble',
+    art: art_everest,
+    text: () => { addCoins(2); return P(
+      `A low distant rumble. Mr Porky freezes. The guide does not freeze. "Far away," she says. The guide is correct. Izzy films the snow cloud. Mr Porky sits down for a moment. "You're fine," says Izzy. He is fine. +2 Fish Coins.`,
+      `A low distant rumble. Squid grabs Mr Porky's flipper. The guide confirms it's far. Squid immediately pretends she didn't grab his flipper. He pretends not to notice she did. +2 Fish Coins.`
+    ); },
+    choices: () => [{ text: '🪨 Build a memory-cairn together', next: 'everest_activity', cls: 'special' }],
+  },
+  everest_valley: {
+    name: 'EVEREST — Hidden Valley',
+    art: art_everest,
+    text: () => { addCoins(8); return P(
+      `Below the tourist trails. Green, tucked between impossible walls of rock. A community that has been here for centuries. They offer food. You stay longer than you meant to. +8 Fish Coins.`,
+      `Squid finds the path by asking three locals the same question. They follow it down into somewhere that feels secret. Food is offered. Squid accepts immediately. Mr Porky helps wash up. Both right. +8 Fish Coins.`
+    ); },
     choices: () => [{ text: '🪨 Build a memory-cairn together', next: 'everest_activity', cls: 'special' }],
   },
   everest_activity: {
     name: 'EVEREST — CAIRN OF MEMORIES',
-    text: () => `${P('Mr Porky', 'Squid')} kneels in the snow. Three stones. Three memories. Stack each, and the moment will find you.<br><br>🪨 <span style="color:var(--gold);">Click each stone in the snow.</span>`,
+    text: () => P(
+      `Three small stones rest in the snow at Mr Porky's feet. An old climber's tradition: stack a cairn before the moment that matters most. He kneels in the snow. Three stones. Three memories. Stack each, and the moment will find you.<br><br>🪨 <span style="color:var(--gold);">Click each stone in the snow.</span>`,
+      `Three small stones rest in the snow at Squid's feet. An old climber's tradition, Mr Porky whispers — stack them, one for each memory worth carrying. She kneels. Three stones. Three memories. Stack each, and the moment will find you.<br><br>🪨 <span style="color:var(--gold);">Click each stone in the snow.</span>`
+    ),
     puzzle: {
       kind: 'memory-walk',
       sceneClass: 'bg-everest',
@@ -3752,6 +4511,15 @@ const SCENE_VIBES = {
   egypt_finish_win:    ['adventure',   3],
   egypt_finish_lose:   ['silly',       1],
   egypt_bribe:         ['silly',       1],
+  egypt_market:        ['social',      2],
+  egypt_nile:          ['romantic',    3],
+  egypt_museum:        ['sentimental', 2],
+  egypt_dig:           ['adventure',   3],
+  egypt_sunset:        ['romantic',    2],
+  egypt_food:          ['silly',       2],
+  egypt_dance:         ['sentimental', 3],
+  egypt_stars:         ['romantic',    3],
+  egypt_secret:        ['adventure',   3],
   // Amazon
   amazon_butterfly:    ['adventure',   3],
   amazon_river:        ['romantic',    1],

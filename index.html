@@ -108,6 +108,8 @@
   .gameTitle { color: var(--gold); font-size: 12px; letter-spacing: 2px; }
   .coins { color: var(--gold); }
   .stops { color: var(--teal); }
+  .tokensBar { display: inline-flex; gap: 4px; padding: 2px 6px; border: 2px solid var(--pink); margin-left: 4px; }
+  .tokenIcon { font-size: 14px; line-height: 1; cursor: help; filter: drop-shadow(0 0 4px var(--pink)); }
 
   .scene {
     flex: 1;
@@ -1138,6 +1140,272 @@
     pointer-events: none;
   }
 
+  /* ========= Scotland Stage 1 — Great Hall ========= */
+  .castleHall {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 26px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 52px),
+      linear-gradient(to bottom, #2a2a3a 0%, #4a4a5a 60%, #1a1a28 100%);
+    pointer-events: none;
+  }
+  .hallFloor {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 14%;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.4) 0 2px, transparent 2px 44px),
+      linear-gradient(to bottom, #3a3030 0%, #1a1010 100%);
+    pointer-events: none;
+  }
+  .fireplace {
+    position: absolute; left: 6%; top: 56%;
+    width: 70px; height: 60px;
+    background: #1a0a05;
+    border: 4px solid #3a2010;
+    box-shadow: inset 0 0 0 2px #5a3018;
+    pointer-events: none;
+  }
+  .fireplace::after {
+    content: "🔥";
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 22px;
+    animation: torchFlicker 0.5s steps(3) infinite;
+  }
+  .armorStand {
+    position: absolute;
+    width: 30px; height: 70px;
+    background: linear-gradient(to bottom, #aab0c0 0%, #6a7080 60%, #3a3a4a 100%);
+    border: 2px solid #1a1a28;
+    box-shadow: 0 0 0 1px #5a5a6a;
+    pointer-events: none;
+  }
+  .armorStand::before {
+    content: ""; position: absolute;
+    left: 50%; top: -14px; transform: translateX(-50%);
+    width: 16px; height: 16px;
+    background: #6a7080;
+    border: 2px solid #1a1a28;
+    border-radius: 50%;
+  }
+  .castleBanner {
+    position: absolute;
+    width: 50px; height: 70px;
+    background: repeating-linear-gradient(135deg, #5a1a1a 0 6px, #3a0a0a 6px 12px, #5a3a18 12px 18px, #1a1a4a 18px 24px);
+    border: 2px solid #2a0a08;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+  .castleBanner.dusty::before {
+    content: ""; position: absolute; inset: 0;
+    background: rgba(180,160,120,0.55);
+    transition: opacity 1.2s ease;
+  }
+  .castleBanner.brushed::before { opacity: 0; }
+  .castlePortrait {
+    position: absolute;
+    width: 56px; height: 70px;
+    background: linear-gradient(to bottom, #4a2a3a 0%, #2a1a2a 100%);
+    border: 4px solid #c98a3a;
+    box-shadow: 0 0 0 2px #5a3018, inset 0 0 0 2px #2a1a08;
+    pointer-events: none;
+    transition: transform 0.4s ease;
+  }
+  .castlePortrait::after {
+    content: "👤"; position: absolute;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+    font-size: 26px;
+    filter: grayscale(0.7) brightness(0.7);
+  }
+  .castlePortrait.swung { transform: rotate(-12deg) translateX(-12px); }
+  .castleChest {
+    position: absolute;
+    width: 60px; height: 38px;
+    background: #5a3018;
+    border: 3px solid #2a1a08;
+    box-shadow: inset 0 0 0 2px #c98a3a, 0 4px 0 rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .castleChest::before {
+    content: ""; position: absolute;
+    left: 50%; top: -6px; transform: translateX(-50%);
+    width: 56px; height: 14px;
+    background: #5a3018;
+    border: 3px solid #2a1a08;
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+    box-shadow: inset 0 0 0 2px #c98a3a;
+  }
+  .castleChest.opened {
+    background: #2a1a08;
+    box-shadow: inset 0 0 14px #1a0a05;
+  }
+  .bagpipes {
+    position: absolute;
+    width: 44px; height: 44px;
+    background: radial-gradient(ellipse at 40% 40%, #6a4a4a 0%, #2a0a0a 80%);
+    border: 2px solid #1a0a08;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .bagpipes::before {
+    content: ""; position: absolute;
+    left: 50%; top: -10px; transform: translateX(-50%);
+    width: 5px; height: 18px;
+    background: #5a3018;
+  }
+  .bagpipes.squeezing { animation: bagpipeSqueeze 0.4s steps(3); }
+  @keyframes bagpipeSqueeze {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(0.85, 1.1); }
+  }
+  .keepDoorTag { font-family: inherit; }
+
+  /* ========= Scotland Stage 2 — Ghost's Vault ========= */
+  .ghostVault {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(120,180,220,0.18) 0%, transparent 60%),
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0 1px, transparent 1px 32px),
+      linear-gradient(to bottom, #1a2030 0%, #0a0a18 100%);
+    pointer-events: none;
+  }
+  .vaultFloor {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 12%;
+    background: linear-gradient(to bottom, #1a1a28 0%, #050508 100%);
+    pointer-events: none;
+  }
+  .strongbox {
+    position: absolute;
+    left: 50%; top: 38%;
+    transform: translateX(-50%);
+    width: 200px; height: 130px;
+    background: linear-gradient(to bottom, #5a4a2a 0%, #3a2a18 60%, #2a1a08 100%);
+    border: 5px solid #1a0a05;
+    box-shadow: inset 0 0 0 3px #c98a3a, inset 0 0 22px rgba(0,0,0,0.7), 0 6px 14px rgba(0,0,0,0.6);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .strongbox.opened {
+    background: linear-gradient(to bottom, #c98a3a 0%, #ff9f4a 60%, #5a3018 100%);
+    box-shadow: inset 0 0 0 3px #ffd23f, 0 0 30px var(--gold);
+    animation: brewGlow 1.2s steps(4) infinite;
+  }
+  .dial {
+    position: absolute;
+    transform: translateX(-50%);
+    width: 36px; height: 36px;
+    background: radial-gradient(circle at 30% 30%, #c98a3a 0%, #5a3018 75%, #1a0a05 100%);
+    border: 3px solid #1a0a05;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 2px #ffd23f, inset 0 0 6px rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    color: #ffd23f;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 0 4px #000;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .vaultGhost {
+    position: absolute;
+    right: 6%; top: 40%;
+    width: 48px; height: 60px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(200,230,255,0.85) 0%, rgba(120,180,220,0.4) 60%, transparent 90%);
+    border-radius: 50% 50% 30% 30% / 60% 60% 40% 40%;
+    pointer-events: none;
+    animation: ghostFloat 3s steps(6) infinite;
+    filter: drop-shadow(0 0 8px rgba(180,220,255,0.6));
+  }
+  .vaultGhost::before {
+    content: "👻";
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    opacity: 0.85;
+  }
+  @keyframes ghostFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .vaultDesk {
+    position: absolute;
+    left: 4%; bottom: 12%;
+    width: 90px; height: 38px;
+    background: linear-gradient(to bottom, #5a3018 0%, #2a1a08 100%);
+    border: 2px solid #1a0a05;
+    pointer-events: none;
+  }
+  .vaultLedger {
+    position: absolute;
+    left: 6%; bottom: 32%;
+    width: 28px; height: 22px;
+    background: #d6c090;
+    border: 2px solid #5a3018;
+    box-shadow: inset 0 0 0 1px #b89870, 1px 1px 0 #000;
+    pointer-events: none;
+  }
+  .vaultPainting {
+    position: absolute;
+    right: 22%; top: 12%;
+    width: 50px; height: 44px;
+    background: linear-gradient(135deg, #3a2a18 0%, #1a1a28 100%);
+    border: 3px solid #c98a3a;
+    box-shadow: 0 0 0 1px #2a1a08;
+    pointer-events: none;
+  }
+  .vaultPainting::after {
+    content: "🦌"; position: absolute;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+    font-size: 22px;
+  }
+  .vaultChess {
+    position: absolute;
+    left: 18%; bottom: 14%;
+    width: 36px; height: 36px;
+    background: repeating-conic-gradient(#1a1a28 0% 25%, #d6c090 0% 50%);
+    background-size: 18px 18px;
+    border: 2px solid #1a0a05;
+    pointer-events: none;
+  }
+  .vaultChess::after {
+    content: "♛"; position: absolute;
+    left: 50%; top: 50%; transform: translate(-50%, -50%);
+    font-size: 18px;
+    color: #1a0a05;
+    text-shadow: 0 0 3px #ffd23f;
+  }
+  .vaultQuill {
+    position: absolute;
+    right: 8%; bottom: 14%;
+    width: 30px; height: 18px;
+    background: #d6c090;
+    border: 2px solid #5a3018;
+    pointer-events: none;
+  }
+  .vaultQuill::before {
+    content: "🪶"; position: absolute;
+    left: 50%; top: -16px; transform: translateX(-50%) rotate(-25deg);
+    font-size: 16px;
+  }
+  .tryLockBtn {
+    position: absolute;
+    left: 50%; top: 70%;
+    transform: translateX(-50%);
+    width: 110px;
+    padding: 5px 0;
+    text-align: center;
+    font-family: inherit;
+    font-size: 9px;
+    letter-spacing: 1px;
+    background: #1a0a05;
+    color: var(--gold);
+    border: 2px solid var(--gold);
+    cursor: pointer;
+    user-select: none;
+    z-index: 4;
+    box-shadow: 0 0 8px rgba(0,0,0,0.6);
+  }
+  .tryLockBtn:hover { background: var(--gold); color: #1a0a05; }
+
   .feedback.info { color: var(--teal); border: 2px solid var(--teal); }
 
   /* Memory-walk activity effects */
@@ -1894,6 +2162,8 @@ const State = {
   vibes: { romantic: 0, silly: 0, sentimental: 0, adventure: 0 },
   // Hidden personality stats shaped by every choice
   stats: { adventurous: 0, curious: 0, social: 0, cautious: 0 },
+  // Persistent puzzle tokens earned this playthrough (e.g. castle 🏰)
+  tokens: [],
 };
 
 // =============== SCENE ART RENDERERS ==================
@@ -2766,18 +3036,266 @@ const Scenes = {
     choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
   },
   scotland_castle: {
-    name: 'SCOTLAND — Castle Mystery',
+    name: 'SCOTLAND — THE GREAT HALL',
+    text: () => P(
+      `The great hall is colder than outside. A keep door looms at the back, four empty sigil slots set into its iron face. Tartan banners, suits of armour, a sleeping fireplace. Somewhere in here is the way through.`,
+      `The great hall is colder than outside. Squid is already at the back, pointing at the keep door. Four empty sigil slots glare from the iron. "Right," she says. "Crests."`
+    ),
+    puzzle: {
+      kind: 'escape-room',
+      sceneClass: 'bg-iceland',
+      slots: 4,
+      resetFlags: ['armorLUsed','armorRUsed','chandelierTaken','ashTaken','bannerBrushed','portraitSwung','chestOpened','fiddleRevealed','bagpipeBlows'],
+      sceneArt: `
+        <div class="castleHall"></div>
+        <div class="hallFloor"></div>
+        <div class="torch left" style="top: 6%; left: 3%;">🔥</div>
+        <div class="torch right" style="top: 6%; right: 3%;">🔥</div>
+        <div class="escapeDoor" style="bottom: 30%; height: 50%; width: 22%;">
+          <div class="doorLabel">KEEP</div>
+          <div class="sigilRow">
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+          </div>
+        </div>
+        <div class="fireplace"></div>
+        <div class="armorStand" style="left: 28%; top: 44%;"></div>
+        <div class="armorStand" style="right: 28%; top: 44%;"></div>
+        <div class="castleBanner" style="right: 5%; top: 14%;"></div>
+        <div class="castlePortrait" style="left: 5%; top: 14%;"></div>
+        <div class="castleChest" style="right: 10%; bottom: 18%;"></div>
+        <div class="bagpipes" style="right: 2%; top: 50%;"></div>
+      `,
+      hotspots: [
+        // Armour stands — one yields the rusted key, the other a dust rag
+        { id: 'armorL', type: 'collect', x: '30%', y: '50%', symbol: '🛡', label: 'left suit of armour', size: 28,
+          visibleIf: () => !State.flags.armorLUsed,
+          onUse: () => {
+            State.flags.armorLUsed = true;
+            addToInventory('rusted_key', '🗝', 'rusted iron key');
+            showFeedback('A heavy rusted key clatters out of the gauntlet.', 'good');
+          }
+        },
+        { id: 'armorR', type: 'collect', x: '70%', y: '50%', symbol: '🛡', label: 'right suit of armour', size: 28,
+          visibleIf: () => !State.flags.armorRUsed,
+          onUse: () => {
+            State.flags.armorRUsed = true;
+            addToInventory('dust_rag', '🧽', 'dust rag');
+            showFeedback('A folded dust rag, tucked under the breastplate. Useful.', 'good');
+          }
+        },
+        // Herrings
+        { id: 'chandelier', type: 'collect', x: '50%', y: '88%', symbol: '🕯', label: 'fallen chandelier', size: 24,
+          visibleIf: () => !State.flags.chandelierTaken,
+          onUse: () => {
+            State.flags.chandelierTaken = true;
+            showFeedback('A toppled chandelier. The candles are stubs and the brass is cold. Nothing to take.', 'bad');
+          }
+        },
+        { id: 'fireplace_ash', type: 'collect', x: '8%', y: '72%', symbol: '✨', label: 'fireplace ashes', size: 22,
+          visibleIf: () => !State.flags.ashTaken,
+          onUse: () => {
+            State.flags.ashTaken = true;
+            showFeedback('Just cold ash. You wipe your flippers on your knees.', 'bad');
+          }
+        },
+        // Banner — needs the dust rag → thistle sigil (pos 2)
+        { id: 'banner', type: 'interact', x: '90%', y: '22%', symbol: '🚩', label: 'tartan banner', size: 26,
+          visibleIf: () => !State.flags.bannerBrushed,
+          requires: 'dust_rag',
+          failMessage: 'A tartan banner, thick with dust. Something is woven into it, but you can\'t make it out.',
+          onUse: () => {
+            State.flags.bannerBrushed = true;
+            const b = document.querySelector('.castleBanner');
+            if (b) b.classList.add('brushed');
+            revealSymbol('thistle', '🌿', 2, 'thistle');
+            showFeedback('The dust falls away. A clan thistle blazes from the weave!', 'good');
+          }
+        },
+        // Portrait — swings open without a tool → stag sigil (pos 1)
+        { id: 'portrait', type: 'interact', x: '12%', y: '22%', symbol: '🖼', label: 'stern laird\'s portrait', size: 26,
+          visibleIf: () => !State.flags.portraitSwung,
+          onUse: () => {
+            State.flags.portraitSwung = true;
+            const p = document.querySelector('.castlePortrait');
+            if (p) p.classList.add('swung');
+            revealSymbol('stag', '🦌', 1, 'stag');
+            showFeedback('The portrait swings open on a hidden hinge. Behind it: a carved stag, glowing faintly.', 'good');
+          }
+        },
+        // Chest — needs the rusted key → sword sigil (pos 3)
+        { id: 'chest', type: 'interact', x: '85%', y: '82%', symbol: '🧰', label: 'iron-banded chest', size: 28,
+          visibleIf: () => !State.flags.chestOpened,
+          requires: 'rusted_key',
+          failMessage: 'An iron-banded chest. Heavy. Locked.',
+          onUse: () => {
+            State.flags.chestOpened = true;
+            const c = document.querySelector('.castleChest');
+            if (c) c.classList.add('opened');
+            revealSymbol('sword', '🗡', 3, 'sword');
+            showFeedback('The lock turns. Inside: a sigil shaped like a broken sword, still warm somehow.', 'good');
+          }
+        },
+        // Bagpipes — multi-click reveal → fiddle sigil (pos 4)
+        { id: 'bagpipes', type: 'interact', x: '95%', y: '53%', symbol: '🎵', label: 'old bagpipes', size: 22,
+          visibleIf: () => !State.flags.fiddleRevealed,
+          onUse: () => {
+            State.flags.bagpipeBlows = (State.flags.bagpipeBlows || 0) + 1;
+            const bp = document.querySelector('.bagpipes');
+            if (bp) {
+              bp.classList.add('squeezing');
+              setTimeout(() => bp.classList.remove('squeezing'), 400);
+            }
+            if (State.flags.bagpipeBlows >= 3) {
+              State.flags.fiddleRevealed = true;
+              revealSymbol('fiddle', '🎻', 4, 'fiddle');
+              showFeedback('On the third squeeze the bagpipes finally wheeze a tune. A fiddle sigil dances out of the noise!', 'good');
+            } else {
+              showFeedback(`The bagpipes wheeze pitifully. (${State.flags.bagpipeBlows}/3)`, 'info');
+            }
+          }
+        },
+      ],
+      onWin: 'scotland_castle_inner',
+      onLose: 'scotland_finish_locked',
+      hint: 'Two suits of armour, two useful things. The dust hides what the weave remembers. The portrait swings on a hinge if you nudge it. The chest has a heavy lock. The bagpipes need persuasion.',
+    },
+  },
+  scotland_castle_inner: {
+    name: 'SCOTLAND — THE GHOST\'S VAULT',
+    text: () => P(
+      `The keep door grinds shut behind you. A circular study, dust, candlelight. A great strongbox waits in the center — four brass dials in its face. A friendly ghost looks up from a chair and gestures at the room. "The clues are all here. Take your time."`,
+      `The keep door grinds shut. A round study, candlelight, a strongbox with four dials. The ghost looks up from a chair, doesn't seem the least surprised. "Set the dials right. The clues are all here." Squid is already at the painting.`
+    ),
+    puzzle: {
+      kind: 'escape-room',
+      sceneClass: 'bg-iceland',
+      slots: 4,
+      resetFlags: ['dial1','dial2','dial3','dial4','vaultOpened','tryAttempts'],
+      sceneArt: `
+        <div class="ghostVault"></div>
+        <div class="vaultFloor"></div>
+        <div class="torch left" style="top: 6%; left: 3%;">🕯</div>
+        <div class="torch right" style="top: 6%; right: 3%;">🕯</div>
+        <div class="vaultGhost"></div>
+        <div class="vaultPainting"></div>
+        <div class="vaultDesk"></div>
+        <div class="vaultLedger"></div>
+        <div class="vaultChess"></div>
+        <div class="vaultQuill"></div>
+        <div class="strongbox"></div>
+        <div class="dial" data-dial="1" style="left: 36%; top: 50%;">I</div>
+        <div class="dial" data-dial="2" style="left: 44%; top: 50%;">🦌</div>
+        <div class="dial" data-dial="3" style="left: 56%; top: 50%;">🌷</div>
+        <div class="dial" data-dial="4" style="left: 64%; top: 50%;">🗡</div>
+      `,
+      hotspots: [
+        // Four dials — each click cycles to next position (0..3)
+        { id: 'dial1', type: 'interact', x: '36%', y: '50%', label: 'numeral dial',
+          onUse: () => {
+            State.flags.dial1 = ((State.flags.dial1 || 0) + 1) % 4;
+            updateDialVisual(1);
+            showFeedback('The numeral dial clicks forward.', 'info');
+          }
+        },
+        { id: 'dial2', type: 'interact', x: '44%', y: '50%', label: 'beast dial',
+          onUse: () => {
+            State.flags.dial2 = ((State.flags.dial2 || 0) + 1) % 4;
+            updateDialVisual(2);
+            showFeedback('The beast dial clicks forward.', 'info');
+          }
+        },
+        { id: 'dial3', type: 'interact', x: '56%', y: '50%', label: 'season dial',
+          onUse: () => {
+            State.flags.dial3 = ((State.flags.dial3 || 0) + 1) % 4;
+            updateDialVisual(3);
+            showFeedback('The season dial clicks forward.', 'info');
+          }
+        },
+        { id: 'dial4', type: 'interact', x: '64%', y: '50%', label: 'arms dial',
+          onUse: () => {
+            State.flags.dial4 = ((State.flags.dial4 || 0) + 1) % 4;
+            updateDialVisual(4);
+            showFeedback('The arms dial clicks forward.', 'info');
+          }
+        },
+        // Try lock — validates all four dials
+        { id: 'tryLock', type: 'interact', label: 'try the lock',
+          visibleIf: () => !State.flags.vaultOpened,
+          onUse: () => {
+            const correct = (State.flags.dial1 || 0) === 3
+                         && (State.flags.dial2 || 0) === 0
+                         && (State.flags.dial3 || 0) === 3
+                         && (State.flags.dial4 || 0) === 0;
+            if (correct) {
+              State.flags.vaultOpened = true;
+              const sb = document.querySelector('.strongbox');
+              if (sb) sb.classList.add('opened');
+              revealSymbol('castle', '🏰', 1, 'castle');
+              revealSymbol('shield', '🛡', 2, 'shield');
+              revealSymbol('crown',  '👑', 3, 'crown');
+              revealSymbol('swords', '⚔', 4, 'swords');
+              showFeedback('Every dial sings a long brass note. The strongbox flies open and four sigils spill out!', 'good');
+            } else {
+              State.flags.tryAttempts = (State.flags.tryAttempts || 0) + 1;
+              showFeedback('The lock holds. Something is misaligned.', 'bad');
+            }
+          }
+        },
+        // Re-readable clue hotspots
+        { id: 'ledger', type: 'interact', x: '12%', y: '76%', symbol: '📒', label: 'open ledger', size: 24,
+          onUse: () => showFeedback('Ledger entry: "Of his four sons, only the youngest returned home."', 'info'),
+        },
+        { id: 'painting', type: 'interact', x: '76%', y: '20%', symbol: '🖼', label: 'painting of a beast', size: 24,
+          onUse: () => showFeedback('Beneath the painting, in faded gilt: "His standard bore the antlers."', 'info'),
+        },
+        { id: 'chessPiece', type: 'interact', x: '24%', y: '78%', symbol: '♛', label: 'frozen chess game', size: 24,
+          onUse: () => showFeedback('A note tucked under the queen: "She fell in the long winter."', 'info'),
+        },
+        { id: 'quillPage', type: 'interact', x: '90%', y: '78%', symbol: '🪶', label: 'torn page', size: 24,
+          onUse: () => showFeedback('Torn page: "...and the broken sword on the wall, never the bow nor the axe."', 'info'),
+        },
+        // Ghost — atmospheric only
+        { id: 'ghost', type: 'interact', x: '92%', y: '44%', symbol: '👻', label: 'friendly ghost', size: 26,
+          onUse: () => showFeedback('The ghost smiles politely. "I won\'t tell you the answers. But I will hum if you ask nicely." It hums. It is not helpful.', 'info'),
+        },
+      ],
+      onWin: 'scotland_finish_win',
+      onLose: 'scotland_finish_partial',
+      hint: 'Four clues, four dials. The ledger speaks of sons. The painting wears antlers. The chess board holds a season. The torn page names a weapon.',
+    },
+  },
+  scotland_finish_win: {
+    name: 'SCOTLAND — The Castle Token',
     art: art_scotland,
-    text: () => { addCoins(6); return statFlavor({
-      cur: P(
-        `Inside the castle a ghost (friendly, also confused by penguins) reveals a hidden gold coin stash. You ask the ghost seventeen historical questions. It loves this. +6 Fish Coins!`,
-        `Inside the castle Squid greets a friendly ghost like an old friend. Mr Porky asks the ghost seventeen historical questions. The ghost loves this and reveals a hidden gold coin stash by way of thanks. +6 Fish Coins.`
-      ),
-      def: P(
-        `Inside the castle a ghost (friendly, also confused by penguins) reveals a hidden gold coin stash behind a portrait of a very serious man. +6 Fish Coins!`,
-        `Inside the castle a ghost (friendly, deeply confused by Squid's enthusiasm) reveals a hidden gold coin stash behind a portrait of a very serious man. Mr Porky bows to the ghost. The ghost bows back. +6 Fish Coins.`
-      ),
-    }); },
+    text: () => {
+      addCoins(8);
+      addToken('castle', '🏰', 'Castle Token — solved both castle puzzles');
+      return P(
+        `The strongbox opens fully. Inside, on a velvet square, a small bronze castle token catches the candlelight. The ghost bows. "It belongs to the pair of you now." Mr Porky pockets it like he's handling a coronation jewel. +8 Fish Coins and the Castle Token!`,
+        `The strongbox flings itself open. A small bronze castle token sits on velvet inside. The ghost bows to both of them. Squid bows back, then immediately tries on every dust-covered hat in the vault. +8 Fish Coins and the Castle Token!`
+      );
+    },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
+  },
+  scotland_finish_partial: {
+    name: 'SCOTLAND — A Polite Defeat',
+    art: art_scotland,
+    text: () => { addCoins(4); return P(
+      `The dials never line up. The ghost shrugs apologetically and shows you a side door. You leave with the great-hall sigils and your dignity. No token today. +4 Fish Coins.`,
+      `The dials refuse them. The ghost shrugs, almost embarrassed, and waves them out a side door. Squid stages a dramatic farewell. They leave with their dignity. +4 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
+  },
+  scotland_finish_locked: {
+    name: 'SCOTLAND — Locked Out',
+    art: art_scotland,
+    text: () => P(
+      `The keep door doesn't budge. You leave the great hall the way you came in, slightly out-puzzled by a building. No coins, no token. The hall keeps its secrets.`,
+      `The keep door doesn't budge. Squid declares it "rude." They leave the way they came in, slightly out-puzzled by a building. No coins, no token. The hall keeps its secrets.`
+    ),
     choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
   },
   scotland_loch: {
@@ -5093,6 +5611,7 @@ const Scenes = {
       State.selectedItem = null;
       State.vibes = { romantic: 0, silly: 0, sentimental: 0, adventure: 0 };
       State.stats = { adventurous: 0, curious: 0, social: 0, cautious: 0 };
+      State.tokens = [];
       State.lastLocation = 'antarctica';
       goTo('title');
     },
@@ -5252,12 +5771,22 @@ function endingScreen({ title, bodyPorky, bodySquid, gradesPorky, gradesSquid })
 function renderTopBar() {
   const tb = document.getElementById('topbar');
   if (tb) {
+    const tokens = (State.tokens || []).map(t =>
+      `<span class="tokenIcon" title="${t.label}">${t.symbol}</span>`).join('');
     tb.innerHTML = `
       <span class="gameTitle">🐧 PENGUIN TRAVELS 🐧</span>
       <span class="coins">🪙 ${State.coins}</span>
       <span class="stops">📍 STOPS: ${State.stops}</span>
+      ${tokens ? `<span class="tokensBar">${tokens}</span>` : ''}
     `;
   }
+}
+
+function addToken(id, symbol, label) {
+  if (!State.tokens) State.tokens = [];
+  if (State.tokens.some(t => t.id === id)) return;
+  State.tokens.push({ id, symbol, label });
+  renderTopBar();
 }
 
 function renderTitle() {
@@ -5804,6 +6333,21 @@ function updateSundialVisual(rotation) {
   }
 }
 
+const VAULT_DIAL_SYMBOLS = {
+  1: ['I', 'II', 'III', 'IV'],
+  2: ['🦌', '🐺', '🦅', '🐎'],
+  3: ['🌷', '☀', '🍂', '❄'],
+  4: ['🗡', '🏹', '🛡', '🪓'],
+};
+function updateDialVisual(idx) {
+  const dial = document.querySelector(`.dial[data-dial="${idx}"]`);
+  if (!dial) return;
+  const arr = VAULT_DIAL_SYMBOLS[idx];
+  if (!arr) return;
+  const pos = (State.flags[`dial${idx}`] || 0) % 4;
+  dial.textContent = arr[pos];
+}
+
 function updateCauldronVisual(state) {
   const liq = document.querySelector('.cauldronLiquid');
   if (!liq) return;
@@ -5891,6 +6435,9 @@ function renderEscapeRoom(container, p) {
   if (document.querySelector('.sundialMount')) {
     updateSundialVisual(State.flags.sunRotation || 0);
   }
+  if (document.querySelector('.dial[data-dial]')) {
+    [1,2,3,4].forEach(updateDialVisual);
+  }
   showFeedback('The tomb is silent. Dust hangs in the torchlight.', '');
 }
 
@@ -5949,6 +6496,30 @@ function rerenderEscapeHotspots() {
       ov.dataset.hotspotId = h.id;
       ov.onclick = () => handleEscapeHotspot(h);
       wrap.appendChild(ov);
+      return;
+    }
+    if (['dial1','dial2','dial3','dial4'].includes(h.id)) {
+      const ov = document.createElement('div');
+      ov.className = 'hotspotOverlay silent';
+      ov.style.left = h.x;
+      ov.style.top = h.y;
+      ov.style.width = '40px';
+      ov.style.height = '40px';
+      ov.style.transform = 'translateX(-50%)';
+      ov.title = h.label;
+      ov.dataset.hotspotId = h.id;
+      ov.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(ov);
+      return;
+    }
+    if (h.id === 'tryLock') {
+      const btn = document.createElement('div');
+      btn.className = 'tryLockBtn';
+      btn.textContent = '✓ TRY LOCK';
+      btn.title = h.label;
+      btn.dataset.hotspotId = h.id;
+      btn.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(btn);
       return;
     }
     const dot = document.createElement('div');

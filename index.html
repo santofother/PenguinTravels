@@ -669,6 +669,7 @@
     transition: filter 0.1s steps(2), transform 0.1s steps(2);
     user-select: none;
     line-height: 1;
+    z-index: 4;
   }
   .hotspot:hover {
     transform: translate(-50%, -50%) scale(1.2);
@@ -754,6 +755,11 @@
   .symBtn.tool {
     border-color: var(--teal);
     color: var(--teal);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px 6px;
   }
   .symBtn.tool:hover { background: var(--teal); color: var(--ink); }
   .symBtn.tool.selected {
@@ -769,13 +775,12 @@
     50% { transform: translateY(0); }
   }
   .symBtn .toolTag {
-    position: absolute;
-    bottom: -10px; left: 50%;
-    transform: translateX(-50%);
+    position: static;
+    transform: none;
     font-size: 7px;
     background: #000;
     color: var(--paper);
-    padding: 2px 4px;
+    padding: 2px 5px;
     border: 2px solid currentColor;
     line-height: 1;
     letter-spacing: 1px;
@@ -802,6 +807,213 @@
   /* Cracked-wall texture for hotspot */
   .hotspot.dusty {
     filter: grayscale(0.6) brightness(0.7) drop-shadow(0 0 4px #000);
+  }
+
+  /* ========= Egypt Tomb interior ========= */
+  .tombInterior {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0,0,0,0.18) 0 1px,
+        transparent 1px 28px),
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.22) 0 1px,
+        transparent 1px 44px),
+      linear-gradient(to bottom, #1a1008 0%, #2e1f0a 60%, #1a1008 100%);
+    pointer-events: none;
+  }
+  .tombFloor {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 18%;
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.4) 0 2px,
+        transparent 2px 36px),
+      linear-gradient(to bottom, #2a1a08 0%, #150a02 100%);
+    box-shadow: inset 0 4px 0 rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+  .torch {
+    position: absolute;
+    width: 22px; height: 22px;
+    font-size: 18px;
+    line-height: 1;
+    text-align: center;
+    z-index: 2;
+    pointer-events: none;
+    animation: torchFlicker 0.5s steps(3) infinite;
+  }
+  .torch::before {
+    content: "";
+    position: absolute;
+    inset: -40px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,159,74,0.5) 0%, rgba(255,159,74,0.2) 40%, transparent 70%);
+    pointer-events: none;
+    animation: torchGlow 1.2s steps(4) infinite;
+  }
+  .torch.left { top: 6%; left: 33%; }
+  .torch.right { top: 6%; right: 4%; }
+  @keyframes torchFlicker {
+    0%, 100% { filter: drop-shadow(0 0 4px #ff9f4a); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 9px #ffd23f); transform: scale(1.08); }
+  }
+  @keyframes torchGlow {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+
+  /* The big sealed tomb door */
+  .tombDoor {
+    position: absolute;
+    left: 50%;
+    bottom: 16%;
+    transform: translateX(-50%);
+    width: 28%;
+    height: 70%;
+    background:
+      linear-gradient(90deg, #1a0f05 0%, #2a1a0a 48%, #000 50%, #2a1a0a 52%, #1a0f05 100%);
+    border: 6px solid #6b4a1a;
+    box-shadow:
+      inset 0 0 0 3px #2a1a08,
+      inset 0 0 30px rgba(0,0,0,0.8),
+      0 0 0 2px #000,
+      0 0 24px rgba(0,0,0,0.7);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .tombDoor .doorLabel {
+    position: absolute;
+    top: 4px; left: 0; right: 0;
+    text-align: center;
+    color: var(--gold);
+    font-size: 7px;
+    letter-spacing: 3px;
+    text-shadow: 0 0 4px #000;
+  }
+  .tombDoor .sigilRow {
+    position: absolute;
+    top: 18%; left: 0; right: 0;
+    display: flex; justify-content: space-around;
+    padding: 0 10%;
+  }
+  .tombDoor .sigilSlot {
+    width: 18px; height: 18px;
+    border: 2px solid var(--gold);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.8);
+  }
+
+  /* Big dusty wall on left side */
+  .tombWall {
+    position: absolute;
+    left: 0; top: 0;
+    width: 30%;
+    height: 82%;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0,0,0,0.3) 0 2px,
+        transparent 2px 32px),
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.25) 0 2px,
+        transparent 2px 48px),
+      linear-gradient(to bottom, #3a2410 0%, #2a1a08 100%);
+    border-right: 3px solid rgba(0,0,0,0.6);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .tombWall .glyphGrid {
+    position: absolute;
+    inset: 12% 8%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    place-items: center;
+    color: var(--gold);
+    font-size: 22px;
+    text-shadow: 0 0 6px rgba(255,159,74,0.6);
+    opacity: 0;
+    transition: opacity 1.5s ease;
+  }
+  .tombWall .dustOverlay {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(255,255,255,0.04) 0 1px,
+        transparent 1px 6px),
+      rgba(180,160,120,0.55);
+    opacity: 1;
+    transition: opacity 1.2s ease;
+    pointer-events: none;
+  }
+  .tombWall.wallRevealed .dustOverlay { opacity: 0; }
+  .tombWall.wallRevealed .glyphGrid { opacity: 1; }
+
+  /* Wall-mounted sundial */
+  .sundialMount {
+    position: absolute;
+    left: 76%; top: 36%;
+    width: 90px; height: 90px;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .sundialMount svg { width: 100%; height: 100%; transition: filter 0.3s ease; }
+  .sundialMount.maxed svg { animation: sundialPulse 1.2s steps(4) infinite; }
+  @keyframes sundialPulse {
+    0%, 100% { filter: drop-shadow(0 0 8px #ff9f4a) drop-shadow(0 0 16px #ffd23f); }
+    50% { filter: drop-shadow(0 0 18px #fff) drop-shadow(0 0 28px #ffd23f); }
+  }
+  .sunBurst {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 36px;
+    pointer-events: none;
+    animation: sunBurst 1.6s ease-out forwards;
+  }
+  @keyframes sunBurst {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    60% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+  }
+
+  /* Large transparent overlay hotspots (wall, sundial) */
+  .hotspotOverlay {
+    position: absolute;
+    cursor: pointer;
+    background: transparent;
+    outline: 2px dashed transparent;
+    transition: outline-color 0.15s, background 0.15s;
+    z-index: 3;
+  }
+  .hotspotOverlay:hover {
+    outline-color: rgba(255,210,63,0.4);
+    background: rgba(255,210,63,0.06);
+  }
+
+  /* Sundial check / lock button */
+  .sundialCheckBtn {
+    position: absolute;
+    left: 73%; top: 78%;
+    width: 100px;
+    padding: 5px 0;
+    text-align: center;
+    font-family: inherit;
+    font-size: 9px;
+    letter-spacing: 1px;
+    background: #1a0f05;
+    color: var(--gold);
+    border: 2px solid var(--gold);
+    cursor: pointer;
+    user-select: none;
+    z-index: 4;
+    box-shadow: 0 0 8px rgba(0,0,0,0.6);
+  }
+  .sundialCheckBtn:hover {
+    background: var(--gold);
+    color: #1a0f05;
   }
 
   .feedback.info { color: var(--teal); border: 2px solid var(--teal); }
@@ -2666,77 +2878,129 @@ const Scenes = {
     choices: () => [{ text: '➡ Round 2!', next: 'egypt_r2' }],
   },
   egypt_puzzle: {
-    name: 'EGYPT — SPHINX TRIAL',
+    name: 'EGYPT — TOMB CHAMBER',
     text: () => P(
-      `"EARN THE SIGILS, FLIGHTLESS BIRDS." A sealed door stands before the Great Pyramid, marked with four empty slots. Mr Porky rolls up his metaphorical sleeves. Izzy is already poking things.<br><br>🔍 <span style="color:var(--gold);">Click objects to inspect. Collect tools, select them, then use them on something.</span>`,
-      `"EARN THE SIGILS, FLIGHTLESS BIRDS." A sealed door — four empty slots. Squid immediately starts touching things. Mr Porky is already reading the carvings. Between them, they will figure this out.<br><br>🔍 <span style="color:var(--gold);">Click objects to inspect. Collect tools, select them, then use them on something.</span>`
+      `The torch flickers as the entrance seals behind you. A thin shaft of light slants down through a vent above — it must be nearly midday outside. A great stone door dominates the far wall, four empty sigil slots staring back at you. Somewhere in this room is the way through.`,
+      `The torchlight catches the dust still falling. The entrance is sealed. A pale knife of midday sun slips through a vent in the ceiling. A massive stone door blocks the way forward, four hollow circles waiting across its face. Squid is already moving toward the pots.`
     ),
     puzzle: {
       kind: 'escape-room',
-      sceneClass: 'bg-egypt',
+      sceneClass: 'bg-tomb',
       slots: 4,
-      resetFlags: ['sandSearched', 'wallBrushed', 'jarOpened', 'sphinxEyeOpened', 'sunRevealed', 'sunRotation'],
+      resetFlags: ['potAOpened','potBOpened','potCOpened','potDOpened','wallBrushed','doorUnsealed','sunRevealed','sunRotation'],
       sceneArt: `
-        <div style="position:absolute;top:18px;right:14%;width:34px;height:34px;background:var(--gold);border-radius:50%;box-shadow:0 0 0 3px #ff9f4a, 0 0 20px var(--gold);pointer-events:none;"></div>
-        <div class="pyramid" style="pointer-events:none;"></div>
-        <div class="sealedDoor">SEALED</div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:34px;background:linear-gradient(to bottom, transparent, rgba(0,0,0,0.35));pointer-events:none;"></div>
+        <div class="tombInterior"></div>
+        <div class="tombFloor"></div>
+        <div class="torch left">🔥</div>
+        <div class="torch right">🔥</div>
+        <div class="tombWall dustyWall">
+          <div class="glyphGrid">
+            <span>🪲</span><span>𓂀</span><span>☀</span><span>𓋹</span>
+          </div>
+          <div class="dustOverlay"></div>
+        </div>
+        <div class="tombDoor">
+          <div class="doorLabel">SEALED</div>
+          <div class="sigilRow">
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+          </div>
+        </div>
+        <div class="sundialMount">
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
       `,
       hotspots: [
-        { id: 'sand', type: 'collect', x: '85%', y: '88%', symbol: '🏖', label: 'sand pile', size: 30,
-          visibleIf: () => !State.flags.sandSearched,
+        { id: 'potA', type: 'collect', x: '15%', y: '88%', symbol: '🏺', label: 'clay pot', size: 36,
+          visibleIf: () => !State.flags.potAOpened,
           onUse: () => {
-            State.flags.sandSearched = true;
+            State.flags.potAOpened = true;
             addToInventory('brush', '🪶', 'feather brush');
-            showFeedback('You dig through the sand and uncover a feather brush!', 'good');
+            showFeedback('Inside: a perfectly preserved feather brush. Someone left this here intentionally.', 'good');
           }
         },
-        { id: 'wall', type: 'interact', x: '38%', y: '52%', symbol: '🧱', label: 'cracked wall', size: 34,
+        { id: 'potB', type: 'collect', x: '34%', y: '92%', symbol: '🏺', label: 'clay pot', size: 32,
+          visibleIf: () => !State.flags.potBOpened,
+          onUse: () => {
+            State.flags.potBOpened = true;
+            showFeedback('Dusty linen bandages. Ancient. Useless. You put them back.', 'bad');
+          }
+        },
+        { id: 'potC', type: 'collect', x: '64%', y: '90%', symbol: '🏺', label: 'clay pot', size: 34,
+          visibleIf: () => !State.flags.potCOpened,
+          onUse: () => {
+            State.flags.potCOpened = true;
+            addToInventory('scarab_key', '🗝', 'Eye of Horus Key');
+            revealSymbol('scarab', '🪲', 1, 'scarab');
+            showFeedback('A bronze key engraved with the Eye of Horus, and — the scarab sigil imprinted on the inside of the lid!', 'good');
+          }
+        },
+        { id: 'potD', type: 'collect', x: '88%', y: '86%', symbol: '🏺', label: 'clay pot', size: 30,
+          visibleIf: () => !State.flags.potDOpened,
+          onUse: () => {
+            State.flags.potDOpened = true;
+            showFeedback('Sand. And a very dead, very dried-out beetle. Not the right one.', 'bad');
+          }
+        },
+        { id: 'wall', type: 'interact', x: '15%', y: '40%', symbol: '', label: 'dusty wall', size: 0,
           visibleIf: () => !State.flags.wallBrushed,
           requires: 'brush',
-          failMessage: 'A thick layer of dust covers the wall. You need something to brush it clean.',
+          failMessage: 'A thick layer of centuries-old dust covers this wall. You sense something beneath it.',
           onUse: () => {
             State.flags.wallBrushed = true;
+            const wallEl = document.querySelector('.dustyWall');
+            if (wallEl) wallEl.classList.add('wallRevealed');
             revealSymbol('ankh', '𓋹', 4, 'ankh');
-            showFeedback('Dust falls away. The inscription glows: 🪲 → 𓂀 → ☀ → 𓋹  (the sigil order). The ankh sigil flares loose.', 'good');
+            showFeedback('Dust cascades to the floor. The wall blazes: 🪲 → 𓂀 → ☀ → 𓋹 — and the ankh sigil breaks free from the stone!', 'good');
           }
         },
-        { id: 'jar', type: 'collect', x: '12%', y: '88%', symbol: '🏺', label: 'half-buried jar', size: 30,
-          visibleIf: () => !State.flags.jarOpened,
-          onUse: () => {
-            State.flags.jarOpened = true;
-            addToInventory('scarab_key', '🗝', 'scarab key');
-            revealSymbol('scarab', '🪲', 1, 'scarab');
-            showFeedback('Inside the jar: a scarab-shaped key — and the scarab sigil itself!', 'good');
-          }
-        },
-        { id: 'sphinx', type: 'interact', x: '17%', y: '60%', symbol: '𓁢', label: 'sphinx', size: 40,
-          visibleIf: () => !State.flags.sphinxEyeOpened,
+        { id: 'doorlock', type: 'interact', x: '50%', y: '38%', symbol: '𓂀', label: 'door seal', size: 30,
+          visibleIf: () => !State.flags.doorUnsealed,
           requires: 'scarab_key',
-          failMessage: 'The sphinx stares forward, eye sealed shut. A scarab-shaped slot sits below it.',
+          failMessage: 'The door does not yield. Something is missing.',
           onUse: () => {
-            State.flags.sphinxEyeOpened = true;
+            State.flags.doorUnsealed = true;
             revealSymbol('eye', '𓂀', 2, 'eye of horus');
-            showFeedback('The scarab key clicks into place. The sphinx\'s eye opens — the Eye of Horus is revealed!', 'good');
+            showFeedback('The key turns. The door shudders. The Eye of Horus blazes to life above the keyhole!', 'good');
           }
         },
-        { id: 'sundial', type: 'interact', x: '62%', y: '82%', symbol: '𓇳', label: 'stone sundial', size: 34,
+        { id: 'sundial', type: 'interact', x: '80%', y: '40%', symbol: '', label: 'stone sundial', size: 0,
           visibleIf: () => !State.flags.sunRevealed,
           onUse: () => {
             State.flags.sunRotation = (State.flags.sunRotation || 0) + 1;
-            if (State.flags.sunRotation >= 3) {
+            updateSundialVisual(State.flags.sunRotation);
+          }
+        },
+        { id: 'sundialCheck', type: 'interact', x: '0', y: '0', symbol: '', label: 'lock the dial', size: 0,
+          visibleIf: () => !State.flags.sunRevealed,
+          onUse: () => {
+            const r = State.flags.sunRotation || 0;
+            const hour = ((r + 7) % 12) + 1;
+            if (hour === 12) {
               State.flags.sunRevealed = true;
               revealSymbol('sun', '☀', 3, 'sun');
-              showFeedback('The sundial locks into place — sunlight strikes the pyramid and a sun sigil ignites in the air!', 'good');
+              const mount = document.querySelector('.sundialMount');
+              if (mount) {
+                mount.classList.add('maxed');
+                if (!mount.querySelector('.sunBurst')) {
+                  const burst = document.createElement('div');
+                  burst.className = 'sunBurst';
+                  burst.textContent = '☀';
+                  mount.appendChild(burst);
+                }
+              }
+              showFeedback('You lock the dial. The shadow points straight up — the sun is at its peak. A radiant sun sigil tears free from the stone!', 'good');
             } else {
-              showFeedback(`You rotate the sundial. Light shifts across the sand... (${State.flags.sunRotation}/3)`, 'info');
+              showFeedback('The shadow isn\'t aligned. The sun is not where you have placed it.', 'bad');
             }
           }
         },
       ],
       onWin: 'egypt_finish_win',
       onLose: 'egypt_finish_lose',
-      hint: 'Find the brush in the sand. Brush the wall to read the order. Open the jar for a key + scarab sigil. Use the key on the sphinx. Rotate the sundial 3 times.',
+      hint: 'Four pots hide secrets — not all of them useful. The walls remember what they once showed. The sundial answers to patience. The door will open when it is ready.',
     },
   },
   egypt_finish_win: {
@@ -5199,6 +5463,55 @@ function showFeedback(msg, kind) {
   fb.textContent = msg;
 }
 
+function updateSundialVisual(rotation) {
+  const mount = document.querySelector('.sundialMount');
+  if (!mount) return;
+  const svg = mount.querySelector('svg');
+  if (!svg) return;
+
+  // hour: rotation 0 starts at 8, each click advances by 1 (loops 1..12)
+  const hour = ((rotation + 7) % 12) + 1;
+  const isMidday = hour === 12;
+
+  const angle = (hour % 12) * 30 * Math.PI / 180;
+  const tipX = 50 + 36 * Math.sin(angle);
+  const tipY = 50 - 36 * Math.cos(angle);
+
+  let ticks = '';
+  for (let h = 1; h <= 12; h++) {
+    const a = (h % 12) * 30 * Math.PI / 180;
+    const ox = 50 + 40 * Math.sin(a);
+    const oy = 50 - 40 * Math.cos(a);
+    const ix = 50 + 33 * Math.sin(a);
+    const iy = 50 - 33 * Math.cos(a);
+    const isMajor = h === 12 || h === 3 || h === 6 || h === 9;
+    const lit = h === hour;
+    const stroke = lit ? '#ffd23f' : (isMajor ? '#8a6a3a' : '#5a4a2a');
+    const w = lit ? 2.5 : (isMajor ? 2 : 1.5);
+    ticks += `<line x1="${ix}" y1="${iy}" x2="${ox}" y2="${oy}" stroke="${stroke}" stroke-width="${w}" stroke-linecap="round"/>`;
+  }
+
+  const noon = isMidday ? '#ffd23f' : '#8a6a3a';
+  svg.innerHTML = `
+    <circle cx="50" cy="50" r="44" fill="#3a2a10" stroke="#6b4a1a" stroke-width="3"/>
+    <circle cx="50" cy="50" r="38" fill="none" stroke="#2a1a08" stroke-width="1"/>
+    <text x="50" y="22" text-anchor="middle" font-size="9" fill="${noon}" font-family="monospace" font-weight="bold">12</text>
+    <text x="50" y="86" text-anchor="middle" font-size="6" fill="#5a4a2a" font-family="monospace">6</text>
+    <text x="86" y="53" text-anchor="middle" font-size="6" fill="#5a4a2a" font-family="monospace">3</text>
+    <text x="14" y="53" text-anchor="middle" font-size="6" fill="#5a4a2a" font-family="monospace">9</text>
+    <g class="ticks">${ticks}</g>
+    <line class="shadow" x1="50" y1="50" x2="${tipX}" y2="${tipY}" stroke="${isMidday ? '#ffd23f' : '#ff9f4a'}" stroke-width="3" stroke-linecap="round"/>
+    <rect x="48" y="46" width="4" height="14" fill="#c98a3a" stroke="#000" stroke-width="0.5"/>
+    <circle cx="50" cy="50" r="3" fill="#ffd23f"/>
+  `;
+
+  if (isMidday) {
+    svg.style.filter = 'drop-shadow(0 0 10px #ffd23f) drop-shadow(0 0 18px #ff9f4a)';
+  } else {
+    svg.style.filter = 'drop-shadow(0 0 4px #ff9f4a)';
+  }
+}
+
 function renderEscapeRoom(container, p) {
   // Reset puzzle-scoped state
   State.inventory = [];
@@ -5272,16 +5585,56 @@ function renderEscapeRoom(container, p) {
 
   rerenderEscapeHotspots();
   rerenderInventory();
-  showFeedback('Click around. Some objects need a tool — pick one up, click to select, then click an object.', 'info');
+  if (document.querySelector('.sundialMount')) {
+    updateSundialVisual(State.flags.sunRotation || 0);
+  }
+  showFeedback('The tomb is silent. Dust hangs in the torchlight.', '');
 }
 
 function rerenderEscapeHotspots() {
   const wrap = document.getElementById('escapeRoomScene');
   if (!wrap) return;
   const p = wrap.__puzzle;
-  wrap.querySelectorAll('.hotspot').forEach(h => h.remove());
+  wrap.querySelectorAll('.hotspot, .hotspotOverlay').forEach(h => h.remove());
   p.hotspots.forEach(h => {
     if (h.visibleIf && !h.visibleIf()) return;
+    // Large transparent overlay hotspots (wall, sundial)
+    if (h.id === 'wall') {
+      const ov = document.createElement('div');
+      ov.className = 'hotspotOverlay';
+      ov.style.left = '0';
+      ov.style.top = '0';
+      ov.style.width = '30%';
+      ov.style.height = '82%';
+      ov.title = h.label;
+      ov.dataset.hotspotId = h.id;
+      ov.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(ov);
+      return;
+    }
+    if (h.id === 'sundial') {
+      const ov = document.createElement('div');
+      ov.className = 'hotspotOverlay';
+      ov.style.left = '74%';
+      ov.style.top = '34%';
+      ov.style.width = '94px';
+      ov.style.height = '94px';
+      ov.title = h.label;
+      ov.dataset.hotspotId = h.id;
+      ov.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(ov);
+      return;
+    }
+    if (h.id === 'sundialCheck') {
+      const btn = document.createElement('div');
+      btn.className = 'sundialCheckBtn';
+      btn.textContent = '✓ LOCK DIAL';
+      btn.title = h.label;
+      btn.dataset.hotspotId = h.id;
+      btn.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(btn);
+      return;
+    }
     const dot = document.createElement('div');
     dot.className = 'hotspot';
     dot.style.left = h.x;

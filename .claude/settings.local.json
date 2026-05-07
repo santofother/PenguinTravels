@@ -5,7 +5,8 @@
       "Bash(node *)",
       "Bash(unzip -p perspective_changes.docx word/document.xml)",
       "Bash(py --version)",
-      "Bash(py -c ' *)"
+      "Bash(py -c ' *)",
+      "PowerShell(Out-File *)"
     ]
   }
 }

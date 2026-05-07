@@ -1275,12 +1275,12 @@
   }
   .strongbox {
     position: absolute;
-    left: 50%; top: 38%;
+    left: 50%; top: 30%;
     transform: translateX(-50%);
-    width: 200px; height: 130px;
+    width: 340px; height: 200px;
     background: linear-gradient(to bottom, #5a4a2a 0%, #3a2a18 60%, #2a1a08 100%);
-    border: 5px solid #1a0a05;
-    box-shadow: inset 0 0 0 3px #c98a3a, inset 0 0 22px rgba(0,0,0,0.7), 0 6px 14px rgba(0,0,0,0.6);
+    border: 6px solid #1a0a05;
+    box-shadow: inset 0 0 0 4px #c98a3a, inset 0 0 30px rgba(0,0,0,0.7), 0 8px 18px rgba(0,0,0,0.6);
     z-index: 1;
     pointer-events: none;
   }
@@ -1292,14 +1292,14 @@
   .dial {
     position: absolute;
     transform: translateX(-50%);
-    width: 36px; height: 36px;
+    width: 60px; height: 60px;
     background: radial-gradient(circle at 30% 30%, #c98a3a 0%, #5a3018 75%, #1a0a05 100%);
-    border: 3px solid #1a0a05;
+    border: 4px solid #1a0a05;
     border-radius: 50%;
-    box-shadow: inset 0 0 0 2px #ffd23f, inset 0 0 6px rgba(0,0,0,0.6);
+    box-shadow: inset 0 0 0 3px #ffd23f, inset 0 0 8px rgba(0,0,0,0.6);
     display: flex; align-items: center; justify-content: center;
     color: #ffd23f;
-    font-size: 14px;
+    font-size: 24px;
     font-weight: bold;
     text-shadow: 0 0 4px #000;
     z-index: 2;
@@ -1388,21 +1388,21 @@
   }
   .tryLockBtn {
     position: absolute;
-    left: 50%; top: 70%;
+    left: 50%; top: 72%;
     transform: translateX(-50%);
-    width: 110px;
-    padding: 5px 0;
+    width: 180px;
+    padding: 10px 0;
     text-align: center;
     font-family: inherit;
-    font-size: 9px;
-    letter-spacing: 1px;
+    font-size: 13px;
+    letter-spacing: 2px;
     background: #1a0a05;
     color: var(--gold);
-    border: 2px solid var(--gold);
+    border: 3px solid var(--gold);
     cursor: pointer;
     user-select: none;
     z-index: 4;
-    box-shadow: 0 0 8px rgba(0,0,0,0.6);
+    box-shadow: 0 0 12px rgba(0,0,0,0.7), inset 0 0 8px rgba(255,210,63,0.2);
   }
   .tryLockBtn:hover { background: var(--gold); color: #1a0a05; }
 
@@ -2350,6 +2350,22 @@ function art_scotland() {
     </div>
   </div>`;
 }
+function art_london() {
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#5a6a8a 0%,#8aa0bb 35%,#3a4a6a 70%,#1a2030 100%);">
+    <div style="position:absolute;top:18px;left:18px;font-size:18px;opacity:0.7;">☁</div>
+    <div style="position:absolute;top:12px;right:34px;font-size:22px;opacity:0.6;">☁</div>
+    <div style="position:absolute;top:24px;left:38%;font-size:30px;">🌧</div>
+    <div style="position:absolute;bottom:60px;left:14%;width:36px;height:80px;background:#3a3a4a;border:2px solid #1a1a28;box-shadow:inset 0 0 0 2px #c98a3a;"></div>
+    <div style="position:absolute;bottom:135px;left:14%;width:36px;height:14px;background:#c98a3a;border:2px solid #1a1a28;border-radius:50% 50% 0 0;"></div>
+    <div style="position:absolute;bottom:50px;right:18%;width:60px;height:90px;background:linear-gradient(to bottom,#c98a3a 0%,#8a5a2a 100%);border:2px solid #1a1a28;box-shadow:inset 0 0 0 2px #ffd23f;"></div>
+    <div style="position:absolute;bottom:140px;right:18%;font-size:24px;">👑</div>
+    <div style="position:absolute;bottom:30px;left:45%;font-size:18px;">🚌</div>
+    <div class="penguinPair" style="bottom:36px;left:38%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
 function art_india() {
   return `<div class="sceneArt" style="background:linear-gradient(to bottom,#ffe4b8 0%,#ffb84a 60%,#c8883a 100%);">
     <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:60px;height:70px;background:#fff;border-radius:30px 30px 0 0;box-shadow:0 0 0 3px #000;"></div>
@@ -3186,35 +3202,35 @@ const Scenes = {
         <div class="vaultChess"></div>
         <div class="vaultQuill"></div>
         <div class="strongbox"></div>
-        <div class="dial" data-dial="1" style="left: 36%; top: 50%;">I</div>
-        <div class="dial" data-dial="2" style="left: 44%; top: 50%;">🦌</div>
-        <div class="dial" data-dial="3" style="left: 56%; top: 50%;">🌷</div>
-        <div class="dial" data-dial="4" style="left: 64%; top: 50%;">🗡</div>
+        <div class="dial" data-dial="1" style="left: 32%; top: 48%;">I</div>
+        <div class="dial" data-dial="2" style="left: 44%; top: 48%;">🦌</div>
+        <div class="dial" data-dial="3" style="left: 56%; top: 48%;">🌷</div>
+        <div class="dial" data-dial="4" style="left: 68%; top: 48%;">🗡</div>
       `,
       hotspots: [
         // Four dials — each click cycles to next position (0..3)
-        { id: 'dial1', type: 'interact', x: '36%', y: '50%', label: 'numeral dial',
+        { id: 'dial1', type: 'interact', x: '32%', y: '48%', label: 'numeral dial',
           onUse: () => {
             State.flags.dial1 = ((State.flags.dial1 || 0) + 1) % 4;
             updateDialVisual(1);
             showFeedback('The numeral dial clicks forward.', 'info');
           }
         },
-        { id: 'dial2', type: 'interact', x: '44%', y: '50%', label: 'beast dial',
+        { id: 'dial2', type: 'interact', x: '44%', y: '48%', label: 'beast dial',
           onUse: () => {
             State.flags.dial2 = ((State.flags.dial2 || 0) + 1) % 4;
             updateDialVisual(2);
             showFeedback('The beast dial clicks forward.', 'info');
           }
         },
-        { id: 'dial3', type: 'interact', x: '56%', y: '50%', label: 'season dial',
+        { id: 'dial3', type: 'interact', x: '56%', y: '48%', label: 'season dial',
           onUse: () => {
             State.flags.dial3 = ((State.flags.dial3 || 0) + 1) % 4;
             updateDialVisual(3);
             showFeedback('The season dial clicks forward.', 'info');
           }
         },
-        { id: 'dial4', type: 'interact', x: '64%', y: '50%', label: 'arms dial',
+        { id: 'dial4', type: 'interact', x: '68%', y: '48%', label: 'arms dial',
           onUse: () => {
             State.flags.dial4 = ((State.flags.dial4 || 0) + 1) % 4;
             updateDialVisual(4);
@@ -3297,6 +3313,28 @@ const Scenes = {
       `The keep door doesn't budge. Squid declares it "rude." They leave the way they came in, slightly out-puzzled by a building. No coins, no token. The hall keeps its secrets.`
     ),
     choices: () => [{ text: '➡ Round 2!', next: 'scotland_r2' }],
+  },
+
+  // === LONDON — secret, unlocked by the Castle Token ===
+  london: {
+    name: 'LONDON — A QUIET WORD',
+    art: art_london,
+    text: () => P(
+      `A black car was waiting at the airport with no name on the door. The driver tipped his cap, said only "Sir," and didn't ask where you were going. He already knew. The bronze castle token sits warm in your pocket. London is grey and damp and, for some reason, expecting you.`,
+      `Squid notices the car first — black, no name, driver in a hat. "Porky," she whispers. "Either we're being collected by spies or you've made friends in very high places." Mr Porky pats his pocket. The castle token is warm. The driver tips his cap. "Ma'am. Sir." He already knows where they're going. London is grey and damp and quietly expectant.`
+    ),
+    choices: () => [
+      { text: P('🏰 Follow the man in the hat', '🏰 Squid is already in the car — follow her'), next: 'london_meet_king', cls: 'special' },
+    ],
+  },
+  london_meet_king: {
+    name: 'LONDON — THE KING',
+    art: art_london,
+    text: () => { addCoins(12); return P(
+      `A side door of a building you've definitely seen on biscuit tins. A long corridor. A small bright room with a fire and two chairs. The King stands up when you enter. He shakes your flipper. "I heard you solved the old castle. My great-great-grandmother set those dials." He pours tea. He asks you about Antarctica. He listens. When you leave, he presses something into your flipper — a tiny silver pin shaped like a sleeping puffin. "From one tired bird to another." Mr Porky's eyes are very bright. +12 Fish Coins.`,
+      `A side door of a building Squid has only seen on biscuit tins. A long corridor. A small bright room with a fire. The King stands up when they enter — actually stands — and shakes both their flippers. "I heard you solved the old castle. Brilliant work." He pours tea. He asks about Antarctica. He listens to Squid for nine uninterrupted minutes. When they leave he presses a tiny silver puffin pin into Mr Porky's flipper. "From one tired bird to another." Mr Porky cries on the train back. Squid pretends not to see. She sees. +12 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Back to the journey', next: () => midNext() }],
   },
   scotland_loch: {
     name: 'SCOTLAND — Loch Ness',
@@ -3802,6 +3840,7 @@ const Scenes = {
       { text: '🌴 Hawaii — beach time', next: 'hawaii', requires: () => !State.visited.has('hawaii') },
       { text: '🕌 India — Taj Mahal & chaos', next: 'india', requires: () => !State.visited.has('india') },
       { text: '🏔 Peru — Machu Picchu & llamas', next: 'peru', requires: () => !State.visited.has('peru') },
+      { text: '👑 London — a quiet word (SECRET)', next: 'london', cls: 'special', requires: () => hasToken('castle') && !State.visited.has('london') },
     ]),
   },
 
@@ -4846,6 +4885,7 @@ const Scenes = {
       { text: '🌴 Hawaii — beach time', next: 'hawaii', requires: () => !State.visited.has('hawaii') },
       { text: '🕌 India — Taj Mahal & chaos', next: 'india', requires: () => !State.visited.has('india') },
       { text: '🏔 Peru — Machu Picchu & llamas', next: 'peru', requires: () => !State.visited.has('peru') },
+      { text: '👑 London — a quiet word (SECRET)', next: 'london', cls: 'special', requires: () => hasToken('castle') && !State.visited.has('london') },
     ]),
   },
 
@@ -5788,6 +5828,9 @@ function addToken(id, symbol, label) {
   State.tokens.push({ id, symbol, label });
   renderTopBar();
 }
+function hasToken(id) {
+  return Array.isArray(State.tokens) && State.tokens.some(t => t.id === id);
+}
 
 function renderTitle() {
   // ♥ generated here — trigger heart SFX (only after unlock)
@@ -6503,8 +6546,8 @@ function rerenderEscapeHotspots() {
       ov.className = 'hotspotOverlay silent';
       ov.style.left = h.x;
       ov.style.top = h.y;
-      ov.style.width = '40px';
-      ov.style.height = '40px';
+      ov.style.width = '64px';
+      ov.style.height = '64px';
       ov.style.transform = 'translateX(-50%)';
       ov.title = h.label;
       ov.dataset.hotspotId = h.id;
@@ -6705,7 +6748,7 @@ function discoverMemory(idx) {
 
 // ============= SCENE TRANSITIONS =============
 const TRAVEL_SCENES = new Set([
-  'antarctica', 'tokyo', 'paris', 'egypt', 'morocco', 'scotland',
+  'antarctica', 'tokyo', 'paris', 'egypt', 'morocco', 'scotland', 'london',
   'amazon', 'iceland', 'venice', 'hawaii', 'india', 'peru',
   'everest', 'nyc', 'gbr',
 ]);
@@ -6716,6 +6759,7 @@ const TRAVEL_LABELS = {
   egypt: 'CAIRO',
   morocco: 'MARRAKECH',
   scotland: 'SCOTLAND',
+  london: 'LONDON',
   amazon: 'AMAZON',
   iceland: 'ICELAND',
   venice: 'VENICE',
@@ -6738,6 +6782,7 @@ const LOCATION_COORDS = {
   egypt:      [ 30.04,  31.24],    // Cairo
   morocco:    [ 31.63,  -7.99],    // Marrakech
   scotland:   [ 56.49,  -4.20],
+  london:     [ 51.50,  -0.13],    // Buckingham Palace (secret)
   amazon:     [ -3.47, -62.21],    // central Amazon basin
   iceland:    [ 64.13, -21.94],    // Reykjavik
   venice:     [ 45.44,  12.32],

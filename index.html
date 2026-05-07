@@ -865,7 +865,7 @@
   }
 
   /* The big sealed tomb door */
-  .tombDoor {
+  .escapeDoor {
     position: absolute;
     left: 50%;
     bottom: 16%;
@@ -883,7 +883,7 @@
     pointer-events: none;
     z-index: 1;
   }
-  .tombDoor .doorLabel {
+  .escapeDoor .doorLabel {
     position: absolute;
     top: 4px; left: 0; right: 0;
     text-align: center;
@@ -892,13 +892,13 @@
     letter-spacing: 3px;
     text-shadow: 0 0 4px #000;
   }
-  .tombDoor .sigilRow {
+  .escapeDoor .sigilRow {
     position: absolute;
     top: 18%; left: 0; right: 0;
     display: flex; justify-content: space-around;
     padding: 0 10%;
   }
-  .tombDoor .sigilSlot {
+  .escapeDoor .sigilSlot {
     width: 18px; height: 18px;
     border: 2px solid var(--gold);
     border-radius: 50%;
@@ -1020,6 +1020,122 @@
   .hotspotOverlay.silent:hover {
     outline-color: transparent;
     background: transparent;
+  }
+
+  /* ========= Amazon Alchemist's Hut ========= */
+  .alchemyHut {
+    position: absolute; inset: 0;
+    background:
+      repeating-linear-gradient(0deg,
+        rgba(0,0,0,0.18) 0 1px,
+        transparent 1px 22px),
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.15) 0 1px,
+        transparent 1px 60px),
+      linear-gradient(to bottom, #3a2208 0%, #5a3a18 55%, #2a1a08 100%);
+    pointer-events: none;
+  }
+  .hutThatch {
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 8%;
+    background:
+      repeating-linear-gradient(90deg,
+        #2a1a08 0 6px,
+        #4a2a10 6px 12px);
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .hutFloor {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 14%;
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0.4) 0 2px,
+        transparent 2px 40px),
+      linear-gradient(to bottom, #2a1a08 0%, #150a02 100%);
+    pointer-events: none;
+  }
+  .shelfRack {
+    position: absolute;
+    left: 4%; top: 28%;
+    width: 42%; height: 38%;
+    background:
+      linear-gradient(to bottom, transparent 49%, #3a2208 49%, #3a2208 52%, transparent 52%),
+      linear-gradient(180deg, rgba(0,0,0,0.3), rgba(0,0,0,0.3));
+    border: 3px solid #2a1a08;
+    box-shadow: inset 0 0 0 2px #5a3a18;
+    pointer-events: none;
+  }
+  .cauldron {
+    position: absolute;
+    left: 50%; top: 60%;
+    transform: translateX(-50%);
+    width: 110px; height: 80px;
+    background: #1a0f05;
+    border: 4px solid #2a1a08;
+    border-radius: 8px 8px 50% 50% / 8px 8px 40% 40%;
+    box-shadow: 0 0 0 2px #000, 0 6px 14px rgba(0,0,0,0.7);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .cauldronLiquid {
+    position: absolute;
+    left: 6px; top: 6px; right: 6px; bottom: 6px;
+    border-radius: 6px 6px 50% 50% / 6px 6px 40% 40%;
+    background: #4a2a08;
+    transition: background 0.6s ease, box-shadow 0.4s ease;
+    box-shadow: inset 0 0 14px rgba(0,0,0,0.7);
+  }
+  .cauldronLiquid[data-brew-step="1"] { background: #8a3a3a; box-shadow: inset 0 0 16px rgba(255,80,80,0.4); }
+  .cauldronLiquid[data-brew-step="2"] { background: #6a2a8a; box-shadow: inset 0 0 18px rgba(180,80,255,0.4); }
+  .cauldronLiquid[data-brew-step="3"] { background: #c98a3a; box-shadow: inset 0 0 20px rgba(255,210,63,0.5); }
+  .cauldronLiquid[data-brew-step="4"] {
+    background: linear-gradient(135deg, #ffd23f, #ff6ec7, #6bdc6b);
+    box-shadow: inset 0 0 22px #fff, 0 0 24px #ffd23f;
+    animation: brewGlow 1.2s steps(4) infinite;
+  }
+  .cauldronLiquid.curdled {
+    background: #1a0a0a !important;
+    box-shadow: inset 0 0 24px #6a0a0a !important;
+  }
+  @keyframes brewGlow {
+    0%, 100% { filter: drop-shadow(0 0 8px #ffd23f); }
+    50% { filter: drop-shadow(0 0 16px #ff6ec7); }
+  }
+  .cauldronFire {
+    position: absolute;
+    left: 50%; bottom: 18%;
+    transform: translateX(-50%);
+    font-size: 22px;
+    line-height: 1;
+    pointer-events: none;
+    animation: torchFlicker 0.5s steps(3) infinite;
+    z-index: 0;
+  }
+  .scrollPaper {
+    position: absolute;
+    left: 66%; top: 78%;
+    width: 38px; height: 26px;
+    background: #d6c090;
+    border: 2px solid #5a3a18;
+    box-shadow: inset 0 0 0 2px #b89870, 2px 2px 0 rgba(0,0,0,0.5);
+    pointer-events: none;
+  }
+  .scrollPaper.dipped {
+    background: #f0d8a0;
+    box-shadow: inset 0 0 0 2px #c8a878, 0 0 8px rgba(255,210,63,0.5), 2px 2px 0 rgba(0,0,0,0.5);
+  }
+  .waterBasin {
+    position: absolute;
+    left: 82%; top: 78%;
+    width: 44px; height: 26px;
+    background: radial-gradient(ellipse at center, #4cd2ff 0%, #1a5c8a 70%, #0a2a4a 100%);
+    border: 2px solid #2a1a08;
+    border-radius: 50%;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.6), 2px 2px 0 rgba(0,0,0,0.5);
+    pointer-events: none;
   }
 
   .feedback.info { color: var(--teal); border: 2px solid var(--teal); }
@@ -2905,7 +3021,7 @@ const Scenes = {
           </div>
           <div class="dustOverlay"></div>
         </div>
-        <div class="tombDoor">
+        <div class="escapeDoor">
           <div class="doorLabel">SEALED</div>
           <div class="sigilRow">
             <div class="sigilSlot"></div>
@@ -3285,6 +3401,7 @@ const Scenes = {
       ),
     }),
     choices: () => [
+      { text: P('🧪 Investigate the abandoned alchemist\'s hut (PUZZLE)', '🧪 Squid spotted a hut — go in (PUZZLE)'), next: 'amazon_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
       { text: P('🗺 Explore the hidden jungle path', '🗺 Follow Squid down the hidden path'), next: 'amazon_path', effect: () => addStat('adventurous') },
       { text: P('🧭 Join a local guide off the map', '🧭 Squid wants the guide — go off the map'), next: 'amazon_guide', effect: () => addStat('curious') },
       { text: P('🍚 Share a meal with the riverside community', '🍚 Help cook (chaotically) at the riverside meal'), next: 'amazon_meal', effect: () => addStat('social') },
@@ -3359,6 +3476,175 @@ const Scenes = {
       `The water is warm and dark as tea. Totally clear from below. They float on their backs and look up through a cathedral of trees at the sky. Izzy declares it the most beautiful thing she has ever seen. Mr Porky agrees. He says it about the sky. He means it about her. +8 Fish Coins.`,
       `Squid is in the water before Mr Porky has finished reading the sign. She floats on her back looking up through the trees. "Porky. Get in. NOW." He gets in. It is the most beautiful thing either of them has seen. +8 Fish Coins.`
     ); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  amazon_puzzle: {
+    name: 'AMAZON — THE ALCHEMIST\'S HUT',
+    text: () => P(
+      `A crooked little hut, half-eaten by vines. Inside, a cauldron simmers over a low fire as if someone left it ten minutes ago and never came back. The door behind you settles shut. Four empty sigil slots stare from the back wall. Shelves of jars line the room. You'll need to brew your way out.`,
+      `A crooked, vine-eaten hut. Cauldron simmering. The door clicks shut behind them. Squid is already cataloguing the shelves before Mr Porky has finished saying "let's not touch—". Four empty sigil slots on the back wall. Apparently they're brewing today.`
+    ),
+    puzzle: {
+      kind: 'escape-room',
+      sceneClass: 'bg-amazon',
+      slots: 4,
+      resetFlags: ['shelf1Used','shelf2Used','shelf3Used','shelf4Used','shelf5Used','shelf6Used','shelf7Used','shelf8Used','scrollPicked','recipeRead','brewStep'],
+      sceneArt: `
+        <div class="alchemyHut"></div>
+        <div class="hutThatch"></div>
+        <div class="hutFloor"></div>
+        <div class="torch left" style="top: 11%; left: 4%;">🪔</div>
+        <div class="torch right" style="top: 11%; right: 4%;">🪔</div>
+        <div class="shelfRack"></div>
+        <div class="escapeDoor" style="bottom: 70%; height: 22%; width: 18%;">
+          <div class="doorLabel">VINE-SEALED</div>
+          <div class="sigilRow">
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+            <div class="sigilSlot"></div>
+          </div>
+        </div>
+        <div class="cauldron"><div class="cauldronLiquid" data-brew-step="0"></div></div>
+        <div class="cauldronFire">🔥</div>
+        <div class="scrollPaper"></div>
+        <div class="waterBasin"></div>
+      `,
+      hotspots: [
+        // Useful ingredients (top shelf)
+        { id: 'shelf1', type: 'collect', x: '10%', y: '34%', symbol: '🍓', label: 'ripe fruit', size: 26,
+          visibleIf: () => !State.flags.shelf1Used,
+          onUse: () => {
+            State.flags.shelf1Used = true;
+            addToInventory('fruit', '🍓', 'ripe fruit');
+            showFeedback('A heavy red fruit, dripping juice. Ripe.', 'good');
+          }
+        },
+        { id: 'shelf2', type: 'collect', x: '22%', y: '34%', symbol: '🍄', label: 'indigo mushroom', size: 26,
+          visibleIf: () => !State.flags.shelf2Used,
+          onUse: () => {
+            State.flags.shelf2Used = true;
+            addToInventory('mushroom', '🍄', 'indigo mushroom');
+            showFeedback('A mushroom with a deep blue cap. Smells faintly of rain.', 'good');
+          }
+        },
+        { id: 'shelf3', type: 'collect', x: '34%', y: '34%', symbol: '🌼', label: 'yellow flower', size: 26,
+          visibleIf: () => !State.flags.shelf3Used,
+          onUse: () => {
+            State.flags.shelf3Used = true;
+            addToInventory('flower', '🌼', 'yellow flower');
+            showFeedback('A small yellow flower, petals still bright.', 'good');
+          }
+        },
+        { id: 'shelf4', type: 'collect', x: '44%', y: '34%', symbol: '🍃', label: 'wide leaf', size: 26,
+          visibleIf: () => !State.flags.shelf4Used,
+          onUse: () => {
+            State.flags.shelf4Used = true;
+            addToInventory('leaf', '🍃', 'wide leaf');
+            showFeedback('A broad green leaf, soft and waxy.', 'good');
+          }
+        },
+        // Herrings (bottom shelf)
+        { id: 'shelf5', type: 'collect', x: '10%', y: '54%', symbol: '🪲', label: 'beetle husk', size: 26,
+          visibleIf: () => !State.flags.shelf5Used,
+          onUse: () => {
+            State.flags.shelf5Used = true;
+            showFeedback('Just a hollow beetle shell. You put it back.', 'bad');
+          }
+        },
+        { id: 'shelf6', type: 'collect', x: '22%', y: '54%', symbol: '🥀', label: 'wilted bloom', size: 26,
+          visibleIf: () => !State.flags.shelf6Used,
+          onUse: () => {
+            State.flags.shelf6Used = true;
+            showFeedback('Brown and crumbling. Long dead.', 'bad');
+          }
+        },
+        { id: 'shelf7', type: 'collect', x: '34%', y: '54%', symbol: '🌶', label: 'dried chili', size: 26,
+          visibleIf: () => !State.flags.shelf7Used,
+          onUse: () => {
+            State.flags.shelf7Used = true;
+            showFeedback('A dried chili. Sharp on the tongue. Probably not for brewing.', 'bad');
+          }
+        },
+        { id: 'shelf8', type: 'collect', x: '44%', y: '54%', symbol: '🐌', label: 'garden slug', size: 26,
+          visibleIf: () => !State.flags.shelf8Used,
+          onUse: () => {
+            State.flags.shelf8Used = true;
+            showFeedback('A slug. It looks at you. You look at it. You move on.', 'bad');
+          }
+        },
+        // Scroll (collect)
+        { id: 'scroll', type: 'collect', x: '68%', y: '76%', symbol: '📜', label: 'faded scroll', size: 22,
+          visibleIf: () => !State.flags.scrollPicked,
+          onUse: () => {
+            State.flags.scrollPicked = true;
+            addToInventory('scroll', '📜', 'faded scroll');
+            showFeedback('The ink is mostly gone — illegible without something to coax it out.', 'info');
+          }
+        },
+        // Basin: dip scroll to reveal recipe
+        { id: 'basin', type: 'interact', x: '84%', y: '76%', symbol: '💧', label: 'water basin', size: 22,
+          requires: 'scroll',
+          failMessage: 'Cool, clear water. The basin smells faintly of herbs.',
+          onUse: () => {
+            if (!State.flags.recipeRead) {
+              State.flags.recipeRead = true;
+              const sp = document.querySelector('.scrollPaper');
+              if (sp) sp.classList.add('dipped');
+            }
+            showFeedback('The ink darkens. Recipe: 🍓 fruit, 🍄 mushroom, 🌼 flower, 🍃 leaf — any order, the cauldron will sort them.', 'good');
+          }
+        },
+        // Cauldron — brewing logic in onUse
+        { id: 'cauldron', type: 'interact', label: 'bubbling cauldron',
+          onUse: () => {
+            const sel = State.selectedItem;
+            if (!sel) {
+              showFeedback('Select an ingredient from your inventory first, then click the cauldron.', 'info');
+              return;
+            }
+            const map = {
+              fruit:    { id: 'butterfly', sym: '🦋', pos: 1, label: 'butterfly' },
+              mushroom: { id: 'frog',      sym: '🐸', pos: 2, label: 'frog' },
+              flower:   { id: 'sun',       sym: '🌞', pos: 3, label: 'sun' },
+              leaf:     { id: 'jaguar',    sym: '🐆', pos: 4, label: 'jaguar' },
+            };
+            if (!map[sel]) {
+              showFeedback("That doesn't belong in the cauldron.", 'info');
+              return;
+            }
+            State.inventory = State.inventory.filter(i => i.id !== sel);
+            State.selectedItem = null;
+            const m = map[sel];
+            State.flags.brewStep = (State.flags.brewStep || 0) + 1;
+            revealSymbol(m.id, m.sym, m.pos, m.label);
+            updateCauldronVisual(State.flags.brewStep);
+            rerenderInventory();
+            showFeedback(`The brew brightens. A ${m.label} sigil curls upward in steam!`, 'good');
+          }
+        },
+      ],
+      onWin: 'amazon_finish_win',
+      onLose: 'amazon_finish_lose',
+      hint: 'Eight jars on the shelf — only four belong in the brew. The faded scroll says nothing without a basin to drink it.',
+    },
+  },
+  amazon_finish_win: {
+    name: 'AMAZON — The Vines Wither',
+    art: art_amazon,
+    text: () => { addCoins(6); return P(
+      `The four sigils slot home and the vines on the door wither and curl back as if scolded. Behind it: a tiny garden you weren't meant to find, and a single gold-flecked seedling. Izzy pockets it. Mr Porky doesn't argue. +6 Fish Coins!`,
+      `The sigils click into place. The vines retract like they've been told off. Behind the door: a tiny hidden garden, and a gold-flecked seedling sitting alone on a stone. Squid pockets it before Mr Porky can object. He wasn't going to. +6 Fish Coins!`
+    ); },
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+  amazon_finish_lose: {
+    name: 'AMAZON — A Hasty Exit',
+    art: art_amazon,
+    text: () => P(
+      `The cauldron sighs, the brew goes cold, and the back door — the one nobody locked — creaks open of its own accord. You leave the way you came in, slightly humbled. The hut keeps its secrets.`,
+      `The brew refuses to finish. The cauldron sighs at them in a way Squid finds personally insulting. The back door — never actually locked, it turns out — drifts open. They walk out. The hut keeps its secrets.`
+    ),
     choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
@@ -5518,6 +5804,17 @@ function updateSundialVisual(rotation) {
   }
 }
 
+function updateCauldronVisual(state) {
+  const liq = document.querySelector('.cauldronLiquid');
+  if (!liq) return;
+  if (state === 'curdle') {
+    liq.classList.add('curdled');
+    setTimeout(() => liq.classList.remove('curdled'), 1200);
+    return;
+  }
+  liq.dataset.brewStep = String(state);
+}
+
 function renderEscapeRoom(container, p) {
   // Reset puzzle-scoped state
   State.inventory = [];
@@ -5639,6 +5936,19 @@ function rerenderEscapeHotspots() {
       btn.dataset.hotspotId = h.id;
       btn.onclick = () => handleEscapeHotspot(h);
       wrap.appendChild(btn);
+      return;
+    }
+    if (h.id === 'cauldron') {
+      const ov = document.createElement('div');
+      ov.className = 'hotspotOverlay silent';
+      ov.style.left = '44%';
+      ov.style.top = '56%';
+      ov.style.width = '120px';
+      ov.style.height = '94px';
+      ov.title = h.label;
+      ov.dataset.hotspotId = h.id;
+      ov.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(ov);
       return;
     }
     const dot = document.createElement('div');

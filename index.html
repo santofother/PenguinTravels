@@ -352,6 +352,8 @@
   .bg-everest { background: linear-gradient(to bottom, #6ec5ff 0%, #b3e5ff 60%, #fff 60%, #fff 100%); }
   .bg-nyc { background: linear-gradient(to bottom, #2b0a2b 0%, #4a2b6e 100%); }
   .bg-gbr { background: linear-gradient(to bottom, #4cd2ff 0%, #1a5c8a 60%, #0a2a4a 100%); }
+  .bg-florence { background: linear-gradient(to bottom, #2a160a 0%, #1a0e06 50%, #0e0703 100%); }
+  .bg-switzerland { background: linear-gradient(to bottom, #b3deff 0%, #e8f4ff 55%, #fff 55%, #d8eeff 100%); }
   .bg-credits { background: linear-gradient(to bottom, #0a0a23 0%, #2b0a4a 100%); }
 
   /* Scene-specific pixel art structures */
@@ -1848,6 +1850,121 @@
     text-align: center;
     padding-bottom: 2px;
   }
+
+  /* Florence — gallery iron gate */
+  .galleryGate {
+    position: absolute;
+    left: 50%; bottom: 12%;
+    transform: translateX(-50%);
+    width: 80px; height: 110px;
+    border: 4px solid #7a5a1a;
+    background: repeating-linear-gradient(
+      90deg,
+      #2a1a08 0px, #2a1a08 5px,
+      transparent 5px, transparent 14px
+    );
+    box-shadow: inset 0 0 0 2px #c89a3a, 0 0 0 2px #000;
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 6px;
+    font-size: 7px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    pointer-events: none;
+  }
+  .galleryGate .gateSlots {
+    display: flex; gap: 4px;
+    position: absolute; top: -16px; left: 50%;
+    transform: translateX(-50%);
+  }
+  .galleryGate .gateSlot {
+    width: 14px; height: 14px;
+    border: 2px solid var(--gold);
+    background: #1a0e04;
+    border-radius: 50%;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold);
+  }
+
+  /* Florence — dusty tapestry reveal */
+  .tapestryWall {
+    position: absolute;
+    left: 4%; top: 12%; width: 26%; height: 70%;
+    background: linear-gradient(160deg,#5a3a1a 0%,#3a2210 60%,#1f120a 100%);
+    border: 3px solid #7a5a1a;
+    box-shadow: inset 0 0 14px rgba(0,0,0,0.7);
+    overflow: hidden;
+  }
+  .tapestryDust {
+    position: absolute; inset: 0;
+    background: rgba(160,130,80,0.55);
+    transition: opacity 1.3s ease;
+    pointer-events: none;
+  }
+  .tapestryWall.revealed .tapestryDust { opacity: 0; }
+  .tapestryGlyphs {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 6px; font-size: 18px; color: var(--gold);
+    text-shadow: 0 0 6px rgba(255,210,90,0.7);
+    opacity: 0; transition: opacity 1.6s ease;
+    pointer-events: none;
+  }
+  .tapestryWall.revealed .tapestryGlyphs { opacity: 1; }
+
+  /* Florence puzzle props */
+  .galleryFloor {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 22%;
+    background: linear-gradient(to bottom,#3a2410 0%,#1f120a 100%);
+    box-shadow: inset 0 4px 0 rgba(0,0,0,0.4);
+  }
+  .galleryLectern {
+    position: absolute; bottom: 22%; left: 38%; width: 60px; height: 50px;
+    background: linear-gradient(to bottom,#7a5a2a 0%,#3a2410 100%);
+    border: 2px solid #1a0a04;
+    transform: skewX(-6deg);
+  }
+  .galleryStoneLion {
+    position: absolute; bottom: 22%; right: 14%; width: 52px; height: 44px;
+    background: linear-gradient(to bottom,#a89070 0%,#5a4830 100%);
+    border: 2px solid #1a0a04;
+    border-radius: 6px 16px 4px 4px;
+  }
+  .galleryInkwell {
+    position: absolute; bottom: 24%; left: 64%; width: 18px; height: 22px;
+    background: #1a0a04;
+    border: 2px solid #c89a3a;
+    border-radius: 0 0 6px 6px;
+  }
+  .galleryInkwell::after {
+    content: '';
+    position: absolute; left: 50%; top: -6px; transform: translateX(-50%);
+    width: 6px; height: 8px; background: #c89a3a; border: 2px solid #1a0a04;
+  }
+  .galleryLilyCrest {
+    position: absolute; top: 14%; right: 8%; width: 40px; height: 40px;
+    border: 2px solid var(--gold);
+    background: radial-gradient(circle,#2a1a08 0%,#1a0e04 100%);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--gold);
+    font-size: 22px;
+    text-shadow: 0 0 4px rgba(255,210,90,0.4);
+  }
+  .lilyGlow { filter: drop-shadow(0 0 8px #ffd23f); }
+
+  /* Switzerland — slope speed lines */
+  @keyframes speedLine {
+    from { transform: translateX(0); opacity: 0.7; }
+    to   { transform: translateX(-120px); opacity: 0; }
+  }
+  .speedLine {
+    position: absolute;
+    height: 2px; background: #fff;
+    animation: speedLine 0.5s linear infinite;
+    pointer-events: none;
+  }
 </style>
 </head>
 <body>
@@ -2346,6 +2463,45 @@ function art_scotland() {
     <div style="position:absolute;bottom:30px;right:25%;font-size:18px;">🐑</div>
     <div style="position:absolute;top:25px;left:45%;font-size:24px;">🏰</div>
     <div class="penguinPair" style="bottom:46px;left:30%;transform:none;">
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_florence() {
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#ffb070 0%,#e8a458 30%,#c97a2a 55%,#8a3a10 70%,#5a2008 100%);">
+    <div style="position:absolute;top:18px;left:14%;width:42px;height:42px;background:#c8623a;border-radius:50% 50% 0 0;box-shadow:0 0 0 2px #1a0a04, inset -4px -2px 0 rgba(0,0,0,0.25);pointer-events:none;"></div>
+    <div style="position:absolute;top:10px;left:18%;width:8px;height:14px;background:#c8623a;border-radius:4px 4px 0 0;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:60px;left:14%;width:42px;height:14px;background:#a85838;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:74px;left:14%;width:42px;height:24px;background:linear-gradient(to bottom,#a85838,#7a3a18);box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:30px;right:18%;width:10px;height:74px;background:#3a2a14;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:24px;right:17%;width:14px;height:14px;background:#2a5a2a;border-radius:50%;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:32px;right:19%;width:14px;height:14px;background:#2a5a2a;border-radius:50%;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:48px;right:18%;width:14px;height:14px;background:#2a5a2a;border-radius:50%;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:30px;left:62%;width:8px;height:60px;background:#3a2a14;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:26px;left:60%;width:14px;height:14px;background:#2a5a2a;border-radius:50%;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;top:38px;left:62%;width:14px;height:14px;background:#2a5a2a;border-radius:50%;box-shadow:0 0 0 2px #1a0a04;pointer-events:none;"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:36px;background:#3a1a04;pointer-events:none;"></div>
+    <div style="position:absolute;bottom:6px;left:10%;font-size:18px;">🌹</div>
+    <div style="position:absolute;bottom:6px;right:11%;font-size:16px;">🫒</div>
+    <div style="position:absolute;top:8px;right:28px;font-size:12px;opacity:0.7;color:var(--gold);">✦</div>
+    <div class="penguinPair" style="bottom:30px;left:34%;transform:none;">
+      <div class="penguin"><div class="body"></div></div>
+      <div class="heart" style="top:-14px;">♥</div>
+      <div class="penguin izzy"><div class="body"></div></div>
+    </div>
+  </div>`;
+}
+function art_switzerland() {
+  let snow = '';
+  for (let i = 0; i < 14; i++) snow += `<div class="snowflake" style="left:${Math.random()*100}%;top:${Math.random()*60}%;animation-delay:${Math.random()*3}s;font-size:${8+Math.random()*10}px;">❄</div>`;
+  return `<div class="sceneArt" style="background:linear-gradient(to bottom,#b3deff 0%,#e8f4ff 55%,#fff 55%,#d8eeff 100%);">
+    ${snow}
+    <div style="position:absolute;bottom:30px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:55px solid transparent;border-right:55px solid transparent;border-bottom:110px solid #d8eeff;pointer-events:none;"></div>
+    <div style="position:absolute;bottom:90px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:30px solid transparent;border-right:30px solid transparent;border-bottom:50px solid #fff;pointer-events:none;"></div>
+    <div style="position:absolute;bottom:28px;left:14%;font-size:11px;color:#8ab0d0;letter-spacing:2px;pointer-events:none;">— — — — — — — —</div>
+    <div style="position:absolute;top:18px;left:20px;font-size:20px;opacity:0.8;">🚡</div>
+    <div style="position:absolute;bottom:50px;right:18%;font-size:28px;transform:scaleX(-1);">🏂</div>
+    <div class="penguinPair" style="bottom:34px;left:22%;transform:none;">
       <div class="penguin izzy"><div class="body"></div></div>
     </div>
   </div>`;
@@ -3598,6 +3754,376 @@ const Scenes = {
       `Three ghosts. Two are friendly. One is extremely theatrical. Squid befriends all three within ten minutes — even the theatrical one drops the act for her. Mr Porky asks the historical questions. They walk out with a 400-year account of castle life and a possibly haunted scarf. +8 Fish Coins.`
     ); },
     choices: () => [{ text: '➡ Next destination!', next: 'choose2', effect: countStop }],
+  },
+
+  // === FLORENCE BRANCH ===
+  florence: {
+    name: 'FLORENCE, ITALY — ARRIVAL',
+    art: art_florence,
+    text: () => P(
+      `The Arno glitters gold. The air smells of espresso, old stone, and sun-warmed terracotta. Brunelleschi's dome is RIGHT THERE, the largest masonry dome ever built — finished 1436, the man invented his own herringbone bricklaying pattern to do it. Mr Porky immediately wants to sketch everything. Izzy immediately wants to eat everything. These are not incompatible goals.`,
+      `Florence hits them both at once — the light, the smell, the weight of five centuries of beauty pressing very gently against the eyes. Brunelleschi's dome looms above, the proud stone hat of Santa Maria del Fiore. Squid wants food. Mr Porky wants to touch literally every wall. Neither of them is wrong.`
+    ),
+    choices: () => [
+      { text: P('🖼 Investigate the locked gallery room (PUZZLE)', '🖼 Squid spots the locked gallery — Mr Porky is already reading the sign (PUZZLE)'), next: 'florence_puzzle', cls: 'puzzle', effect: () => addStat('curious') },
+      { text: P('🍦 Find the city\'s most disputed gelato', '🍦 Mr Porky has a list of three gelaterias — Squid wants ALL THREE'), next: 'florence_gelato', effect: () => addStat('social') },
+      { text: P('🌉 Walk the Ponte Vecchio at midday', '🌉 Drag Mr Porky onto the Ponte Vecchio — the goldsmiths are open'), next: 'florence_bridge', effect: () => addStat('curious') },
+      { text: P('🌅 Sprint up to Piazzale Michelangelo for the view', '🌅 Squid wants the Piazzale view — race up the steps'), next: 'florence_piazzale', effect: () => addStat('adventurous') },
+      ...( statUnlocked('curious') ? [{ text: P('📜 A scholar offers a tour of a private Medici archive', '📜 A scholar invites both of you into a private Medici archive — Squid said yes for both'), next: 'florence_archive', cls: 'special', effect: () => { addStat('curious'); addStat('cautious'); } }] : [] ),
+    ],
+  },
+  florence_gelato: {
+    name: 'FLORENCE — Gelato Wars',
+    art: art_florence,
+    text: () => { addCoins(4); return statFlavor({
+      soc: P(
+        `Three gelaterias. Vivoli (since 1929 — possibly the oldest in Florence). Perché No (1939, named for the line "why not?" a US soldier kept saying). Gelateria dei Neri. Izzy charms a free fourth scoop out of the proprietor at Perché No, who tells you both the espresso-pistachio pairing was invented HERE in the 1950s. +4 Fish Coins.`,
+        `Three gelaterias. Vivoli — possibly the oldest in Florence, opened 1929. Perché No, 1939, named after the catchphrase of an American GI in '45. Gelateria dei Neri. Squid charms TWO free scoops out of the staff and inhales the espresso-pistachio combination invented in this very alley in the 1950s. Mr Porky photographs each cone for posterity. +4 Fish Coins.`
+      ),
+      def: P(
+        `Vivoli serves the original recipe still made the way Aunt Olga did it in 1929. The pistachio is from Bronte, Sicily — the only place the EU lets it be called proper Sicilian pistachio. Izzy has three flavours stacked impossibly high. Mr Porky has chosen, with great care, one. +4 Fish Coins.`,
+        `Vivoli serves the original family recipe still made the way Aunt Olga did it in 1929. Mr Porky chooses one flavour after eight minutes of solemn deliberation. Squid has three flavours stacked into a structurally unsound pyramid. Both are correct. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'florence_r2' }],
+  },
+  florence_bridge: {
+    name: 'FLORENCE — Ponte Vecchio',
+    art: art_florence,
+    text: () => { addCoins(3); return statFlavor({
+      cur: P(
+        `The bridge is older than most countries — built 1345, the only bridge in Florence the Nazis didn't blow up. Above it runs the Vasari Corridor: a SECRET PASSAGE built in 1565 so the Medici could walk from Palazzo Vecchio to Pitti Palace without mingling with the public. The goldsmiths' shops have been here since 1593, when Ferdinand I evicted the butchers because the smell wasn't dignified enough. Izzy buys a tiny silver charm. Mr Porky writes everything down. +3 Fish Coins.`,
+        `The bridge is older than most countries — built 1345, the only bridge in Florence the Nazis didn't blow up in 1944. Above it runs the Vasari Corridor: a SECRET PASSAGE the Medici commissioned in 1565 so they wouldn't have to walk among the people. Mr Porky relays this with such reverence that Squid actually stops talking for a full minute. Then she buys a tiny silver charm and gives it to him. +3 Fish Coins.`
+      ),
+      def: P(
+        `Goldsmiths' shops crowd the bridge on both sides, their wooden shutters flung open like tiny treasure chests. Izzy presses her beak to every window. Mr Porky watches her be delighted and considers this the best art in Florence. +3 Fish Coins.`,
+        `Goldsmiths' shops crowd the bridge on both sides, wooden shutters flung open like treasure chests. Squid presses her beak to every single window. Mr Porky watches her be delighted, decides this is the best art in Florence, and forgets to look at the gold. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'florence_r2' }],
+  },
+  florence_piazzale: {
+    name: 'FLORENCE — Piazzale Michelangelo',
+    art: art_florence,
+    text: () => { addCoins(5); return statFlavor({
+      adv: P(
+        `Two hundred steps. You take them at a run. From the Piazzale, the whole city lies below — Brunelleschi's dome, Giotto's Campanile, Palazzo Vecchio's tower, the Arno cutting through it all. There's a bronze David replica up here too (the original David lived outdoors in Piazza della Signoria from 1504 to 1873 before they moved him inside to save him from weather). Izzy poses next to it. +5 Fish Coins.`,
+        `Two hundred steps and Squid is at the top before Mr Porky has finished reading the trail map. The whole city lies below — Brunelleschi's dome, Giotto's Campanile, Palazzo Vecchio. The bronze David up here is a replica of the one Michelangelo carved between 1501 and 1504; the original stood here-ish until they moved it indoors to save it from the rain. Squid poses next to David. The pose is identical. Mr Porky weeps with laughter. +5 Fish Coins.`
+      ),
+      def: P(
+        `From the Piazzale, the whole city lies below. The dome looks impossibly close. Izzy is quiet for the first time all day. Mr Porky wants to live in this minute forever. +5 Fish Coins.`,
+        `From the Piazzale, the whole city lies below. The dome looks impossibly close. Squid is quiet for the first time all day. Mr Porky wants to live in this minute forever. +5 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ Round 2!', next: 'florence_r2' }],
+  },
+  florence_archive: {
+    name: 'FLORENCE — A Private Archive',
+    art: art_florence,
+    text: () => { addCoins(6); State.flags.romantic = true; return P(
+      `A side door near San Lorenzo. Down two flights. The scholar is Dottoressa Bianchi, eighty-one and small as a sparrow. She shows you working sketches — Botticelli's preparatory drawings for the Birth of Venus, before Venus was Venus. A page of Leonardo's mirror-script that's never been reproduced. The Medici account books listing what they paid Donatello in 1430 for the bronze David: a sum that, adjusted for inflation, you would not believe. She lets you both turn one page each. Izzy picks Botticelli. You pick Leonardo. Dottoressa Bianchi nods, satisfied. +6 Fish Coins.`,
+      `A side door near San Lorenzo. Down two flights. Dottoressa Bianchi, eighty-one and small as a sparrow, shows them working sketches — Botticelli's preparatory drawings for the Birth of Venus, a page of Leonardo's mirror-script never reproduced, the Medici account books listing what they paid Donatello in 1430. She lets each of them turn one page. Squid picks Botticelli. Mr Porky picks Leonardo. Dottoressa Bianchi nods, satisfied: "You chose the same way two scholars I trained in 1968 chose. They later married each other." Squid and Mr Porky do not look at each other. +6 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Round 2!', next: 'florence_r2' }],
+  },
+  florence_puzzle: {
+    name: 'FLORENCE — THE LOCKED GALLERY',
+    text: () => P(
+      `The lock on the door is a museum-grade thing of brass and mystery. The room beyond is dim — afternoon light slipping through one high window onto a tapestry, a stone Marzocco lion, a lectern with a faded codex, and a Florentine lily crest set high on the wall. Four sigils, the curator told you. The order is in this room.`,
+      `Squid jiggles the lock — it does not jiggle. The room is dim, afternoon light slipping past a tapestry, a stone Marzocco lion, a faded codex on a lectern, and a Florentine giglio crest. "Four sigils, signora," the curator said. "The order is in this room." Squid is already inside. Mr Porky is one step behind, reading the signs.`
+    ),
+    puzzle: {
+      kind: 'escape-room',
+      sceneClass: 'bg-florence',
+      slots: 4,
+      resetFlags: ['tapestryBrushed', 'inkwellOpened', 'codexTraced', 'lilyCrestClicked', 'lilyCount', 'lionUnlocked', 'mapUnrolled'],
+      sceneArt: `
+        <div class="galleryFloor"></div>
+        <div class="tapestryWall">
+          <div class="tapestryDust"></div>
+          <div class="tapestryGlyphs">
+            <span>🌹 → 🦁 → ⚜ → 🗝</span>
+            <span style="font-size:10px;letter-spacing:2px;opacity:0.85;">ROSA · LEONE · GIGLIO · CHIAVE</span>
+          </div>
+        </div>
+        <div class="galleryLectern"></div>
+        <div class="galleryStoneLion"></div>
+        <div class="galleryInkwell"></div>
+        <div class="galleryLilyCrest">⚜</div>
+        <div class="galleryGate">
+          <div class="gateSlots">
+            <div class="gateSlot">○</div>
+            <div class="gateSlot">○</div>
+            <div class="gateSlot">○</div>
+            <div class="gateSlot">○</div>
+          </div>
+          LOCKED
+        </div>
+      `,
+      hotspots: [
+        { id: 'inkwell', type: 'collect', x: '64%', y: '70%', symbol: '🪶', label: 'old inkwell with quill', size: 30,
+          visibleIf: () => !State.flags.inkwellOpened,
+          onUse: () => {
+            State.flags.inkwellOpened = true;
+            addToInventory('quill', '🪶', 'gallery quill');
+            showFeedback('A perfectly preserved goose quill, ink long dry. Useful for brushing very old surfaces.', 'good');
+          }
+        },
+        { id: 'tapestry', type: 'interact', x: '15%', y: '40%', symbol: '', label: 'dusty tapestry', size: 0,
+          visibleIf: () => !State.flags.tapestryBrushed,
+          requires: 'quill',
+          failMessage: 'Centuries of dust. You\'d need something soft enough to brush it without damage.',
+          onUse: () => {
+            State.flags.tapestryBrushed = true;
+            const wall = document.querySelector('.tapestryWall');
+            if (wall) wall.classList.add('revealed');
+            revealSymbol('rose', '🌹', 1, 'rose');
+            showFeedback('Dust comes free in slow drifts. The tapestry blooms with a woven rose at its centre and four sigils in order: 🌹 → 🦁 → ⚜ → 🗝. The rose lifts free of the weave!', 'good');
+          }
+        },
+        { id: 'lion', type: 'interact', x: '78%', y: '74%', symbol: '🦁', label: 'stone Marzocco lion', size: 30,
+          visibleIf: () => !State.flags.lionUnlocked,
+          requires: 'quill',
+          failMessage: 'The Marzocco — Florence\'s heraldic lion. His paw rests on a worn shield. Something is etched there, but you can\'t read it through the dust.',
+          onUse: () => {
+            State.flags.lionUnlocked = true;
+            revealSymbol('lion', '🦁', 2, 'Marzocco lion');
+            showFeedback('You brush the dust from the shield beneath the Marzocco\'s paw. A roaring lion sigil sits there, ready to be lifted!', 'good');
+          }
+        },
+        { id: 'lilycrest', type: 'interact', x: '88%', y: '20%', symbol: '⚜', label: 'Florentine lily crest', size: 28,
+          visibleIf: () => !(State.flags.lilyCount >= 3 && hasItem('lily')),
+          onUse: () => {
+            State.flags.lilyCount = (State.flags.lilyCount || 0) + 1;
+            updateLilyVisual(State.flags.lilyCount);
+            if (State.flags.lilyCount === 1) {
+              showFeedback('The crest hums faintly under your touch. The giglio — Florence\'s lily — has been the city\'s symbol since the 11th century.', 'info');
+            } else if (State.flags.lilyCount === 2) {
+              showFeedback('The crest glows brighter. You can feel something inside it wanting to wake up.', 'info');
+            } else if (State.flags.lilyCount >= 3) {
+              revealSymbol('lily', '⚜', 3, 'giglio (Florentine lily)');
+              showFeedback('The crest BLAZES gold and the giglio sigil tears free in a shower of light!', 'good');
+            }
+          }
+        },
+        { id: 'codex', type: 'interact', x: '42%', y: '64%', symbol: '📜', label: 'faded codex on the lectern', size: 28,
+          visibleIf: () => !State.flags.codexTraced,
+          requires: 'quill',
+          failMessage: 'A 15th-century codex, ink so faded the letters are almost gone. You\'d need something fine to trace what remains.',
+          onUse: () => {
+            State.flags.codexTraced = true;
+            revealSymbol('key', '🗝', 4, 'Medici key');
+            showFeedback('You retrace the faded ink with the dry quill. A bronze key sigil, the mark of the Medici archives, surfaces from the page!', 'good');
+          }
+        },
+      ],
+      onWin: 'florence_finish_win',
+      onLose: 'florence_finish_lose',
+      hint: 'Five centuries of dust hide three of the four sigils. One sigil only stirs when touched again, and again, and again. The order is woven somewhere in the room.',
+    },
+  },
+  florence_finish_win: {
+    name: 'FLORENCE — The Curator Bows',
+    art: art_florence,
+    text: () => {
+      addCoins(8);
+      State.flags.florencePuzzleWon = true;
+      return P(
+        `The lock turns with a sound like a held breath releasing. The door swings open into a corridor of UNCATALOGUED sketches — Vasari preparatory drawings, an unsigned page that might be Leonardo, working notes on the Pietà in Michelangelo's own hand. The curator bows to you both: "Pochi visitatori. Few visitors get this far." On a small marble table sits a folded note, sealed with gold wax in the shape of a mountain. The curator notices you noticing it. "From a friend," she says. "She said you would solve this. The note is for after." +8 Fish Coins.`,
+        `The lock turns with a sound like a held breath releasing. The corridor beyond is full of UNCATALOGUED sketches — Vasari prep drawings, an unsigned page that might be Leonardo, working notes on the Pietà in Michelangelo's own hand. Squid is, for once, silent. The curator bows: "Pochi visitatori." On a small marble table sits a folded note, sealed with gold wax in the shape of a mountain. The curator's eyes warm: "From a friend. She said you would solve this. The note is for after." Squid is already eyeing the gold seal. +8 Fish Coins.`
+      );
+    },
+    choices: () => [
+      { text: P('➡ Round 2 — see more of Florence first', '➡ Round 2 — Squid wants more of Florence first'), next: 'florence_r2' },
+      { text: P('🏔 Open the gold-sealed note (SECRET)', '🏔 Squid is already cracking the wax seal — open the note (SECRET)'), next: 'switzerland', cls: 'special' },
+    ],
+  },
+  florence_finish_lose: {
+    name: 'FLORENCE — The Curator Smiles Anyway',
+    art: art_florence,
+    text: () => P(
+      `The curator finds you both an hour later still glaring at the lock. She smiles, kindly. "Many people do not solve it. Come — I will show you the public rooms." She does. They are still magnificent. Vasari painted that ceiling in 1565. You leave with your dignity and a postcard.`,
+      `The curator finds them both an hour later, Squid still arguing with the lock. She laughs gently. "Many do not solve it. Come — the public rooms are still wonderful." They are. Vasari painted that ceiling in 1565. Squid sulks for forty seconds and then is fine. Mr Porky buys her a postcard.`
+    ),
+    choices: () => [{ text: '➡ Round 2!', next: 'florence_r2' }],
+  },
+  florence_r2: {
+    name: 'FLORENCE — EVENING IN OLTRARNO',
+    art: art_florence,
+    text: () => P(
+      `The light shifts. Florence at evening turns gold, then pink, then a kind of blue that only happens here. The Arno mirrors the sky. Bells start. They will keep starting for an hour. One more Florentine memory before you go.`,
+      `The light shifts. Florence at evening goes gold, then pink, then a colour Squid does not have a word for and is annoyed about. The bells start. Mr Porky says quietly, "That's San Miniato." Squid looks at him like he's just performed magic. One more memory before they go.`
+    )+statFlavor({
+      adv: P(
+        ` There is a vineyard above Fiesole that does sunset tastings. The hike up is steep.`,
+        ` There is a vineyard above Fiesole — sunset tasting. Squid has already announced she's going.`
+      ),
+      cur: P(
+        ` Santa Croce is open late tonight. Galileo, Michelangelo, and Machiavelli are all buried in there.`,
+        ` Santa Croce is open late tonight. Mr Porky says "Galileo is in there" with the voice of a man trying not to cry.`
+      ),
+      soc: P(
+        ` The Mercato Centrale upstairs is roaring with food stalls and locals.`,
+        ` The Mercato Centrale upstairs is roaring with stalls and locals. Squid is already five steps ahead.`
+      ),
+      cau: P(
+        ` A small enoteca on a side street is doing quiet Chianti and free crostini.`,
+        ` A small enoteca is doing quiet Chianti. Mr Porky reads the sign. Squid has already booked them in.`
+      ),
+      def: P(
+        ` The evening waits.`,
+        ` The evening waits. Squid does not.`
+      ),
+    }),
+    choices: () => [
+      { text: P('🌉 Sunset stroll across Ponte Vecchio', '🌉 Sunset stroll on the Ponte Vecchio — Squid wants the gold light'), next: 'florence_bridge_r2', effect: () => addStat('cautious') },
+      { text: P('⛪ Visit Santa Croce — the Pantheon of Italians', '⛪ Santa Croce — Squid will be quiet for Galileo, no promises elsewhere'), next: 'florence_basilica', effect: () => addStat('curious') },
+      { text: P('🍷 Quiet enoteca, Chianti, crostini', '🍷 Enoteca with Chianti — Squid has booked the corner table'), next: 'florence_wine', effect: () => addStat('cautious') },
+      { text: P('🥖 Mercato Centrale upstairs — eat with locals', '🥖 Mercato Centrale — Squid will leave with three new friends'), next: 'florence_market', effect: () => addStat('social') },
+      ...( statUnlocked('adventurous') ? [{ text: P('🍇 Hike to a Fiesole vineyard for the sunset', '🍇 Hike up to Fiesole — Squid is already ahead, vineyard ho'), next: 'florence_fiesole', cls: 'special', effect: () => { addStat('adventurous'); addStat('cautious'); } }] : [] ),
+    ],
+  },
+  florence_bridge_r2: {
+    name: 'FLORENCE — Ponte Vecchio at Dusk',
+    art: art_florence,
+    text: () => { addCoins(4); State.flags.romantic = true; return P(
+      `The goldsmiths are closing one by one, their wooden shutters slamming home in soft, irregular percussion. The Vasari Corridor runs above your heads — the secret Medici passage Cosimo I had built in five months in 1565 so he could walk to work without being SEEN. The river is full of sky. Izzy leans on the rail. You do too. +4 Fish Coins.`,
+      `The goldsmiths close one by one, wooden shutters slamming home in soft, irregular percussion. Above their heads runs the Vasari Corridor — the Medici's secret commute, built in five months in 1565 so Cosimo I would not have to mingle with the public on his way to Pitti Palace. Squid leans on the rail. Mr Porky leans next to her. The river is full of sky. +4 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ To the journey…', next: 'florence_end' }],
+  },
+  florence_basilica: {
+    name: 'FLORENCE — Santa Croce',
+    art: art_florence,
+    text: () => { addCoins(4); return statFlavor({
+      cur: P(
+        `Santa Croce — the Pantheon of Italians. Galileo (1642) is here, though the Church only let him be buried in the basilica properly in 1737, ninety-five years after he died, after they finally backed down. Michelangelo (1564), in a tomb designed by Vasari himself. Machiavelli (1527). Rossini. Foscolo. The light through the Giotto frescoes is exactly the light Giotto painted. You sit on a stone bench for a long time. Izzy doesn't speak. +4 Fish Coins.`,
+        `Santa Croce — the Pantheon of Italians. Galileo, who the Church only let be buried here properly in 1737, ninety-five years after he died. Michelangelo (1564). Machiavelli (1527). Rossini. The light through the Giotto frescoes is exactly the light Giotto painted in. They sit on a stone bench for a long time. Squid does not speak, which is itself a kind of prayer. Mr Porky's eyes are wet. +4 Fish Coins.`
+      ),
+      def: P(
+        `Florentines call this their Pantheon. The dead are extraordinary; the silence is more so. Izzy holds your flipper and nobody whispers. +4 Fish Coins.`,
+        `Florentines call this their Pantheon. The dead are extraordinary; the silence is more so. Mr Porky holds Squid's flipper and nobody whispers. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ To the journey…', next: 'florence_end' }],
+  },
+  florence_wine: {
+    name: 'FLORENCE — Enoteca',
+    art: art_florence,
+    text: () => { addCoins(3); return statFlavor({
+      cau: P(
+        `Three small glasses of Chianti Classico — the proper one with the black rooster (Gallo Nero) seal that the consortium has used since 1924, though the estates have been making this wine since the 13th century. The crostini come without asking. The proprietor, eighty if a day, tells Izzy the wine is from his cousin's vines outside Greve. Izzy promises she'll visit Greve one day. He looks like he might believe her. +3 Fish Coins.`,
+        `Three small glasses of Chianti Classico — the proper one with the Gallo Nero seal, used by the consortium since 1924 though the estates date from the 13th century. The crostini come without asking. The proprietor, eighty if a day, tells Squid the wine is from his cousin's vines outside Greve. Squid swears she'll visit Greve one day. He looks like he might believe her. Mr Porky knows she will. +3 Fish Coins.`
+      ),
+      def: P(
+        `A tiny room. Stone walls. Candles in old bottles. Wine from a vineyard you can almost see from the window. Izzy is content. So are you. +3 Fish Coins.`,
+        `A tiny room. Stone walls. Candles in old bottles. Wine from a vineyard they can almost see from the window. Squid is content. Mr Porky is content. +3 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ To the journey…', next: 'florence_end' }],
+  },
+  florence_market: {
+    name: 'FLORENCE — Mercato Centrale',
+    art: art_florence,
+    text: () => { addCoins(4); return statFlavor({
+      soc: P(
+        `The upstairs market roars. Twelve food stalls, every region of Italy, locals shouting orders three deep. Izzy befriends a butcher named Lorenzo within ninety seconds; he insists on giving her a slice of finocchiona (fennel salami, a Florentine speciality since the Renaissance, when pepper was too expensive and they used wild fennel seeds instead — the word imboscare, "to hide," comes from this). +4 Fish Coins.`,
+        `The upstairs market roars. Twelve food stalls, every region of Italy, locals shouting three deep. Squid befriends Lorenzo the butcher in ninety seconds and gets a slice of finocchiona — fennel salami, a Florentine speciality since the Renaissance, when pepper was so expensive merchants substituted wild fennel. The word IMBOSCARE — "to hide" — comes from this trick. Lorenzo says all this in Italian. Squid does not understand a word. She laughs anyway. He gives her another slice. +4 Fish Coins.`
+      ),
+      def: P(
+        `Hot food, cold wine, locals everywhere, no tourists. Izzy is delighted. Mr Porky has somehow ordered three things by accident and is now eating them all. +4 Fish Coins.`,
+        `Hot food, cold wine, locals everywhere. Squid orders by pointing. Mr Porky orders by reading the menu carefully and then accidentally getting three things. They share. +4 Fish Coins.`
+      ),
+    }); },
+    choices: () => [{ text: '➡ To the journey…', next: 'florence_end' }],
+  },
+  florence_fiesole: {
+    name: 'FLORENCE — Fiesole at Sunset',
+    art: art_florence,
+    text: () => { addCoins(5); State.flags.romantic = true; return P(
+      `The hike up is forty minutes of switchbacks. Fiesole was here before Florence — Etruscan, then Roman, the amphitheatre's still up here from the 1st century BC. The vineyard sits below the old monastery. The wine is Sangiovese; the host pours it from a bottle without a label. Florence stretches out below, golden and impossible. Izzy puts her head on your shoulder. Neither of you speaks for the entire sunset. The host pretends not to notice. +5 Fish Coins.`,
+      `The hike up is forty minutes of switchbacks. Fiesole was here before Florence — Etruscan, then Roman; the amphitheatre's been here since the 1st century BC. The vineyard sits below the old monastery. The Sangiovese is unlabelled. Florence stretches out below, gold and impossible. Squid puts her head on Mr Porky's shoulder. Neither of them speaks for the entire sunset. The host pretends not to notice. He has seen this many times. +5 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ To the journey…', next: 'florence_end' }],
+  },
+  florence_end: {
+    name: 'FLORENCE — Arrivederci',
+    art: art_florence,
+    text: () => P(
+      `The car back to the airport drives along the Arno. The dome shrinks in the rear window. Izzy whispers, "Arrivederci, Firenze." Mr Porky waves at the dome like it can see him. Brunelleschi would have approved.`,
+      `The car back to the airport drives along the Arno. The dome shrinks in the rear window. Mr Porky whispers, "Arrivederci, Firenze." Squid waves at the dome like it can see her. Brunelleschi would have approved.`
+    ),
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
+  },
+
+  // === SWITZERLAND — secret, unlocked by the Florence puzzle ===
+  switzerland: {
+    name: 'SWITZERLAND — THE MATTERHORN',
+    art: art_switzerland,
+    text: () => {
+      if (!State.flags.florencePuzzleWon) {
+        setTimeout(() => goTo('antarctica'), 50);
+        return P(
+          `A cold wind. Nothing here yet. How did you even get here?`,
+          `Something doesn't add up. The mountain seems to vanish.`
+        );
+      }
+      return P(
+        `The folded note was a lift pass. An actual, current, signed-and-dated lift pass for Zermatt. Clipped to it: one very small, very perfect handwritten message in gold ink: "Top of the run. Go fast. — D.B." Dottoressa Bianchi. Of course. Izzy looks at Mr Porky. Mr Porky looks at the Matterhorn — 4,478m, first climbed 1865, killed four men on the descent. The Matterhorn looks back. "Porky," Izzy says, very calmly, "we're going."`,
+        `The folded note was a lift pass. The Matterhorn is RIGHT THERE — 4,478 metres, first climbed 1865 by Edward Whymper's party, four of whom died on the descent. Squid is in the hire-shop asking about snowboards before Mr Porky has finished reading the lift pass. The note is signed in gold: "Top of the run. Go fast. — D.B." Mr Porky cannot believe Dottoressa Bianchi. Mr Porky absolutely can.`
+      );
+    },
+    choices: () => [
+      { text: P('🏂 Full-send the black run from the top', '🏂 Squid is already strapping in — full-send the black run'), next: 'switzerland_run_fast', effect: () => addStat('adventurous') },
+      { text: P('🏔 The slow scenic blue — take it all in', '🏔 The slow blue route — Squid agrees only because the view is "diabolically good"'), next: 'switzerland_run_slow', effect: () => addStat('cautious') },
+      { text: P('⛷ Race the off-duty ski patrol down', '⛷ Squid challenged the ski patrol — race them down'), next: 'switzerland_race', effect: () => addStat('adventurous') },
+      { text: P('☕ Mountain hut hot chocolate first', '☕ Mountain hut hot chocolate first — Squid is, for once, agreeing to a delay'), next: 'switzerland_hut', effect: () => addStat('social') },
+    ],
+  },
+  switzerland_run_fast: {
+    name: 'SWITZERLAND — The Black Run',
+    art: art_switzerland,
+    text: () => { addCoins(10); return P(
+      `The run is twelve minutes of pure white speed. You bend low, edge clean, and let the mountain decide. The Matterhorn glares overhead the whole way down. Izzy whoops the entire descent. At the bottom you are both shaking and grinning and unable to speak for thirty seconds. A man in a bright orange jacket — head of patrol — comes over and says, in perfect English, "That was a very, very fast line, signor." Then, smaller: "Dottoressa Bianchi sent you, didn't she?" Mr Porky just nods. +10 Fish Coins.`,
+      `Twelve minutes of pure white speed. Squid bends low, edges clean, and lets the mountain decide. The Matterhorn glares overhead the whole way down. Mr Porky whoops the entire descent — actually whoops, out loud, like a person who has forgotten how to be embarrassed. At the bottom they are both shaking and unable to speak for thirty seconds. The head of patrol comes over: "That was a very, very fast line." Then, smaller: "Dottoressa Bianchi sent you?" Squid just grins. +10 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Onwards!', next: 'switzerland_end' }],
+  },
+  switzerland_run_slow: {
+    name: 'SWITZERLAND — The Slow Blue',
+    art: art_switzerland,
+    text: () => { addCoins(7); State.flags.romantic = true; return P(
+      `You take the long blue. Wide turns. Quiet snow. The Matterhorn watches the whole way. About halfway down Izzy stops on a flat stretch and just looks at the mountain. Then at you. She doesn't say anything. You don't either. The wind is the only sound. +7 Fish Coins.`,
+      `Squid takes the long blue at Mr Porky's request. Wide turns. Quiet snow. The Matterhorn watches the whole way. About halfway down she stops on a flat stretch and just looks — first at the mountain, then at Mr Porky. She doesn't say anything. Neither does he. The wind is the only sound for a full minute. +7 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Onwards!', next: 'switzerland_end' }],
+  },
+  switzerland_race: {
+    name: 'SWITZERLAND — Race the Patrol',
+    art: art_switzerland,
+    text: () => { addCoins(9); return P(
+      `Three off-duty patrollers in matching orange. They give you a head start. They do not need it. You see them blow past on the second turn — but somehow Izzy catches the lead patroller on a long traverse and beats him to the lift station by half a board length. The other two arrive arguing. The lead patroller buys you both schnapps. He shakes his head a lot. +9 Fish Coins.`,
+      `Three off-duty patrollers in matching orange. They give Squid a head start. They do not need it. They blow past on the second turn — but somehow Squid catches the lead patroller on a long traverse and beats him to the lift station by half a board length. Mr Porky arrives nineteen seconds later, wholly intact, having executed the smoothest cautious-line carve of his life. The patroller buys them schnapps. He keeps shaking his head. +9 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Onwards!', next: 'switzerland_end' }],
+  },
+  switzerland_hut: {
+    name: 'SWITZERLAND — The Hütte',
+    art: art_switzerland,
+    text: () => { addCoins(6); return P(
+      `A wood-panelled hut at 2,800m. The hot chocolate is so thick the spoon stands up in it. The hütten-wirt — old, weather-cut, eyes like sky — looks at the lift pass and laughs. "Bianchi! She still skis here every February. Tell her Hans says hello." You promise. Then he points at the door: "Now go. The light is right. Go fast." +6 Fish Coins.`,
+      `A wood-panelled hut at 2,800m. The hot chocolate is so thick the spoon stands up in it. The hut-keeper — old, weather-cut, eyes like sky — looks at the lift pass and laughs out loud. "Bianchi! She still skis here every February. Tell her Hans says hello." Squid swears she will. Hans points at the door: "Now go. The light is right. Go fast." Squid is already lacing up. +6 Fish Coins.`
+    ); },
+    choices: () => [{ text: '🏂 Now full-send the black run!', next: 'switzerland_run_fast' }],
+  },
+  switzerland_end: {
+    name: 'SWITZERLAND — Bottom of the Mountain',
+    art: art_switzerland,
+    text: () => P(
+      `The lift station is quiet. The mountain is enormous and indifferent and beautiful. You fold the gold-sealed note carefully and put it in the same pocket as the silver puffin pin. Some pockets, you think, are starting to be interesting.`,
+      `The lift station is quiet. The mountain is enormous and indifferent and beautiful. Squid folds the gold-sealed note carefully into Mr Porky's pocket — next to the silver puffin pin she pretends she doesn't know about. Some pockets, she thinks, are starting to be very interesting.`
+    ),
+    choices: () => [{ text: '➡ Next destination!', next: () => midNext() }],
   },
 
   // === EGYPT BRANCH ===
@@ -5001,6 +5527,7 @@ const Scenes = {
       { text: '🌴 Hawaii — beach time', next: 'hawaii', requires: () => !State.visited.has('hawaii') },
       { text: '🕌 India — Taj Mahal & chaos', next: 'india', requires: () => !State.visited.has('india') },
       { text: '🏔 Peru — Machu Picchu & llamas', next: 'peru', requires: () => !State.visited.has('peru') },
+      { text: '🖼 Florence — Renaissance art & a locked gallery mystery', next: 'florence', requires: () => !State.visited.has('florence') },
       { text: '👑 London — a quiet word (SECRET)', next: 'london', cls: 'special', requires: () => hasToken('castle') && !State.visited.has('london') },
     ]),
   },
@@ -5884,6 +6411,23 @@ const SCENE_VIBES = {
   peru_hike:           ['adventure',   2],
   peru_temple:         ['adventure',   2],
   peru_market:         ['silly',       1],
+  // Florence
+  florence_finish_win: ['adventure',   3],
+  florence_finish_lose:['silly',       1],
+  florence_gelato:     ['silly',       2],
+  florence_bridge:     ['romantic',    2],
+  florence_piazzale:   ['adventure',   2],
+  florence_archive:    ['sentimental', 3],
+  florence_bridge_r2:  ['romantic',    3],
+  florence_basilica:   ['sentimental', 3],
+  florence_wine:       ['romantic',    2],
+  florence_market:     ['silly',       2],
+  florence_fiesole:    ['romantic',    3],
+  // Switzerland (secret)
+  switzerland_run_fast:['adventure',   3],
+  switzerland_run_slow:['romantic',    3],
+  switzerland_race:    ['adventure',   3],
+  switzerland_hut:     ['romantic',    2],
   // Pre-finale activities (final-destination nudge)
   everest_activity:    ['sentimental', 3],
   nyc_activity:        ['romantic',    3],
@@ -6507,6 +7051,21 @@ function updateDialVisual(idx) {
   dial.textContent = arr[pos];
 }
 
+function updateLilyVisual(count) {
+  const dot = document.querySelector('[data-hotspot-id="lilycrest"]');
+  if (!dot) return;
+  dot.style.fontSize = (28 + count * 6) + 'px';
+  dot.style.transition = 'font-size 0.3s steps(3), filter 0.3s';
+  if (count === 1) {
+    dot.style.filter = 'drop-shadow(0 0 6px #ffd23f)';
+  } else if (count === 2) {
+    dot.style.filter = 'drop-shadow(0 0 14px #ffd23f) drop-shadow(0 0 6px #ff9f4a)';
+  } else if (count >= 3) {
+    dot.style.filter = 'drop-shadow(0 0 24px #fff) drop-shadow(0 0 12px #ffd23f)';
+    dot.style.animation = 'foundPulse 0.6s steps(3)';
+  }
+}
+
 function updateCauldronVisual(state) {
   const liq = document.querySelector('.cauldronLiquid');
   if (!liq) return;
@@ -6600,7 +7159,14 @@ function renderEscapeRoom(container, p) {
     } while (State.flags.dial1 === 3 && State.flags.dial2 === 0 && State.flags.dial3 === 3 && State.flags.dial4 === 0);
     [1,2,3,4].forEach(updateDialVisual);
   }
-  showFeedback('The tomb is silent. Dust hangs in the torchlight.', '');
+  const openingLines = {
+    'bg-tomb':      'The tomb is silent. Dust hangs in the torchlight.',
+    'bg-egypt':     'The desert heat presses in. The door waits.',
+    'bg-florence':  'The gallery is silent. Dust hangs in the lamplight.',
+    'bg-iceland':   'The aurora shifts overhead. The runes glow faintly.',
+    'bg-amazon':    'The canopy breathes. Something in this clearing wants finding.',
+  };
+  showFeedback(openingLines[p.sceneClass] || 'Something in this room wants to be found.', '');
 }
 
 function rerenderEscapeHotspots() {
@@ -6620,6 +7186,18 @@ function rerenderEscapeHotspots() {
       ov.style.height = '82%';
       ov.title = h.label;
       ov.dataset.hotspotId = h.id;
+      ov.onclick = () => handleEscapeHotspot(h);
+      wrap.appendChild(ov);
+      return;
+    }
+    if (h.id === 'tapestry') {
+      const ov = document.createElement('div');
+      ov.className = 'hotspotOverlay';
+      ov.style.cssText = 'left:4%;top:12%;width:26%;height:70%;cursor:pointer;background:transparent;outline:2px dashed rgba(200,154,58,0);transition:outline-color 0.2s;z-index:2;';
+      ov.title = h.label;
+      ov.dataset.hotspotId = h.id;
+      ov.onmouseenter = () => ov.style.outlineColor = 'rgba(200,154,58,0.35)';
+      ov.onmouseleave = () => ov.style.outlineColor = 'rgba(200,154,58,0)';
       ov.onclick = () => handleEscapeHotspot(h);
       wrap.appendChild(ov);
       return;
@@ -6868,7 +7446,7 @@ function discoverMemory(idx) {
 // ============= SCENE TRANSITIONS =============
 const TRAVEL_SCENES = new Set([
   'antarctica', 'tokyo', 'paris', 'egypt', 'morocco', 'scotland', 'london',
-  'amazon', 'iceland', 'venice', 'hawaii', 'india', 'peru',
+  'amazon', 'iceland', 'venice', 'hawaii', 'india', 'peru', 'florence',
   'everest', 'nyc', 'gbr',
 ]);
 const TRAVEL_LABELS = {
@@ -6885,6 +7463,7 @@ const TRAVEL_LABELS = {
   hawaii: 'HAWAII',
   india: 'AGRA',
   peru: 'MACHU PICCHU',
+  florence: 'FLORENCE',
   everest: 'EVEREST',
   nyc: 'NEW YORK',
   gbr: 'GREAT BARRIER REEF',
@@ -6908,6 +7487,7 @@ const LOCATION_COORDS = {
   hawaii:     [ 20.80, -156.32],
   india:      [ 27.18,  78.04],    // Agra (Taj Mahal)
   peru:       [-13.16, -72.55],    // Machu Picchu
+  florence:   [ 43.77,  11.26],    // Florence, Tuscany
   everest:    [ 27.99,  86.93],
   nyc:        [ 40.71, -74.01],
   gbr:        [-18.29, 147.70],    // Great Barrier Reef

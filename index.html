@@ -996,12 +996,12 @@
   /* Sundial check / lock button */
   .sundialCheckBtn {
     position: absolute;
-    left: 73%; top: 78%;
-    width: 100px;
-    padding: 5px 0;
+    left: 78%; top: 26%;
+    width: 70px;
+    padding: 3px 0;
     text-align: center;
     font-family: inherit;
-    font-size: 9px;
+    font-size: 7px;
     letter-spacing: 1px;
     background: #1a0f05;
     color: var(--gold);
@@ -1014,6 +1014,12 @@
   .sundialCheckBtn:hover {
     background: var(--gold);
     color: #1a0f05;
+  }
+
+  /* Silent overlay (clickable but no hover indicator) */
+  .hotspotOverlay.silent:hover {
+    outline-color: transparent;
+    background: transparent;
   }
 
   .feedback.info { color: var(--teal); border: 2px solid var(--teal); }
@@ -5614,7 +5620,7 @@ function rerenderEscapeHotspots() {
     }
     if (h.id === 'sundial') {
       const ov = document.createElement('div');
-      ov.className = 'hotspotOverlay';
+      ov.className = 'hotspotOverlay silent';
       ov.style.left = '74%';
       ov.style.top = '34%';
       ov.style.width = '94px';

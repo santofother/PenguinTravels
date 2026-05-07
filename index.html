@@ -3320,16 +3320,39 @@ const Scenes = {
     name: 'LONDON — A QUIET WORD',
     art: art_london,
     text: () => P(
-      `A black car was waiting at the airport with no name on the door. The driver tipped his cap, said only "Sir," and didn't ask where you were going. He already knew. The bronze castle token sits warm in your pocket. London is grey and damp and, for some reason, expecting you. "His Majesty receives you this evening, sir," the driver says without turning around. "You have the afternoon. Anywhere you like."`,
-      `Squid notices the car first — black, no name, driver in a hat. "Porky," she whispers, "either we're being collected by spies or you've made friends in very high places." Mr Porky pats his pocket. The castle token is warm. The driver tips his cap. "Ma'am. Sir. His Majesty receives you this evening — you have the afternoon, anywhere you'd like." Squid is already mentally drawing up an itinerary. London is grey and damp and quietly expectant.`
+      `A black car was waiting at the airport with no name on the door. The driver tipped his cap, said only "Sir," and didn't ask where you were going. He already knew. The bronze castle token sits warm in your pocket. London is grey and damp and, for some reason, expecting you. "His Majesty receives you straight away, sir," the driver says without turning around.`,
+      `Squid notices the car first — black, no name, driver in a hat. "Porky," she whispers, "either we're being collected by spies or you've made friends in very high places." Mr Porky pats his pocket. The castle token is warm. The driver tips his cap. "Ma'am. Sir. His Majesty receives you straight away." Squid sits up VERY straight, which is unusual. London is grey and damp and quietly expectant.`
     ),
     choices: () => [
-      { text: P('🏰 Tower of London — see the ravens', '🏰 Tower of London — Squid knows every raven by name'), next: 'london_tower', effect: () => { addStat('curious'); State.flags.london_afternoon = 'tower'; } },
-      { text: P('🍰 Tea at the Ritz', '🍰 Tea at the Ritz — Squid wants the full performance'), next: 'london_ritz', effect: () => { addStat('cautious'); State.flags.london_afternoon = 'ritz'; } },
-      { text: P('🚖 Black cab tour — let the cabbie pick the route', '🚖 Black cab tour — Squid is already in the front seat'), next: 'london_cab', effect: () => { addStat('social'); State.flags.london_afternoon = 'cab'; } },
-      { text: P('🥧 Borough Market — proper fish pie', '🥧 Drag Mr Porky to Borough Market — fish pie immediately'), next: 'london_market', effect: () => { addStat('social'); State.flags.london_afternoon = 'market'; } },
-      { text: P('🎭 West End matinée', '🎭 Sneak into a West End matinée — Squid will not whisper, no promises'), next: 'london_theatre', effect: () => { addStat('curious'); State.flags.london_afternoon = 'theatre'; } },
-      ...( statUnlocked('curious') ? [{ text: P('🔍 A foggy walk past 221B Baker Street', '🔍 Baker Street walk — Squid wants to spot something Sherlock missed'), next: 'london_baker', cls: 'special', effect: () => { addStat('curious'); addStat('cautious'); State.flags.london_afternoon = 'baker'; } }] : [] ),
+      { text: P('🏰 Follow the man in the hat', '🏰 Squid is already in the car — follow her'), next: 'london_meet_king', cls: 'special' },
+    ],
+  },
+  london_meet_king: {
+    name: 'LONDON — THE KING',
+    art: art_london,
+    text: () => { addCoins(12); return P(
+      `A side door of a building you've definitely seen on biscuit tins. A long corridor. A small bright room with a fire and two chairs. The King stands up when you enter. He shakes your flipper. "I heard you solved the old castle. My great-great-grandmother set those dials." He pours tea. He asks you about Antarctica. He listens — really listens, the way no one with that much on their plate should still know how. When you leave, he presses something into your flipper — a tiny silver pin shaped like a sleeping puffin. "From one tired bird to another." As you reach the door he calls after you, lightly: "The car is yours till evening. Take it anywhere. Don't waste London." Your eyes are very bright. +12 Fish Coins.`,
+      `A side door of a building Squid has only seen on biscuit tins. A long corridor. A small bright room with a fire. The King stands up when they enter — actually stands — and shakes both their flippers. "I heard you solved the old castle. Brilliant work." He pours tea. He asks about Antarctica. He listens to Squid for nine uninterrupted minutes — proper listening, no glances at any clock. When they leave he presses a tiny silver puffin pin into Mr Porky's flipper. "From one tired bird to another." As they reach the door he calls after them, lightly: "The car is yours till evening. Take it anywhere. Don't waste London." Squid is already plotting; Mr Porky is wordless. +12 Fish Coins.`
+    ); },
+    choices: () => [
+      { text: P('🏰 Tower of London — see the ravens', '🏰 Tower of London — Squid wants to meet every raven'), next: 'london_tower', effect: () => addStat('curious') },
+      { text: P('🍰 Tea at the Ritz', '🍰 Tea at the Ritz — Squid wants the full performance'), next: 'london_ritz', effect: () => addStat('cautious') },
+      { text: P('🚖 Black cab tour with a chatty cabbie', '🚖 Black cab tour — Squid is already in the front seat'), next: 'london_cab', effect: () => addStat('social') },
+      { text: P('🥧 Borough Market — proper fish pie', '🥧 Drag Mr Porky to Borough Market — fish pie immediately'), next: 'london_market', effect: () => addStat('social') },
+    ],
+  },
+  london_evening: {
+    name: 'LONDON — EVENING',
+    art: art_london,
+    text: () => P(
+      `London turns from grey to gold as the streetlamps come on. The black car waits patiently at the kerb. The driver looks up. "One more, sir? You've still got the evening."`,
+      `London turns grey to gold as the streetlamps come on. The black car waits patiently at the kerb. The driver looks up. "One more, ma'am? You've still got the evening." Squid is already pointing through the windscreen at something Mr Porky cannot quite see.`
+    ),
+    choices: () => [
+      { text: P('🎭 An evening show in the West End', '🎭 West End evening show — Squid will not whisper, no promises'), next: 'london_theatre', effect: () => addStat('curious') },
+      { text: P('🌙 A quiet walk along the Thames', '🌙 Thames walk — Squid is not ready to leave London'), next: 'london_thames', cls: 'special', effect: () => addStat('cautious') },
+      ...( statUnlocked('curious') ? [{ text: P('🔍 A foggy walk past 221B Baker Street', '🔍 Baker Street walk — Squid wants to spot something Sherlock missed'), next: 'london_baker', cls: 'special', effect: () => { addStat('curious'); addStat('cautious'); } }] : [] ),
+      { text: P('➡ Call it a day, dignified', '➡ Call it a day — Squid is humming all the way home'), next: () => midNext() },
     ],
   },
   london_tower: {
@@ -3337,23 +3360,23 @@ const Scenes = {
     art: art_london,
     text: () => { addCoins(4); return statFlavor({
       cur: P(
-        `A Yeoman Warder spots the bronze token in your pocket, blinks, and quietly walks you past the velvet ropes. The Crown Jewels are smaller than you expected and impossibly bright. A raven called Merlina lets you stand close enough to see the green in her black feathers. Izzy whispers a fact about every single bird. +4 Fish Coins.`,
-        `A Yeoman Warder spots the bronze token, blinks, and quietly walks both penguins past the velvet ropes. Squid names every raven faster than he does — he is so charmed he gives up trying. The Crown Jewels are smaller than expected, impossibly bright, and Mr Porky stands very still with the dignity of a man trying not to cry. Squid takes his flipper. Merlina the raven approves. +4 Fish Coins.`
+        `A Yeoman Warder spots the silver puffin pin and goes quietly still — then walks you both past the velvet ropes without a word. The Crown Jewels are smaller than you expected and impossibly bright. A raven called Merlina lets you stand close enough to see the green in her black feathers. Izzy whispers a fact about every single bird. +4 Fish Coins.`,
+        `A Yeoman Warder spots the silver puffin pin and goes quietly still — then walks both penguins past the velvet ropes without a word. Squid names every raven faster than he does — he's so charmed he gives up trying. The Crown Jewels are smaller than expected, impossibly bright, and Mr Porky stands very still with the dignity of a man trying not to cry twice in one day. Squid takes his flipper. Merlina the raven approves. +4 Fish Coins.`
       ),
       def: P(
-        `The Yeoman Warder catches sight of the bronze token and steps quietly out of the way. The ravens stalk past, ancient and unbothered. Izzy hand-feeds one a piece of biscuit. The Yeoman pretends not to see. +4 Fish Coins.`,
-        `The Yeoman Warder catches sight of the bronze token and clears the path. Squid is already crouched at raven height, having an animated conversation. The ravens are listening. Mr Porky watches her be exactly herself in one of the oldest places in the country. +4 Fish Coins.`
+        `The Yeoman Warder catches sight of the silver pin and steps quietly out of the way. The ravens stalk past, ancient and unbothered. Izzy hand-feeds one a piece of biscuit. The Yeoman pretends not to see. +4 Fish Coins.`,
+        `The Yeoman Warder catches sight of the silver pin and clears the path. Squid is already crouched at raven height, having an animated conversation. The ravens are listening. Mr Porky watches her be exactly herself in one of the oldest places in the country. +4 Fish Coins.`
       ),
     }); },
-    choices: () => [{ text: P('➡ To the audience…', '➡ To the audience — Squid keeps checking her hat'), next: 'london_meet_king', cls: 'special' }],
+    choices: () => [{ text: P('➡ Onwards into the evening…', '➡ Onwards into the evening — Squid is humming'), next: 'london_evening' }],
   },
   london_ritz: {
     name: 'LONDON — Tea at the Ritz',
     art: art_london,
     text: () => { addCoins(5); State.flags.lavish = true; return statFlavor({
       cau: P(
-        `Three tiers of tiny food. You handle each finger sandwich with great precision. Izzy handles each one by inhaling it. The waiter — a man named Thomas, forty years at the Ritz — is so delighted by Izzy's enthusiasm that he brings out an extra tier off the menu and refuses to charge for it. +5 Fish Coins.`,
-        `Three tiers of tiny food. Squid handles each one by inhaling it with deep reverence. Mr Porky handles each one with great precision, his pinky out. Thomas the waiter — forty years at the Ritz — has not enjoyed serving anyone this much in a decade. He brings them an extra tier off the menu and waves the bill away. +5 Fish Coins.`
+        `Three tiers of tiny food. You handle each finger sandwich with great precision. Izzy handles each one by inhaling it. The waiter — a man named Thomas, forty years at the Ritz — is so delighted by Izzy's enthusiasm that he brings out an extra tier off the menu and refuses to charge for it. He clocks the silver pin and says nothing, but his eyes go bright. +5 Fish Coins.`,
+        `Three tiers of tiny food. Squid handles each one by inhaling it with deep reverence. Mr Porky handles each one with great precision, his pinky out. Thomas the waiter — forty years at the Ritz — has not enjoyed serving anyone this much in a decade. He clocks the silver pin in Mr Porky's pocket and says nothing, but his eyes go bright. He brings them an extra tier off the menu and waves the bill away. +5 Fish Coins.`
       ),
       soc: P(
         `Within twenty minutes Izzy is on first-name terms with the table next door, the pianist, and Thomas the head waiter. By the second pot of Earl Grey she has been invited to a wedding. +5 Fish Coins.`,
@@ -3364,7 +3387,7 @@ const Scenes = {
         `Earl Grey, scones, clotted cream, and a string quartet. Squid pronounces the cucumber sandwiches "absurd in a good way." Mr Porky agrees with everything she says. +5 Fish Coins.`
       ),
     }); },
-    choices: () => [{ text: P('➡ To the audience…', '➡ To the audience — Squid is licking jam off her flipper'), next: 'london_meet_king', cls: 'special' }],
+    choices: () => [{ text: P('➡ Onwards into the evening…', '➡ Onwards into the evening — Squid is licking jam off a flipper'), next: 'london_evening' }],
   },
   london_cab: {
     name: 'LONDON — Black Cab Tour',
@@ -3379,7 +3402,7 @@ const Scenes = {
         `The cabbie's name is Dave. Dave has opinions about every politician of the last forty years. Squid eggs him on; Mr Porky listens like he's at a museum. They see twelve landmarks in twenty minutes. +3 Fish Coins.`
       ),
     }); },
-    choices: () => [{ text: P('➡ To the audience…', '➡ To the audience — Squid is still waving at Dave'), next: 'london_meet_king', cls: 'special' }],
+    choices: () => [{ text: P('➡ Onwards into the evening…', '➡ Onwards into the evening — Squid is still waving at Dave'), next: 'london_evening' }],
   },
   london_market: {
     name: 'LONDON — Borough Market',
@@ -3394,7 +3417,7 @@ const Scenes = {
         `Proper fish pie. Crusty, creamy, exactly what cold London weather requires. Squid eats two and a half portions and goes briefly silent — which Mr Porky knows is the highest praise. +4 Fish Coins.`
       ),
     }); },
-    choices: () => [{ text: P('➡ To the audience…', '➡ To the audience — Squid is licking pie crust off a flipper'), next: 'london_meet_king', cls: 'special' }],
+    choices: () => [{ text: P('➡ Onwards into the evening…', '➡ Onwards into the evening — Squid is licking pie crust off a flipper'), next: 'london_evening' }],
   },
   london_theatre: {
     name: 'LONDON — West End',
@@ -3409,7 +3432,16 @@ const Scenes = {
         `Two penguins in row G. Squid whispers approximately constantly. The couple in front turn around, see her face, and forgive everything. Mr Porky's flipper finds hers in the dark. Standing ovation. +4 Fish Coins.`
       ),
     }); },
-    choices: () => [{ text: P('➡ To the audience…', '➡ To the audience — Squid is still humming the finale'), next: 'london_meet_king', cls: 'special' }],
+    choices: () => [{ text: P('➡ Back to the journey', '➡ Back to the journey — Squid is humming the finale'), next: () => midNext() }],
+  },
+  london_thames: {
+    name: 'LONDON — Thames at Night',
+    art: art_london,
+    text: () => { addCoins(5); State.flags.romantic = true; return P(
+      `The Thames is black glass. Big Ben strikes seven. You walk slowly along the embankment, the silver puffin pin warm in your pocket. Izzy is uncharacteristically quiet, just walking close. A bus passes; its lights paint you both in red and gold for one second. London, you decide, has chosen to like you. +5 Fish Coins.`,
+      `The Thames is black glass. Big Ben strikes seven. Squid walks slowly along the embankment for once, leaning into Mr Porky's wing. The silver puffin pin is warm in his pocket. A bus passes; its lights paint them both red and gold for one second. Squid says, quietly, "I think the King thought you were brilliant, Porky." Mr Porky says nothing for a long time. +5 Fish Coins.`
+    ); },
+    choices: () => [{ text: '➡ Back to the journey', next: () => midNext() }],
   },
   london_baker: {
     name: 'LONDON — Baker Street',
@@ -3418,59 +3450,7 @@ const Scenes = {
       `The fog is doing the fog's best work. 221B is a museum but the brass knocker is the same. You walk slowly. Izzy reads the plaque aloud in a perfect Holmes voice. A man on the next bench tips his hat at her and walks off. You're almost certain he had a deerstalker. You don't mention it. The streetlamp flickers exactly once. +6 Fish Coins.`,
       `The fog is doing the fog's best work. 221B is a museum but the brass knocker is the same. They walk slowly. Mr Porky reads the plaque aloud in a perfect Holmes voice — Squid is so impressed she briefly forgets to interrupt. A man on the next bench tips his hat and walks off. They are almost certain he had a deerstalker. Neither of them mentions it. The streetlamp flickers exactly once. Squid takes Mr Porky's flipper. +6 Fish Coins.`
     ); },
-    choices: () => [{ text: P('➡ To the audience…', '➡ To the audience — Squid is unusually quiet'), next: 'london_meet_king', cls: 'special' }],
-  },
-  london_meet_king: {
-    name: 'LONDON — THE KING',
-    art: art_london,
-    text: () => {
-      addCoins(12);
-      const aft = State.flags.london_afternoon;
-      const aside = (() => {
-        if (aft === 'tower') return P(
-          ` He asks if Merlina the raven was civil. You confirm she was. He looks deeply pleased. "She doesn't speak to everyone," he says.`,
-          ` He asks if Merlina the raven was civil. Squid says they had a long conversation. The King looks deeply pleased. "She doesn't speak to everyone," he says quietly.`
-        );
-        if (aft === 'ritz') return P(
-          ` He asks if Thomas is still working the floor. You say he is. He smiles a small private smile. "He served my grandfather."`,
-          ` He asks if Thomas is still working the floor. Squid not only confirms it, she relays Thomas's regards. The King's smile is small and very real. "He served my grandfather."`
-        );
-        if (aft === 'cab') return P(
-          ` He asks the name of your cabbie. You say "Dave." He nods slowly, as if confirming a long-held suspicion. "I've heard of Dave."`,
-          ` He asks the name of the cabbie. Squid says "DAVE!" with such enthusiasm the King laughs out loud — a thing his staff later say they have not heard in months. "I've heard of Dave," he says.`
-        );
-        if (aft === 'market') return P(
-          ` He asks if you tried the fish pie. You did. He nods, satisfied. "The proper one. Good."`,
-          ` He asks if they tried the fish pie. Squid describes it for ninety seconds without pausing for breath. The King listens with full attention. "The proper one," he says when she's done. "Good."`
-        );
-        if (aft === 'theatre') return P(
-          ` He asks which show you saw. You tell him. "I haven't seen that in twenty years," he says. "How was the lead?"`,
-          ` He asks which show. Squid reviews it with passion; Mr Porky reviews it with care. "I haven't seen that in twenty years," the King says, and asks them to tell him everything.`
-        );
-        if (aft === 'baker') return P(
-          ` He looks at you carefully. "Did the lamp flicker?" You say it did, exactly once. He nods, like he expected nothing else, and changes the subject without explaining.`,
-          ` He looks at them carefully. "Did the lamp flicker?" Squid says yes, exactly once. He nods, like he expected nothing else, and changes the subject without explaining.`
-        );
-        return '';
-      })();
-      return P(
-        `A side door of a building you've definitely seen on biscuit tins. A long corridor. A small bright room with a fire and two chairs. The King stands up when you enter. He shakes your flipper. "I heard you solved the old castle. My great-great-grandmother set those dials." He pours tea.${aside} He asks you about Antarctica. He listens. When you leave, he presses something into your flipper — a tiny silver pin shaped like a sleeping puffin. "From one tired bird to another." Mr Porky's eyes are very bright. +12 Fish Coins.`,
-        `A side door of a building Squid has only seen on biscuit tins. A long corridor. A small bright room with a fire. The King stands up when they enter — actually stands — and shakes both their flippers. "I heard you solved the old castle. Brilliant work." He pours tea.${aside} He asks about Antarctica. He listens to Squid for nine uninterrupted minutes. When they leave he presses a tiny silver puffin pin into Mr Porky's flipper. "From one tired bird to another." Mr Porky cries on the train back. Squid pretends not to see. She sees. +12 Fish Coins.`
-      );
-    },
-    choices: () => [
-      { text: P('➡ Back to the journey, dignified', '➡ Back to the journey — Squid is humming'), next: () => midNext() },
-      { text: P('🌙 A quiet walk back along the Thames first', '🌙 Walk back along the Thames — Squid is not done with London'), next: 'london_thames', cls: 'special', effect: () => addStat('cautious') },
-    ],
-  },
-  london_thames: {
-    name: 'LONDON — Thames at Night',
-    art: art_london,
-    text: () => { addCoins(5); State.flags.romantic = true; return P(
-      `The Thames is black glass. Big Ben strikes ten. You walk slowly along the embankment, the silver puffin pin warm in your pocket. Izzy is uncharacteristically quiet, just walking close. A bus passes; its lights paint you both in red and gold for one second. London, you decide, has chosen to like you. +5 Fish Coins.`,
-      `The Thames is black glass. Big Ben strikes ten. Squid walks slowly along the embankment for once, leaning into Mr Porky's wing. The silver puffin pin is warm in his pocket. A bus passes; its lights paint them both red and gold for one second. Squid says, quietly, "I think the King thought you were brilliant, Porky." Mr Porky says nothing for a long time. +5 Fish Coins.`
-    ); },
-    choices: () => [{ text: '➡ Back to the journey', next: () => midNext() }],
+    choices: () => [{ text: P('➡ Back to the journey', '➡ Back to the journey — Squid is unusually quiet'), next: () => midNext() }],
   },
   scotland_loch: {
     name: 'SCOTLAND — Loch Ness',
@@ -6615,6 +6595,9 @@ function renderEscapeRoom(container, p) {
     updateSundialVisual(State.flags.sunRotation || 0);
   }
   if (document.querySelector('.dial[data-dial]')) {
+    do {
+      [1,2,3,4].forEach(i => { State.flags[`dial${i}`] = Math.floor(Math.random() * 4); });
+    } while (State.flags.dial1 === 3 && State.flags.dial2 === 0 && State.flags.dial3 === 3 && State.flags.dial4 === 0);
     [1,2,3,4].forEach(updateDialVisual);
   }
   showFeedback('The tomb is silent. Dust hangs in the torchlight.', '');
